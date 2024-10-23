@@ -159,11 +159,30 @@ public class ObjectPersistOnDiskService<T> where T : new()
         _structureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
+    public void WriteBulk(long index, T[] objs)
+    {
+        var sizeOfObject = GetItemSize();
+        var buffer = new byte[sizeOfObject * objs.Length];
+        for (var i = 0; i < objs.Length; i++)
+        {
+            SerializeBytes(objs[i], buffer, sizeOfObject * i);
+        }
+        _structureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
+    }
+    
     public void Add(T obj)
     {
         var indexToWrite = Length;
         WriteIndex(indexToWrite, obj);
         Length++;
+        SetLength(Length);
+    }
+    
+    public void AddBulk(T[] objs)
+    {
+        var indexToWrite = Length;
+        WriteBulk(indexToWrite, objs);
+        Length += objs.Length;
         SetLength(Length);
     }
     
@@ -209,11 +228,14 @@ public class StringRepository
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
 
-    public (long offset, int stringLength) WriteStringContentAndGetOffset(string str)
+    public (long offset, int stringLength) WriteStringContentAndGetOffset(string? str)
     {
-        if (string.IsNullOrEmpty(str))
+        switch (str)
         {
-            return (-1, 0); // -1 offset indicates empty string
+            case "":
+                return (-1, 0); // -1 offset indicates empty string
+            case null:
+                return (-2, 0); // -2 offset indicates null string
         }
 
         var stringBytes = Encoding.UTF8.GetBytes(str);
@@ -232,15 +254,20 @@ public class StringRepository
         return (currentOffset, stringBytes.Length);
     }
 
-    public string LoadStringContent(long offset, int length)
+    public string? LoadStringContent(long offset, int length)
     {
-        if (offset == -1)
+        switch (offset)
         {
-            return string.Empty;
+            case -1:
+                return string.Empty;
+            case -2:
+                return null;
+            default:
+            {
+                var stringBytes = _fileAccess.ReadInFile(offset, length);
+                return Encoding.UTF8.GetString(stringBytes);
+            }
         }
-
-        var stringBytes = _fileAccess.ReadInFile(offset, length);
-        return Encoding.UTF8.GetString(stringBytes);
     }
 }
 
@@ -291,8 +318,8 @@ public class FileAccessService
         using var fs = new FileStream(_path, FileMode.Open, FileAccess.Read);
         fs.Seek(offset, SeekOrigin.Begin);
         var buffer = new byte[length];
-        var readAsync = fs.Read(buffer, 0, length);
-        if (readAsync != length)
+        var read = fs.Read(buffer, 0, length);
+        if (read != length)
         {
             throw new Exception("Failed to read the expected length of data");
         }
