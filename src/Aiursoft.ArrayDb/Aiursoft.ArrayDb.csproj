@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <Version>1.0.3</Version>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Aiursoft.ArrayDb</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb</RootNamespace>
+    <IsTestProject>false</IsTestProject>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Company>ArrayDb</Company>
+    <Product>ArrayDb</Product>
+    <Description>Nuget package of 'ArrayDb' provided by ArrayDb</Description>
+    <PackageId>Aiursoft.ArrayDb</PackageId>
+    <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
+  </PropertyGroup>
+</Project>

@@ -1,45 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 
-File.Delete("sampleData.bin");
-File.Delete("sampleDataStrings.bin");
-var persistService = new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
-
-for (var i = 0; i < 100; i++)
-{
-    var sample = new SampleData
-    {
-        MyNumber1 = i,
-        MyString1 = $"Hello, World! 你好世界 {i}",
-        MyNumber2 = i * 10,
-        MyBoolean1 = i % 2 == 0,
-        MyString2 = $"This is another longer string. {i}"
-    };
-    persistService.Add(sample);
-}
-
-for (var i = 0; i < 100; i++)
-{
-    var readSample = persistService.Read(i);
-    Console.WriteLine(readSample.MyString1);
-    Console.WriteLine(readSample.MyString2);
-    Console.WriteLine(readSample.MyNumber1);
-    Console.WriteLine(readSample.MyNumber2);
-    Console.WriteLine(readSample.MyBoolean1);
-    Console.WriteLine(readSample.MyDateTime);
-}
-
-Console.WriteLine("Done. Length now is " + persistService.Length);
-
-public class SampleData
-{
-    public int MyNumber1 { get; init; }
-    public string MyString1 { get; init; } = string.Empty;
-    public int MyNumber2 { get; init; }
-    public bool MyBoolean1 { get; init; }
-    public string MyString2 { get; init; } = string.Empty;
-    public DateTime MyDateTime { get; set; } = DateTime.UtcNow;
-}
+namespace Aiursoft.ArrayDb;
 
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
@@ -255,19 +217,19 @@ public class StringRepository
         }
 
         var stringBytes = Encoding.UTF8.GetBytes(str);
-        
+        var currentOffset = FileEndOffset;
         // Save the string content to the string file
-        _fileAccess.WriteInFile(FileEndOffset, stringBytes);
+        _fileAccess.WriteInFile(currentOffset, stringBytes);
         
         // Update the end offset in the string file
-        var newOffset = FileEndOffset + stringBytes.Length;
+        var newOffset = currentOffset + stringBytes.Length;
         var buffer = BitConverter.GetBytes(newOffset);
         _fileAccess.WriteInFile(0, buffer);
         
         // Update the end offset in memory
         FileEndOffset = newOffset;
         
-        return (FileEndOffset, stringBytes.Length);
+        return (currentOffset, stringBytes.Length);
     }
 
     public string LoadStringContent(long offset, int length)
@@ -306,7 +268,6 @@ public class FileAccessService
         {
             while (offset + data.Length > _currentSize)
             {
-                Console.WriteLine($"For file {_path}, After writing content with length {data.Length}, file will be expanded to {_currentSize + data.Length}. However, currently file is {_currentSize}. We will double the size of the file to {_currentSize * 2}");
                 using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
                 fs.SetLength(_currentSize * 2);
                 _currentSize = fs.Length;
