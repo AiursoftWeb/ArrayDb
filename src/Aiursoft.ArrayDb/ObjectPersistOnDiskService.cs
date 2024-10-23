@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Aiursoft.ArrayDb;
 
@@ -11,8 +10,8 @@ public class ObjectPersistOnDiskService<T> where T : new()
 {
     public int Length;
     private const int LengthMarkerSize = sizeof(int); // We reserve the first 4 bytes for Length
-    private readonly FileAccessService _structureFileAccess;
-    private readonly StringRepository _stringRepository;
+    public readonly FileAccessService StructureFileAccess;
+    public readonly StringRepository StringRepository;
 
     /// <summary>
     /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
@@ -23,21 +22,21 @@ public class ObjectPersistOnDiskService<T> where T : new()
     /// <typeparam name="T"></typeparam>
     public ObjectPersistOnDiskService(string structureFilePath, string stringFilePath, long initialSizeIfNotExists)
     {
-        _structureFileAccess = new(structureFilePath, initialSizeIfNotExists);
-        _stringRepository = new(stringFilePath, initialSizeIfNotExists);
+        StructureFileAccess = new(structureFilePath, initialSizeIfNotExists);
+        StringRepository = new(stringFilePath, initialSizeIfNotExists);
         Length = GetLength();
     }
     
     private int GetLength()
     {
-        var buffer = _structureFileAccess.ReadInFile(0, LengthMarkerSize);
+        var buffer = StructureFileAccess.ReadInFile(0, LengthMarkerSize);
         return BitConverter.ToInt32(buffer, 0);
     }
     
-    private void SetLength(int length)
+    private void SaveLength(int length)
     {
         var buffer = BitConverter.GetBytes(length);
-        _structureFileAccess.WriteInFile(0, buffer);
+        StructureFileAccess.WriteInFile(0, buffer);
     }
 
     public int GetItemSize()
@@ -87,7 +86,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
             {
                 // String should be stored as Offset (long) and Length (int)
                 var stringValue = (string)prop.GetValue(obj)!;
-                var (stringOffset, stringLength) = _stringRepository.WriteStringContentAndGetOffset(stringValue);
+                var (stringOffset, stringLength) = StringRepository.WriteStringContentAndGetOffset(stringValue);
                 Unsafe.WriteUnaligned(ref buffer[offset], stringOffset);
                 offset += Unsafe.SizeOf<long>();
                 Unsafe.WriteUnaligned(ref buffer[offset], stringLength);
@@ -108,10 +107,9 @@ public class ObjectPersistOnDiskService<T> where T : new()
         }
     }
 
-    private T Deserialize(byte[] buffer)
+    private T Deserialize(byte[] buffer, int offset = 0)
     {
         var obj = new T();
-        var offset = 0;
 
         foreach (var prop in typeof(T).GetProperties())
         {
@@ -135,7 +133,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
                 var stringLength = Unsafe.ReadUnaligned<int>(ref buffer[offset + Unsafe.SizeOf<long>()]);
 
                 // Read the string from the string file
-                var stringValue = _stringRepository.LoadStringContent(stringOffset, stringLength);
+                var stringValue = StringRepository.LoadStringContent(stringOffset, stringLength);
                 prop.SetValue(obj, stringValue);
 
                 offset += Unsafe.SizeOf<long>() + Unsafe.SizeOf<int>();
@@ -156,7 +154,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject];
         SerializeBytes(obj, buffer, 0);
-        _structureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
+        StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
     public void WriteBulk(long index, T[] objs)
@@ -167,7 +165,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         {
             SerializeBytes(objs[i], buffer, sizeOfObject * i);
         }
-        _structureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
+        StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
     public void Add(T obj)
@@ -175,7 +173,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var indexToWrite = Length;
         WriteIndex(indexToWrite, obj);
         Length++;
-        SetLength(Length);
+        SaveLength(Length);
     }
     
     public void AddBulk(T[] objs)
@@ -183,146 +181,25 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var indexToWrite = Length;
         WriteBulk(indexToWrite, objs);
         Length += objs.Length;
-        SetLength(Length);
+        SaveLength(Length);
     }
     
     public T Read(long index)
     {
         var sizeOfObject = GetItemSize();
-        var data = _structureFileAccess.ReadInFile(sizeOfObject * index + LengthMarkerSize, sizeOfObject);
+        var data = StructureFileAccess.ReadInFile(sizeOfObject * index + LengthMarkerSize, sizeOfObject);
         return Deserialize(data);
     }
-    
-    public T this[long index]
-    {
-        get => Read(index);
-        set => WriteIndex(index, value);
-    }
-}
 
-/// <summary>
-/// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
-/// It manages the strings' offsets in the file and provides methods to save new strings and retrieve existing ones.
-/// </summary>
-public class StringRepository
-{
-    private readonly FileAccessService _fileAccess;
-    public long FileEndOffset;
-    private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset
-
-    /// <summary>
-    /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
-    /// It manages the strings' offsets in the file and provides methods to save new strings and retrieve existing ones.
-    /// </summary>
-    public StringRepository(string stringFilePath, long initialSizeIfNotExists)
+    public T[] ReadBulk(long indexFrom, int count)
     {
-        _fileAccess = new(stringFilePath, initialSizeIfNotExists);
-        FileEndOffset = GetStringFileEndOffset();
-    }
-
-    private long GetStringFileEndOffset()
-    {
-        var buffer = _fileAccess.ReadInFile(0, EndOffsetSize);
-        var offSet = BitConverter.ToInt64(buffer, 0);
-        // When initially the file is empty, we need to reserve the first 8 bytes for EndOffset
-        return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
-    }
-
-    public (long offset, int stringLength) WriteStringContentAndGetOffset(string? str)
-    {
-        switch (str)
+        var sizeOfObject = GetItemSize();
+        var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + LengthMarkerSize, sizeOfObject * count);
+        var result = new T[count];
+        for (var i = 0; i < count; i++)
         {
-            case "":
-                return (-1, 0); // -1 offset indicates empty string
-            case null:
-                return (-2, 0); // -2 offset indicates null string
+            result[i] = Deserialize(data, sizeOfObject * i);
         }
-
-        var stringBytes = Encoding.UTF8.GetBytes(str);
-        var currentOffset = FileEndOffset;
-        // Save the string content to the string file
-        _fileAccess.WriteInFile(currentOffset, stringBytes);
-        
-        // Update the end offset in the string file
-        var newOffset = currentOffset + stringBytes.Length;
-        var buffer = BitConverter.GetBytes(newOffset);
-        _fileAccess.WriteInFile(0, buffer);
-        
-        // Update the end offset in memory
-        FileEndOffset = newOffset;
-        
-        return (currentOffset, stringBytes.Length);
-    }
-
-    public string? LoadStringContent(long offset, int length)
-    {
-        switch (offset)
-        {
-            case -1:
-                return string.Empty;
-            case -2:
-                return null;
-            default:
-            {
-                var stringBytes = _fileAccess.ReadInFile(offset, length);
-                return Encoding.UTF8.GetString(stringBytes);
-            }
-        }
-    }
-}
-
-public class FileAccessService
-{
-    private readonly string _path;
-    private long _currentSize;
-    private readonly object _expandSizeLock = new();
-
-    public FileAccessService(string path, long initialSizeIfNotExists)
-    {
-        _path = path;
-        if (!File.Exists(path))
-        {
-            using var fs = File.Create(path);
-            fs.SetLength(initialSizeIfNotExists);
-        }
-
-        _currentSize = new FileInfo(path).Length;
-    }
-
-    public void WriteInFile(long offset, byte[] data)
-    {
-        lock (_expandSizeLock)
-        {
-            while (offset + data.Length > _currentSize)
-            {
-                using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
-                fs.SetLength(_currentSize * 2);
-                _currentSize = fs.Length;
-            }
-        }
-
-        using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Write))
-        {
-            fs.Seek(offset, SeekOrigin.Begin);
-            fs.Write(data);
-        }
-    }
-
-    public byte[] ReadInFile(long offset, int length)
-    {
-        if (offset + length > _currentSize)
-        {
-            throw new Exception("Exceeded the file size while reading");
-        }
-        
-        using var fs = new FileStream(_path, FileMode.Open, FileAccess.Read);
-        fs.Seek(offset, SeekOrigin.Begin);
-        var buffer = new byte[length];
-        var read = fs.Read(buffer, 0, length);
-        if (read != length)
-        {
-            throw new Exception("Failed to read the expected length of data");
-        }
-        return buffer;
+        return result;
     }
 }
