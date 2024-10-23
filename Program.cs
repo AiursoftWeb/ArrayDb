@@ -3,9 +3,9 @@ using System.Text;
 
 File.Delete("sampleData.bin");
 File.Delete("sampleDataStrings.bin");
-var persistService = new CollectionOnDisk<SampleData>("sampleData.bin", "sampleDataStrings.bin");
+var persistService = new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
-for (var i = 0; i < 2; i++)
+for (var i = 0; i < 100; i++)
 {
     var sample = new SampleData
     {
@@ -15,12 +15,12 @@ for (var i = 0; i < 2; i++)
         MyBoolean1 = i % 2 == 0,
         MyString2 = $"This is another longer string. {i}"
     };
-    await persistService.AddAsync(sample);
+    persistService.Add(sample);
 }
 
-for (var i = 0; i < 2; i++)
+for (var i = 0; i < 100; i++)
 {
-    var readSample = await persistService.ReadAsync(i);
+    var readSample = persistService.Read(i);
     Console.WriteLine(readSample.MyString1);
     Console.WriteLine(readSample.MyString2);
     Console.WriteLine(readSample.MyNumber1);
@@ -42,48 +42,42 @@ public class SampleData
 }
 
 /// <summary>
-/// CollectionOnDisk is a generic class that provides methods
-/// for persistent storage of objects to disk with functionalities
-/// for adding, reading, and writing objects by index.
-///
-/// This class is more safe than the ObjectPersistOnDiskService class. Because it will avoid reading the uninitialized data.
-/// </summary>
-/// <typeparam name="T">The type of object to persist on disk, which must have a parameterless constructor.</typeparam>
-public class CollectionOnDisk<T>(string structureFilePath, string stringFilePath, long initialSizeIfNotExists = 0x10000)
-    where T : new()
-{
-    public int Length { get; private set; }
-    private readonly ObjectPersistOnDiskService<T> _persistService = new(structureFilePath, stringFilePath, initialSizeIfNotExists);
-    public async Task AddAsync(T obj)
-    {
-        var indexToWrite = Length;
-        await _persistService.WriteIndexAsync(indexToWrite, obj);
-        Length++;
-    }
-
-    public Task<T> ReadAsync(int index)
-    {
-        if (index >= Length)
-        {
-            throw new IndexOutOfRangeException();
-        }
-        return _persistService.ReadAsync(index);
-    }
-}
-
-/// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
 /// </summary>
-/// <param name="structureFilePath">The path to the file that stores the structure of the objects.</param>
-/// <param name="stringFilePath">The path to the file that stores the string data.</param>
-/// <param name="initialSizeIfNotExists">The initial size of the file if it does not exist.</param>
 /// <typeparam name="T"></typeparam>
-public class ObjectPersistOnDiskService<T>(string structureFilePath, string stringFilePath, long initialSizeIfNotExists)
-    where T : new()
+public class ObjectPersistOnDiskService<T> where T : new()
 {
-    private readonly FileAccessService _structureFileAccess = new(structureFilePath, initialSizeIfNotExists);
-    private readonly StringRepository _stringRepository = new(stringFilePath, initialSizeIfNotExists);
-   
+    public int Length;
+    private const int LengthMarkerSize = sizeof(int); // We reserve the first 4 bytes for Length
+    private readonly FileAccessService _structureFileAccess;
+    private readonly StringRepository _stringRepository;
+
+    /// <summary>
+    /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
+    /// </summary>
+    /// <param name="structureFilePath">The path to the file that stores the structure of the objects.</param>
+    /// <param name="stringFilePath">The path to the file that stores the string data.</param>
+    /// <param name="initialSizeIfNotExists">The initial size of the file if it does not exist.</param>
+    /// <typeparam name="T"></typeparam>
+    public ObjectPersistOnDiskService(string structureFilePath, string stringFilePath, long initialSizeIfNotExists)
+    {
+        _structureFileAccess = new(structureFilePath, initialSizeIfNotExists);
+        _stringRepository = new(stringFilePath, initialSizeIfNotExists);
+        Length = GetLength();
+    }
+    
+    private int GetLength()
+    {
+        var buffer = _structureFileAccess.ReadInFile(0, LengthMarkerSize);
+        return BitConverter.ToInt32(buffer, 0);
+    }
+    
+    private void SetLength(int length)
+    {
+        var buffer = BitConverter.GetBytes(length);
+        _structureFileAccess.WriteInFile(0, buffer);
+    }
+
     public int GetItemSize()
     {
         var size = 0;
@@ -109,7 +103,7 @@ public class ObjectPersistOnDiskService<T>(string structureFilePath, string stri
         return size;
     }
 
-    private async Task SerializeBytesAsync(T obj, byte[] buffer, int offset)
+    private void SerializeBytes(T obj, byte[] buffer, int offset)
     {
         foreach (var prop in typeof(T).GetProperties())
         {
@@ -131,7 +125,7 @@ public class ObjectPersistOnDiskService<T>(string structureFilePath, string stri
             {
                 // String should be stored as Offset (long) and Length (int)
                 var stringValue = (string)prop.GetValue(obj)!;
-                var (stringOffset, stringLength) = await _stringRepository.WriteStringContentAndGetOffset(stringValue);
+                var (stringOffset, stringLength) = _stringRepository.WriteStringContentAndGetOffset(stringValue);
                 Unsafe.WriteUnaligned(ref buffer[offset], stringOffset);
                 offset += Unsafe.SizeOf<long>();
                 Unsafe.WriteUnaligned(ref buffer[offset], stringLength);
@@ -152,7 +146,7 @@ public class ObjectPersistOnDiskService<T>(string structureFilePath, string stri
         }
     }
 
-    private async Task<T> DeserializeAsync(byte[] buffer)
+    private T Deserialize(byte[] buffer)
     {
         var obj = new T();
         var offset = 0;
@@ -179,7 +173,7 @@ public class ObjectPersistOnDiskService<T>(string structureFilePath, string stri
                 var stringLength = Unsafe.ReadUnaligned<int>(ref buffer[offset + Unsafe.SizeOf<long>()]);
 
                 // Read the string from the string file
-                var stringValue = await _stringRepository.LoadStringContentAsync(stringOffset, stringLength);
+                var stringValue = _stringRepository.LoadStringContent(stringOffset, stringLength);
                 prop.SetValue(obj, stringValue);
 
                 offset += Unsafe.SizeOf<long>() + Unsafe.SizeOf<int>();
@@ -195,26 +189,33 @@ public class ObjectPersistOnDiskService<T>(string structureFilePath, string stri
         return obj;
     }
 
-    public async Task WriteIndexAsync(long index, T obj)
+    public void WriteIndex(long index, T obj)
     {
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject];
-        await SerializeBytesAsync(obj, buffer, 0);
-        await _structureFileAccess.WriteInFile(sizeOfObject * index, buffer);
+        SerializeBytes(obj, buffer, 0);
+        _structureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
-    public async Task<T> ReadAsync(long index)
+    public void Add(T obj)
+    {
+        var indexToWrite = Length;
+        WriteIndex(indexToWrite, obj);
+        Length++;
+        SetLength(Length);
+    }
+    
+    public T Read(long index)
     {
         var sizeOfObject = GetItemSize();
-        var data = await _structureFileAccess.ReadInFile(sizeOfObject * index, sizeOfObject);
-        return await DeserializeAsync(data);
+        var data = _structureFileAccess.ReadInFile(sizeOfObject * index + LengthMarkerSize, sizeOfObject);
+        return Deserialize(data);
     }
     
-    [Obsolete(error: false, message: "This method is not intended to be used. Please use ReadAsync or WriteAsync instead.")]
     public T this[long index]
     {
-        get => ReadAsync(index).Result;
-        set => WriteIndexAsync(index, value).Wait();
+        get => Read(index);
+        set => WriteIndex(index, value);
     }
 }
 
@@ -222,25 +223,31 @@ public class ObjectPersistOnDiskService<T>(string structureFilePath, string stri
 /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
 /// It manages the strings' offsets in the file and provides methods to save new strings and retrieve existing ones.
 /// </summary>
-public class StringRepository(string stringFilePath, long initialSizeIfNotExists)
+public class StringRepository
 {
-    private readonly FileAccessService _fileAccess = new(stringFilePath, initialSizeIfNotExists);
-
+    private readonly FileAccessService _fileAccess;
+    public long FileEndOffset;
     private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset
 
-    private async Task<long> GetStringFileEndOffsetAsync()
+    /// <summary>
+    /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
+    /// It manages the strings' offsets in the file and provides methods to save new strings and retrieve existing ones.
+    /// </summary>
+    public StringRepository(string stringFilePath, long initialSizeIfNotExists)
     {
-        var buffer = await _fileAccess.ReadInFile(0, EndOffsetSize);
-        return BitConverter.ToInt64(buffer, 0);
+        _fileAccess = new(stringFilePath, initialSizeIfNotExists);
+        FileEndOffset = GetStringFileEndOffset();
     }
 
-    private async Task UpdateStringFileEndOffset(long newOffset)
+    private long GetStringFileEndOffset()
     {
-        var buffer = BitConverter.GetBytes(newOffset);
-        await _fileAccess.WriteInFile(0, buffer);
+        var buffer = _fileAccess.ReadInFile(0, EndOffsetSize);
+        var offSet = BitConverter.ToInt64(buffer, 0);
+        // When initially the file is empty, we need to reserve the first 8 bytes for EndOffset
+        return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
-    
-    public async Task<(long offset, int stringLength)> WriteStringContentAndGetOffset(string str)
+
+    public (long offset, int stringLength) WriteStringContentAndGetOffset(string str)
     {
         if (string.IsNullOrEmpty(str))
         {
@@ -248,49 +255,39 @@ public class StringRepository(string stringFilePath, long initialSizeIfNotExists
         }
 
         var stringBytes = Encoding.UTF8.GetBytes(str);
-        var currentOffset = await GetStringFileEndOffsetAsync();
         
-        // Adjust offset to account for reserved EndOffset space
-        var newOffset = currentOffset + EndOffsetSize;
-
         // Save the string content to the string file
-        await _fileAccess.WriteInFile(newOffset, stringBytes);
-
-        // Update the end offset to include the length of the new string
-        await UpdateStringFileEndOffset(currentOffset + stringBytes.Length);
+        _fileAccess.WriteInFile(FileEndOffset, stringBytes);
         
-        return (newOffset, stringBytes.Length);
+        // Update the end offset in the string file
+        var newOffset = FileEndOffset + stringBytes.Length;
+        var buffer = BitConverter.GetBytes(newOffset);
+        _fileAccess.WriteInFile(0, buffer);
+        
+        // Update the end offset in memory
+        FileEndOffset = newOffset;
+        
+        return (FileEndOffset, stringBytes.Length);
     }
 
-    public async Task<string> LoadStringContentAsync(long offset, int length)
+    public string LoadStringContent(long offset, int length)
     {
         if (offset == -1)
         {
             return string.Empty;
         }
 
-        // Adjust offset for reserved EndOffset space
-        var adjustedOffset = offset + EndOffsetSize;
-
-        var stringBytes = await _fileAccess.ReadInFile(adjustedOffset, length);
+        var stringBytes = _fileAccess.ReadInFile(offset, length);
         return Encoding.UTF8.GetString(stringBytes);
     }
 }
 
-/// <summary>
-/// FileAccessService provides methods to perform asynchronous read and write operations on a file.
-/// </summary>
 public class FileAccessService
 {
     private readonly string _path;
     private long _currentSize;
     private readonly object _expandSizeLock = new();
 
-    /// <summary>
-    /// FileAccessService provides methods to perform asynchronous read and write operations on a file.
-    /// </summary>
-    /// <param name="path">The path to the file.</param>
-    /// <param name="initialSizeIfNotExists">The initial size of the file if it does not exist.</param>
     public FileAccessService(string path, long initialSizeIfNotExists)
     {
         _path = path;
@@ -303,7 +300,7 @@ public class FileAccessService
         _currentSize = new FileInfo(path).Length;
     }
 
-    public async Task WriteInFile(long offset, byte[] data)
+    public void WriteInFile(long offset, byte[] data)
     {
         lock (_expandSizeLock)
         {
@@ -316,29 +313,28 @@ public class FileAccessService
             }
         }
 
-        await using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Write))
+        using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Write))
         {
             fs.Seek(offset, SeekOrigin.Begin);
-            await fs.WriteAsync(data);
+            fs.Write(data);
         }
     }
 
-    public async Task<byte[]> ReadInFile(long offset, int length)
+    public byte[] ReadInFile(long offset, int length)
     {
         if (offset + length > _currentSize)
         {
             throw new Exception("Exceeded the file size while reading");
         }
-
-        await using var fs = new FileStream(_path, FileMode.Open, FileAccess.Read);
+        
+        using var fs = new FileStream(_path, FileMode.Open, FileAccess.Read);
         fs.Seek(offset, SeekOrigin.Begin);
         var buffer = new byte[length];
-        var readAsync = await fs.ReadAsync(buffer.AsMemory(0, length));
+        var readAsync = fs.Read(buffer, 0, length);
         if (readAsync != length)
         {
             throw new Exception("Failed to read the expected length of data");
         }
-
         return buffer;
     }
 }
