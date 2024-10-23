@@ -9,6 +9,7 @@ namespace Aiursoft.ArrayDb;
 public class ObjectPersistOnDiskService<T> where T : new()
 {
     public int Length;
+    private readonly object _expandLengthLock = new();
     private const int LengthMarkerSize = sizeof(int); // We reserve the first 4 bytes for Length
     public readonly FileAccessService StructureFileAccess;
     public readonly StringRepository StringRepository;
@@ -149,7 +150,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         return obj;
     }
 
-    public void WriteIndex(long index, T obj)
+    private void WriteIndex(long index, T obj)
     {
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject];
@@ -157,30 +158,42 @@ public class ObjectPersistOnDiskService<T> where T : new()
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
-    public void WriteBulk(long index, T[] objs)
+    private void WriteBulk(long index, T[] objs)
     {
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject * objs.Length];
-        for (var i = 0; i < objs.Length; i++)
+        Parallel.For(0, objs.Length, i =>
         {
             SerializeBytes(objs[i], buffer, sizeOfObject * i);
-        }
+        });
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
     public void Add(T obj)
     {
-        var indexToWrite = Length;
+        int indexToWrite;
+        lock (_expandLengthLock)
+        {
+            indexToWrite = Length;
+            Length++;
+        }   
         WriteIndex(indexToWrite, obj);
-        Length++;
+        
+        // TODO: This should be done asynchronously to avoid blocking the main thread.
         SaveLength(Length);
     }
     
     public void AddBulk(T[] objs)
     {
-        var indexToWrite = Length;
+        int indexToWrite;
+        lock (_expandLengthLock)
+        {
+            indexToWrite = Length;
+            Length += objs.Length;
+        }
         WriteBulk(indexToWrite, objs);
-        Length += objs.Length;
+        
+        // TODO: This should be done asynchronously to avoid blocking the main thread.
         SaveLength(Length);
     }
     
@@ -196,10 +209,10 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var sizeOfObject = GetItemSize();
         var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + LengthMarkerSize, sizeOfObject * count);
         var result = new T[count];
-        for (var i = 0; i < count; i++)
+        Parallel.For(0, count, i =>
         {
             result[i] = Deserialize(data, sizeOfObject * i);
-        }
+        });
         return result;
     }
 }

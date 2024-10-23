@@ -62,6 +62,45 @@ public class PerformanceTests : ArrayDbTestBase
     }
     
     [TestMethod]
+    public void PerformanceTestBulkRead()
+    {
+        var persistService =
+            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        var samples = new List<SampleData>();
+        for (var i = 0; i < 1000000; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            samples.Add(sample);
+        }
+        var samplesArray = samples.ToArray();
+        persistService.AddBulk(samplesArray);
+        
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+        // Read 1000000 times
+        var result = persistService.ReadBulk(0, 1000000);
+        stopWatch.Stop();
+        Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
+        
+        for (var i = 0; i < 1000000; i++)
+        {
+            var readSample = result[i];
+            Assert.AreEqual(i, readSample.MyNumber1);
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
+            Assert.AreEqual(i * 10, readSample.MyNumber2);
+            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
+            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
+        }
+    }
+    
+    [TestMethod]
     public void PerformanceTestRead()
     {
         // Write 100000 times should in less than 3 second. Ideally, it should be around 0.8 seconds.

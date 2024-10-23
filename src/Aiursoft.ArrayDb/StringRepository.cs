@@ -10,6 +10,7 @@ public class StringRepository
 {
     private readonly FileAccessService _fileAccess;
     public long FileEndOffset;
+    private readonly object _expandSizeLock = new();
     private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset
 
     /// <summary>
@@ -41,18 +42,22 @@ public class StringRepository
         }
 
         var stringBytes = Encoding.UTF8.GetBytes(str);
-        var currentOffset = FileEndOffset;
+
+        long currentOffset;
+        lock (_expandSizeLock) // Lock to prevent multiple threads from expanding the file size at the same time
+        {
+            currentOffset = FileEndOffset;
+            var newOffset = currentOffset + stringBytes.Length;
+            FileEndOffset = newOffset;
+        }
+        
         // Save the string content to the string file
         _fileAccess.WriteInFile(currentOffset, stringBytes);
         
         // Update the end offset in the string file
-        var newOffset = currentOffset + stringBytes.Length;
-        var buffer = BitConverter.GetBytes(newOffset);
-        _fileAccess.WriteInFile(0, buffer);
-        
-        // Update the end offset in memory
-        FileEndOffset = newOffset;
-        
+        // TODO: This should be done asynchronously to avoid blocking the main thread.
+        _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
+
         return (currentOffset, stringBytes.Length);
     }
 
