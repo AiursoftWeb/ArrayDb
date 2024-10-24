@@ -33,9 +33,9 @@ public class CachedFileAccessService(
 
     public byte[] ReadInFile(long offset, int length)
     {
-        // TODO: Bad performance with List. Refactor with byte[] and Array.Copy
-        var result = new List<byte>();
+        var result = new byte[length];
         var currentOffset = offset;
+        var resultOffset = 0;
 
         while (length > 0)
         {
@@ -44,14 +44,16 @@ public class CachedFileAccessService(
             var bytesToRead = Math.Min(length, pageSize - pageStart);
 
             var pageData = GetPageFromCache(pageOffset);
-            result.AddRange(new ArraySegment<byte>(pageData, pageStart, bytesToRead));
+            Array.Copy(pageData, pageStart, result, resultOffset, bytesToRead);
 
             currentOffset += bytesToRead;
+            resultOffset += bytesToRead;
             length -= bytesToRead;
         }
 
-        return result.ToArray();
+        return result;
     }
+
 
     private byte[] GetPageFromCache(long pageOffset)
     {

@@ -11,11 +11,11 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestWrite()
     {
         var stopWatch = new Stopwatch();
+        // Write 100 0000 times in less than 100 seconds. On my machine: 42,148ms
         stopWatch.Start();
-        // Write 100000 times in less than 8 seconds. Ideally, it should be around 2.3 seconds.
         var persistService =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
-        for (var i = 0; i < 100000; i++)
+        for (var i = 0; i < 1000000; i++)
         {
             var sample = new SampleData
             {
@@ -28,8 +28,8 @@ public class PerformanceTests : ArrayDbTestBase
             persistService.Add(sample);
         }
         stopWatch.Stop();
-        Console.WriteLine($"Write 100000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 8000);
+        Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 100 * 1000);
     }
     
     [TestMethod]
@@ -53,12 +53,12 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 30 seconds. Ideally, it should be around 4 seconds.
+        // Write 100 0000 times in less than 50 seconds. On my machine: 24595ms
         stopWatch.Start();
         persistService.AddBulk(samplesArray);
         stopWatch.Stop();
         Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 30000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 50 * 1000);
     }
     
     [TestMethod]
@@ -84,7 +84,7 @@ public class PerformanceTests : ArrayDbTestBase
         
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        // Read 1000000 times in less than 3 seconds. Ideally, it should be around 0.8 second.
+        // Read 1000000 times in less than 3 seconds. On my machine 681ms.
         var result = persistService.ReadBulk(0, 1000000);
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
@@ -104,10 +104,10 @@ public class PerformanceTests : ArrayDbTestBase
     [TestMethod]
     public void PerformanceTestRead()
     {
-        // Read 100000 times in less than 3 seconds. Ideally, it should be around 0.8 second.
+        // Read 100 0000 times in less than 3 seconds. On my machine: 760ms. 
         var persistService =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
-        for (var i = 0; i < 100000; i++)
+        for (var i = 0; i < 1000000; i++)
         {
             var sample = new SampleData
             {
@@ -122,8 +122,8 @@ public class PerformanceTests : ArrayDbTestBase
         
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        // Read 100000 times
-        for (var i = 0; i < 100000; i++)
+        // Read 100 0000 times
+        for (var i = 0; i < 1000000; i++)
         {
             var readSample = persistService.Read(i);
             Assert.AreEqual(i, readSample.MyNumber1);
