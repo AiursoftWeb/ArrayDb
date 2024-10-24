@@ -141,10 +141,10 @@ public class FileAccessService
         {
             while (offset + data.Length > _currentSize)
             {
-                using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
-                fs.SetLength(_currentSize * 2);
-                _currentSize = fs.Length;
+                _currentSize *= 2;
             }
+            using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
+            fs.SetLength(_currentSize);
         }
 
         using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Write))
@@ -160,10 +160,10 @@ public class FileAccessService
         {
             while (offset + length > _currentSize)
             {
-                using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
-                fs.SetLength(_currentSize * 2);
-                _currentSize = fs.Length;
+                _currentSize *= 2;
             }
+            using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
+            fs.SetLength(_currentSize);
         }
 
         using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Read))
