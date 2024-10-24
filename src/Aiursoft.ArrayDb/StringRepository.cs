@@ -8,7 +8,7 @@ namespace Aiursoft.ArrayDb;
 /// </summary>
 public class StringRepository
 {
-    private readonly FileAccessService _fileAccess;
+    private readonly CachedFileAccessService _fileAccess;
     public long FileEndOffset;
     private readonly object _expandSizeLock = new();
     private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset

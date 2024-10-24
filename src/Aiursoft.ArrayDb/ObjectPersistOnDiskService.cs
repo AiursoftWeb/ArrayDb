@@ -11,7 +11,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
     public int Length;
     private readonly object _expandLengthLock = new();
     private const int LengthMarkerSize = sizeof(int); // We reserve the first 4 bytes for Length
-    public readonly FileAccessService StructureFileAccess;
+    public readonly CachedFileAccessService StructureFileAccess;
     public readonly StringRepository StringRepository;
 
     /// <summary>
