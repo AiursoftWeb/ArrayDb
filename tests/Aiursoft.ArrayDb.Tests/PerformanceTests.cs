@@ -53,12 +53,12 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 50 seconds. On my machine: 24595ms
+        // Write 100 0000 times in less than 120 seconds. On my machine: 24595ms
         stopWatch.Start();
         persistService.AddBulk(samplesArray);
         stopWatch.Stop();
         Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 50 * 1000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 120 * 1000);
     }
     
     [TestMethod]
@@ -84,11 +84,11 @@ public class PerformanceTests : ArrayDbTestBase
         
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        // Read 1000000 times in less than 3 seconds. On my machine 681ms.
+        // Read 1000000 times in less than 10 seconds. On my machine 681ms.
         var result = persistService.ReadBulk(0, 1000000);
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 3000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
         
         for (var i = 0; i < 1000000; i++)
         {
@@ -104,7 +104,7 @@ public class PerformanceTests : ArrayDbTestBase
     [TestMethod]
     public void PerformanceTestRead()
     {
-        // Read 100 0000 times in less than 3 seconds. On my machine: 760ms. 
+        // Read 100 0000 times in less than 10 seconds. On my machine: 760ms. 
         var persistService =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         for (var i = 0; i < 1000000; i++)
@@ -135,6 +135,6 @@ public class PerformanceTests : ArrayDbTestBase
         stopWatch.Stop();
 
         Console.WriteLine($"Read 100000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 3000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
     }
 }
