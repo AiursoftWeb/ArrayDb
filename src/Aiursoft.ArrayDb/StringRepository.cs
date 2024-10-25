@@ -36,7 +36,7 @@ public class StringRepository
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
 
-    private StringInByteArray WriteStringContentAndGetOffset(string? str, ref long currentOffset)
+    private StringInByteArray WriteStringContentAndGetOffset(string? str)
     {
         switch (str)
         {
@@ -49,21 +49,25 @@ public class StringRepository
 
         var stringBytes = Encoding.UTF8.GetBytes(str);
 
-        _fileAccess.WriteInFile(currentOffset, stringBytes);
-        currentOffset += stringBytes.Length;
-        return new StringInByteArray { Offset = currentOffset, Length = stringBytes.Length };
+        _fileAccess.WriteInFile(FileEndOffset, stringBytes);
+        FileEndOffset += stringBytes.Length;
+        
+        return new StringInByteArray
+        { 
+            Offset = FileEndOffset - stringBytes.Length, 
+            Length = stringBytes.Length 
+        };
     }
 
-    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(string?[] strs)
+    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(IReadOnlyCollection<string> strs)
     {
-        long currentOffset = FileEndOffset;
         foreach (var str in strs)
         {
-            yield return WriteStringContentAndGetOffset(str, ref currentOffset);
+            yield return WriteStringContentAndGetOffset(str);
         }
         
         // Update the end offset in the string file
-        _fileAccess.WriteInFile(0, BitConverter.GetBytes(currentOffset));
+        _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
     }
 
     public string? LoadStringContent(long offset, int length)
