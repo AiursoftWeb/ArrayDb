@@ -76,14 +76,13 @@ public class ObjectPersistOnDiskService<T> where T : new()
     private ObjectWithPersistedStrings<T>[] SaveObjectStrings(T[] objs)
     {
         var stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
-        var strings = objs.SelectMany(obj => typeof(T)
+        var stringsQuery = objs.SelectMany(obj => typeof(T)
             .GetProperties()
             .Where(p => p.PropertyType == typeof(string))
-            .Select(p => (string)p.GetValue(obj)!)); // strings Count = objs.Length * stringsCount
-        
+            .Select(p => (string)p.GetValue(obj)!));
+
         var savedStrings = StringRepository
-            .BulkWriteStringContentAndGetOffset(strings)
-            .ToArray();
+            .BulkWriteStringContentAndGetOffset(stringsQuery, stringsCount * objs.Length);
         
         var result = new ObjectWithPersistedStrings<T>[objs.Length];
         for (int i = 0; i < objs.Length; i++)

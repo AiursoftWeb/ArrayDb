@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Aiursoft.ArrayDb;
 
-public class StringInByteArray
+public struct StringInByteArray
 {
     public required long Offset;
     public required int Length;
@@ -37,6 +37,13 @@ public class StringRepository
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
 
+    /// <summary>
+    /// This method writes a string to the file and returns the offset where the string is stored.
+    ///
+    /// This method is multi-thread safe.
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
     private StringInByteArray WriteStringContentAndGetOffset(string? str)
     {
         switch (str)
@@ -49,32 +56,33 @@ public class StringRepository
         }
 
         var stringBytes = Encoding.UTF8.GetBytes(str);
-
-        _fileAccess.WriteInFile(FileEndOffset, stringBytes);
-        lock (_expandSizeLock)
+        long writeOffset;
+        lock (_expandSizeLock) // When calling this method multi-threads, different threads are writing to different offsets
         {
+            writeOffset = FileEndOffset;
             FileEndOffset += stringBytes.Length;
-            return new StringInByteArray
-            { 
-                Offset = FileEndOffset - stringBytes.Length, 
-                Length = stringBytes.Length 
-            };
         }
-        
+        _fileAccess.WriteInFile(writeOffset, stringBytes);
+        return new StringInByteArray { Offset = writeOffset, Length = stringBytes.Length };
         // Warning, DO NOT CALL this method without updating the end offset in the string file.
     }
 
     // TODO: Use multiple underlying files (partitions) to store strings
     // So we can use multiple threads to write strings concurrently
-    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(IEnumerable<string> strs)
+    public StringInByteArray[] BulkWriteStringContentAndGetOffset(IEnumerable<string> stringsQuery, int stringsCount)
     {
-        foreach (var str in strs)
+        var stringInByteArrays = new StringInByteArray[stringsCount];
+        var index = 0;
+        foreach (var str in stringsQuery)
         {
-            yield return WriteStringContentAndGetOffset(str);
+            //yield return WriteStringContentAndGetOffset(str);
+            stringInByteArrays[index++] = WriteStringContentAndGetOffset(str);
         }
         
         // Update the end offset in the string file
         _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
+        
+        return stringInByteArrays;
     }
 
     public string? LoadStringContent(long offset, int length)
