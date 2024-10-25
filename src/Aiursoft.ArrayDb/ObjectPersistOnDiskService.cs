@@ -14,11 +14,9 @@ public class ObjectWithPersistedStrings<T>
 /// <typeparam name="T"></typeparam>
 public class ObjectPersistOnDiskService<T> where T : new()
 {
-    public int Length;
+    public long Length;
     private readonly object _expandLengthLock = new();
-    
-    // TODO: This should be changed to type long instead of int.
-    private const int LengthMarkerSize = sizeof(int); // We reserve the first 4 bytes for Length
+    private const int LengthMarkerSize = sizeof(long); // We reserve the first 4 bytes for Length
     public readonly CachedFileAccessService StructureFileAccess;
     public readonly StringRepository StringRepository;
 
@@ -36,13 +34,13 @@ public class ObjectPersistOnDiskService<T> where T : new()
         Length = GetLength();
     }
     
-    private int GetLength()
+    private long GetLength()
     {
         var buffer = StructureFileAccess.ReadInFile(0, LengthMarkerSize);
         return BitConverter.ToInt32(buffer, 0);
     }
     
-    private void SaveLength(int length)
+    private void SaveLength(long length)
     {
         var buffer = BitConverter.GetBytes(length);
         StructureFileAccess.WriteInFile(0, buffer);
@@ -236,7 +234,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
     [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     public void Add(T obj)
     {
-        int indexToWrite;
+        long indexToWrite;
         lock (_expandLengthLock)
         {
             indexToWrite = Length;
@@ -250,7 +248,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
     
     public void AddBulk(T[] objs)
     {
-        int indexToWrite;
+        long indexToWrite;
         lock (_expandLengthLock)
         {
             indexToWrite = Length;
