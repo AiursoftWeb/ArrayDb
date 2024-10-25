@@ -16,6 +16,7 @@ public class StringRepository
 {
     private readonly CachedFileAccessService _fileAccess;
     public long FileEndOffset;
+    private readonly object _expandSizeLock = new();
     private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset
 
     /// <summary>
@@ -50,13 +51,15 @@ public class StringRepository
         var stringBytes = Encoding.UTF8.GetBytes(str);
 
         _fileAccess.WriteInFile(FileEndOffset, stringBytes);
-        FileEndOffset += stringBytes.Length;
-        
-        return new StringInByteArray
-        { 
-            Offset = FileEndOffset - stringBytes.Length, 
-            Length = stringBytes.Length 
-        };
+        lock (_expandSizeLock)
+        {
+            FileEndOffset += stringBytes.Length;
+            return new StringInByteArray
+            { 
+                Offset = FileEndOffset - stringBytes.Length, 
+                Length = stringBytes.Length 
+            };
+        }
         
         // Warning, DO NOT CALL this method without updating the end offset in the string file.
     }
