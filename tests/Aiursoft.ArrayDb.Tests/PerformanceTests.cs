@@ -11,7 +11,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestWrite()
     {
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 100 seconds. On my machine: 42,148ms
+        // Write 100 0000 times in less than 100 seconds. On my machine: 42,148ms -> 37072ms
         stopWatch.Start();
         var persistService =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
@@ -53,7 +53,7 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 120 seconds. On my machine: 24595ms
+        // Write 100 0000 times in less than 120 seconds. On my machine: 24595ms -> 15177ms
         stopWatch.Start();
         persistService.AddBulk(samplesArray);
         stopWatch.Stop();

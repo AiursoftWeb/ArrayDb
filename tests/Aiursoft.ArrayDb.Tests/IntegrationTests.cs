@@ -6,6 +6,7 @@ namespace Aiursoft.ArrayDb.Tests;
 public class IntegrationTests : ArrayDbTestBase
 {
     [TestMethod]
+    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
     public void WriteAndReadTests()
     {
         var persistService =
@@ -36,6 +37,7 @@ public class IntegrationTests : ArrayDbTestBase
     }
     
     [TestMethod]
+    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
     public void WriteAndReadEmptyString()
     {
         var persistService =
@@ -59,6 +61,7 @@ public class IntegrationTests : ArrayDbTestBase
     }
 
     [TestMethod]
+    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
     public void RebootTest()
     {
         var persistService =
@@ -144,6 +147,7 @@ public class IntegrationTests : ArrayDbTestBase
     }
 
     [TestMethod]
+    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
     public void MixedBulkWriteAndWrite()
     {
         // Bulk write 2 samples

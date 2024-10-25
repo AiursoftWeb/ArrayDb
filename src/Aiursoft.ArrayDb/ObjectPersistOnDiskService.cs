@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Aiursoft.ArrayDb;
 
@@ -234,6 +233,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
+    [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     public void Add(T obj)
     {
         int indexToWrite;
@@ -262,6 +262,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         SaveLength(Length);
     }
     
+    [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
     public T Read(int index)
     {
         if (index < 0 || index >= Length)
