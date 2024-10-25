@@ -57,6 +57,8 @@ public class StringRepository
             Offset = FileEndOffset - stringBytes.Length, 
             Length = stringBytes.Length 
         };
+        
+        // Warning, DO NOT CALL this method without updating the end offset in the string file.
     }
 
     public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(IEnumerable<string> strs)
