@@ -17,6 +17,8 @@ public class ObjectPersistOnDiskService<T> where T : new()
 {
     public int Length;
     private readonly object _expandLengthLock = new();
+    
+    // TODO: This should be changed to type long instead of int.
     private const int LengthMarkerSize = sizeof(int); // We reserve the first 4 bytes for Length
     public readonly CachedFileAccessService StructureFileAccess;
     public readonly StringRepository StringRepository;
@@ -260,15 +262,23 @@ public class ObjectPersistOnDiskService<T> where T : new()
         SaveLength(Length);
     }
     
-    public T Read(long index)
+    public T Read(int index)
     {
+        if (index < 0 || index >= Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
         var sizeOfObject = GetItemSize();
         var data = StructureFileAccess.ReadInFile(sizeOfObject * index + LengthMarkerSize, sizeOfObject);
         return DeserializeBytes(data);
     }
 
-    public T[] ReadBulk(long indexFrom, int count)
+    public T[] ReadBulk(int indexFrom, int count)
     {
+        if (indexFrom < 0 || indexFrom + count > Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(indexFrom));
+        }
         var sizeOfObject = GetItemSize();
         // Sequential read. Load binary data from disk and deserialize them in parallel.
         var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + LengthMarkerSize, sizeOfObject * count);

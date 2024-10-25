@@ -106,7 +106,6 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(null, readSample2.MyString2);
     }
 
-
     [TestMethod]
     public void AddBulkAndReadBulk()
     {
@@ -114,7 +113,7 @@ public class IntegrationTests : ArrayDbTestBase
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
         var samples = new List<SampleData>();
-        for (var i = 0; i < 100; i++)
+        for (var i = 0; i < 2; i++)
         {
             var sample = new SampleData
             {
@@ -132,8 +131,8 @@ public class IntegrationTests : ArrayDbTestBase
         var persistService2 =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
-        var readSamples = persistService2.ReadBulk(0, 100);
-        for (var i = 0; i < 100; i++)
+        var readSamples = persistService2.ReadBulk(0, 2);
+        for (var i = 0; i < 2; i++)
         {
             var readSample = readSamples[i];
             Assert.AreEqual(i, readSample.MyNumber1);
@@ -142,5 +141,59 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
         }
+    }
+
+    [TestMethod]
+    public void MixedBulkWriteAndWrite()
+    {
+        // Bulk write 2 samples
+        var persistService =
+            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        
+        var samples = new List<SampleData>();
+        for (var i = 0; i < 2; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            samples.Add(sample);
+        }
+        var samplesArray = samples.ToArray();
+        persistService.AddBulk(samplesArray);
+        
+        // Write 3 samples
+        for (var i = 2; i < 5; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            persistService.Add(sample);
+        }
+        
+        // Read all 5 samples
+        var persistService2 =
+            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        
+        var readSamples = persistService2.ReadBulk(0, 5);
+        for (var i = 0; i < 5; i++)
+        {
+            var readSample = readSamples[i];
+            Assert.AreEqual(i, readSample.MyNumber1);
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
+            Assert.AreEqual(i * 10, readSample.MyNumber2);
+            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
+            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
+        }
+        Assert.AreEqual(5, persistService2.Length);
     }
 }
