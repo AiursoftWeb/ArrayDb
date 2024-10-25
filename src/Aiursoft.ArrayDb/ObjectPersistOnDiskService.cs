@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Aiursoft.ArrayDb;
 
@@ -6,6 +7,32 @@ public class ObjectWithPersistedStrings<T>
 {
     public required T Object;
     public required IEnumerable<StringInByteArray> Strings;
+}
+
+public static class ToolkitExtensions
+{
+    // ReSharper disable once FieldCanBeMadeReadOnly.Global
+    public static bool ShowBench = true;
+    
+    public static void RunWithTimedBench(string actionName, Action action)
+    {
+        if (!ShowBench)
+        {
+            action();
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(actionName))
+        {
+            actionName = "Anonymous action";
+        }
+        
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        action();
+        stopwatch.Stop();
+        Console.WriteLine($"{actionName} took {stopwatch.ElapsedMilliseconds} ms.");
+    }
 }
 
 /// <summary>
@@ -75,25 +102,35 @@ public class ObjectPersistOnDiskService<T> where T : new()
     // T to OWPST
     private ObjectWithPersistedStrings<T>[] SaveObjectStrings(T[] objs)
     {
-        var stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
-        var stringsQuery = objs.SelectMany(obj => typeof(T)
-            .GetProperties()
-            .Where(p => p.PropertyType == typeof(string))
-            .Select(p => (string)p.GetValue(obj)!));
-
-        var savedStrings = StringRepository
-            .BulkWriteStringContentAndGetOffset(stringsQuery, stringsCount * objs.Length);
-        
-        var result = new ObjectWithPersistedStrings<T>[objs.Length];
-        for (int i = 0; i < objs.Length; i++)
+        IEnumerable<string> stringsQuery = [];
+        int stringsCount = 0;
+        ToolkitExtensions.RunWithTimedBench("Extracting strings from objects", () =>
         {
-            var obj = objs[i];
-            result[i] = new ObjectWithPersistedStrings<T>
+            stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
+            var properties = typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
+            stringsQuery = objs.SelectMany(obj => properties.Select(p => (string)p.GetValue(obj)!));
+        });
+
+        StringInByteArray[] savedStrings = [];
+        ToolkitExtensions.RunWithTimedBench("Saving the strings of objects on disk", () =>
+        {
+            savedStrings = StringRepository.BulkWriteStringContentAndGetOffset(stringsQuery, stringsCount * objs.Length);
+        });
+        
+        ObjectWithPersistedStrings<T>[] result = [];
+        ToolkitExtensions.RunWithTimedBench("Convert objects to objects with persisted strings and save them in memory", () =>
+        {
+            result = new ObjectWithPersistedStrings<T>[objs.Length];
+            for (int i = 0; i < objs.Length; i++)
             {
-                Object = obj,
-                Strings = savedStrings.Skip(i * stringsCount).Take(stringsCount)
-            };
-        }
+                var obj = objs[i];
+                result[i] = new ObjectWithPersistedStrings<T>
+                {
+                    Object = obj,
+                    Strings = savedStrings.Skip(i * stringsCount).Take(stringsCount)
+                };
+            }
+        });
         
         return result;
     }
@@ -217,17 +254,18 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var objWithStrings = SaveObjectStrings(objs);
         
         // This is faster.
-        Parallel.For(0, objs.Length, i =>
+        ToolkitExtensions.RunWithTimedBench("Serializing objects from objects with strings to bytes in memory. (Parallel)", () =>
         {
-            SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
+            Parallel.For(0, objs.Length, i =>
+            {
+                SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
+            });
         });
         
-        // This is slower.
-        // for (int i = 0; i < objs.Length; i++)
-        // {
-        //     SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
-        // }
-        StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
+        ToolkitExtensions.RunWithTimedBench("Writing bytes to disk", () =>
+        {
+            StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
+        });
     }
     
     [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]

@@ -62,6 +62,8 @@ public class StringRepository
             writeOffset = FileEndOffset;
             FileEndOffset += stringBytes.Length;
         }
+        // TODO IMMEDIATELY: Write all strings in a single write operation
+        // Then calculate the offset of each string
         _fileAccess.WriteInFile(writeOffset, stringBytes);
         return new StringInByteArray { Offset = writeOffset, Length = stringBytes.Length };
         // Warning, DO NOT CALL this method without updating the end offset in the string file.
@@ -75,7 +77,6 @@ public class StringRepository
         var index = 0;
         foreach (var str in stringsQuery)
         {
-            //yield return WriteStringContentAndGetOffset(str);
             stringInByteArrays[index++] = WriteStringContentAndGetOffset(str);
         }
         
