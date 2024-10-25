@@ -164,8 +164,10 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var buffer = new byte[sizeOfObject * objs.Length];
         Parallel.For(0, objs.Length, i =>
         {
+            // Random access to the string file to save the string data.
             SerializeBytes(objs[i], buffer, sizeOfObject * i);
         });
+        // Sequential write. Save binary data to disk.
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
@@ -207,10 +209,12 @@ public class ObjectPersistOnDiskService<T> where T : new()
     public T[] ReadBulk(long indexFrom, int count)
     {
         var sizeOfObject = GetItemSize();
+        // Sequential read. Load binary data from disk and deserialize them in parallel.
         var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + LengthMarkerSize, sizeOfObject * count);
         var result = new T[count];
         Parallel.For(0, count, i =>
         {
+            // Random access to the string file to load the string data.
             result[i] = Deserialize(data, sizeOfObject * i);
         });
         return result;
