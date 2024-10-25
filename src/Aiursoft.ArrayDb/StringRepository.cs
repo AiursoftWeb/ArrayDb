@@ -61,6 +61,8 @@ public class StringRepository
         // Warning, DO NOT CALL this method without updating the end offset in the string file.
     }
 
+    // TODO: Use multiple underlying files (partitions) to store strings
+    // So we can use multiple threads to write strings concurrently
     public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(IEnumerable<string> strs)
     {
         foreach (var str in strs)
