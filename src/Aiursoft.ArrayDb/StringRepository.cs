@@ -59,7 +59,7 @@ public class StringRepository
         };
     }
 
-    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(IReadOnlyCollection<string> strs)
+    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffset(IEnumerable<string> strs)
     {
         foreach (var str in strs)
         {

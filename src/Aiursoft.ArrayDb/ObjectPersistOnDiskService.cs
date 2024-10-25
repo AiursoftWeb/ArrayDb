@@ -1,6 +1,13 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Aiursoft.ArrayDb;
+
+public class ObjectWithPersistedStrings<T>
+{
+    public required T Object;
+    public required IEnumerable<StringInByteArray> Strings;
+}
 
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
@@ -51,7 +58,8 @@ public class ObjectPersistOnDiskService<T> where T : new()
             }
             else if (prop.PropertyType == typeof(string))
             {
-                size += Unsafe.SizeOf<long>() * 2; // Offset and Length (2 long values)
+                size += Unsafe.SizeOf<long>(); // Size of Offset (stored as long)
+                size += Unsafe.SizeOf<int>(); // Size of Length (stored as int)
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
@@ -65,96 +73,141 @@ public class ObjectPersistOnDiskService<T> where T : new()
         return size;
     }
 
-    private void SerializeBytes(T obj, byte[] buffer, int offset)
+    // T to OWPST
+    private ObjectWithPersistedStrings<T>[] SaveObjectStrings(T[] objs)
     {
+        var stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
+        var strings = objs.SelectMany(obj => typeof(T)
+            .GetProperties()
+            .Where(p => p.PropertyType == typeof(string))
+            .Select(p => (string)p.GetValue(obj)!)); // strings Count = objs.Length * stringsCount
+        
+        var savedStrings = StringRepository
+            .BulkWriteStringContentAndGetOffset(strings)
+            .ToArray();
+        
+        var result = new ObjectWithPersistedStrings<T>[objs.Length];
+        for (int i = 0; i < objs.Length; i++)
+        {
+            var obj = objs[i];
+            result[i] = new ObjectWithPersistedStrings<T>
+            {
+                Object = obj,
+                Strings = savedStrings.Skip(i * stringsCount).Take(stringsCount)
+            };
+        }
+        
+        return result;
+    }
+    
+    
+    // OWPST to bytes.
+    private void SerializeBytes(ObjectWithPersistedStrings<T> objWithStrings, byte[] buffer, int offset)
+    {
+        // Save the object properties
+        var innerObject = objWithStrings.Object;
         foreach (var prop in typeof(T).GetProperties())
         {
             if (prop.PropertyType == typeof(bool))
             {
                 // Bool should be stored as 1 or 0
-                var value = (bool)prop.GetValue(obj)! ? 1 : 0;
+                var value = (bool)prop.GetValue(innerObject)! ? 1 : 0;
                 Unsafe.WriteUnaligned(ref buffer[offset], value);
                 offset += Unsafe.SizeOf<int>();
             }
             else if (prop.PropertyType == typeof(int))
             {
                 // Int should be stored as int
-                var value = prop.GetValue(obj);
+                var value = prop.GetValue(innerObject);
                 Unsafe.WriteUnaligned(ref buffer[offset], (int)value!);
-                offset += Unsafe.SizeOf<int>();
-            }
-            else if (prop.PropertyType == typeof(string))
-            {
-                // String should be stored as Offset (long) and Length (int)
-                var stringValue = (string)prop.GetValue(obj)!;
-                var (stringOffset, stringLength) = StringRepository.WriteStringContentAndGetOffset(stringValue);
-                Unsafe.WriteUnaligned(ref buffer[offset], stringOffset);
-                offset += Unsafe.SizeOf<long>();
-                Unsafe.WriteUnaligned(ref buffer[offset], stringLength);
                 offset += Unsafe.SizeOf<int>();
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
                 // DateTime should be stored as Ticks (long)
-                var dateTimeValue = (DateTime)prop.GetValue(obj)!;
+                var dateTimeValue = (DateTime)prop.GetValue(innerObject)!;
                 var ticks = dateTimeValue.Ticks;
                 Unsafe.WriteUnaligned(ref buffer[offset], ticks);
                 offset += Unsafe.SizeOf<long>();
+            }
+            else if (prop.PropertyType == typeof(string))
+            {
+                // String should be ignored here. It is stored in the string file.
+                // Later at the end of the method, we will save the offsets and lengths of the strings.
             }
             else
             {
                 throw new Exception($"Unsupported property type: {prop.PropertyType}");
             }
         }
+        
+        // Save the strings (Actually, the offsets and lengths of the strings)
+        foreach (var stringInByteArray in objWithStrings.Strings)
+        {
+            Unsafe.WriteUnaligned(ref buffer[offset], stringInByteArray.Offset);
+            offset += Unsafe.SizeOf<long>();
+            Unsafe.WriteUnaligned(ref buffer[offset], stringInByteArray.Length);
+            offset += Unsafe.SizeOf<int>();
+        }
     }
-
-    private T Deserialize(byte[] buffer, int offset = 0)
+    
+    // Bytes to T
+    private T DeserializeBytes(byte[] buffer, int offset = 0)
     {
+        // Load the object basic properties.
         var obj = new T();
-
         foreach (var prop in typeof(T).GetProperties())
         {
-            if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(bool))
+            if (prop.PropertyType == typeof(bool))
             {
                 var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-                if (prop.PropertyType == typeof(bool))
-                {
-                    prop.SetValue(obj, value != 0);
-                }
-                else
-                {
-                    prop.SetValue(obj, value);
-                }
+                prop.SetValue(obj, value == 1);
                 offset += Unsafe.SizeOf<int>();
             }
-            else if (prop.PropertyType == typeof(string))
+            else if (prop.PropertyType == typeof(int))
             {
-                // Read the Offset and Length
-                var stringOffset = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                var stringLength = Unsafe.ReadUnaligned<int>(ref buffer[offset + Unsafe.SizeOf<long>()]);
-
-                // Read the string from the string file
-                var stringValue = StringRepository.LoadStringContent(stringOffset, stringLength);
-                prop.SetValue(obj, stringValue);
-
-                offset += Unsafe.SizeOf<long>() + Unsafe.SizeOf<int>();
+                var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
+                prop.SetValue(obj, value);
+                offset += Unsafe.SizeOf<int>();
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
                 var ticks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                var dateTimeValue = new DateTime(ticks);
-                prop.SetValue(obj, dateTimeValue);
+                prop.SetValue(obj, new DateTime(ticks));
                 offset += Unsafe.SizeOf<long>();
             }
+            else if (prop.PropertyType == typeof(string))
+            {
+                // String should be ignored here. It is loaded from the string file.
+                // Later at the end of the method, we will load the strings.
+            }
+            else
+            {
+                throw new Exception($"Unsupported property type: {prop.PropertyType}");
+            }
         }
+        
+        // Load the object strings.
+        foreach (var prop in typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string)))
+        {
+            var offsetInByteArray = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
+            offset += Unsafe.SizeOf<long>();
+            var length = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
+            offset += Unsafe.SizeOf<int>();
+            var str = StringRepository.LoadStringContent(offsetInByteArray, length);
+            prop.SetValue(obj, str);
+        }
+        
         return obj;
     }
-
+    
     private void WriteIndex(long index, T obj)
     {
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject];
-        SerializeBytes(obj, buffer, 0);
+        // Save the strings.
+        var objWithStrings = SaveObjectStrings([obj])[0];
+        SerializeBytes(objWithStrings, buffer, 0);
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
@@ -162,12 +215,20 @@ public class ObjectPersistOnDiskService<T> where T : new()
     {
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject * objs.Length];
-        Parallel.For(0, objs.Length, i =>
+        // Save the strings.
+        var objWithStrings = SaveObjectStrings(objs);
+        
+        // This is faster.
+        // Parallel.For(0, objs.Length, i =>
+        // {
+        //     SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
+        // });
+        
+        // This is slower.
+        for (int i = 0; i < objs.Length; i++)
         {
-            // Random access to the string file to save the string data.
-            SerializeBytes(objs[i], buffer, sizeOfObject * i);
-        });
-        // Sequential write. Save binary data to disk.
+            SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
+        }
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
@@ -203,7 +264,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
     {
         var sizeOfObject = GetItemSize();
         var data = StructureFileAccess.ReadInFile(sizeOfObject * index + LengthMarkerSize, sizeOfObject);
-        return Deserialize(data);
+        return DeserializeBytes(data);
     }
 
     public T[] ReadBulk(long indexFrom, int count)
@@ -215,8 +276,9 @@ public class ObjectPersistOnDiskService<T> where T : new()
         Parallel.For(0, count, i =>
         {
             // Random access to the string file to load the string data.
-            result[i] = Deserialize(data, sizeOfObject * i);
+            result[i] = DeserializeBytes(data, sizeOfObject * i);
         });
         return result;
     }
 }
+
