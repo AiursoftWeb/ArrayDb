@@ -8,10 +8,11 @@ public class PerformanceTests : ArrayDbTestBase
 {
     
     [TestMethod]
+    [Obsolete(message: "I understand that reading item one by one is slow, but this test need to cover the scenario.")]
     public void PerformanceTestWrite()
     {
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 100 seconds. On my machine: 42,148ms -> 37072ms
+        // Write 100 0000 times in less than 100 seconds. On my machine: 42,148ms -> 37,072ms
         stopWatch.Start();
         var persistService =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
@@ -84,7 +85,7 @@ public class PerformanceTests : ArrayDbTestBase
         
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        // Read 1000000 times in less than 10 seconds. On my machine 681ms.
+        // Read 100 0000 times in less than 10 seconds. On my machine 681ms -> 685ms.
         var result = persistService.ReadBulk(0, 1000000);
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
@@ -102,11 +103,13 @@ public class PerformanceTests : ArrayDbTestBase
     }
     
     [TestMethod]
+    [Obsolete(message: "I understand that reading item one by one is slow, but this test need to cover the scenario.")]
     public void PerformanceTestRead()
     {
-        // Read 100 0000 times in less than 10 seconds. On my machine: 760ms. 
+        // Read 100 0000 times in less than 10 seconds. On my machine: 760ms -> 912ms
         var persistService =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        var list = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
             var sample = new SampleData
@@ -117,8 +120,9 @@ public class PerformanceTests : ArrayDbTestBase
                 MyBoolean1 = i % 2 == 0,
                 MyString2 = $"This is another longer string. {i}"
             };
-            persistService.Add(sample);
+            list.Add(sample);
         }
+        persistService.AddBulk(list.ToArray());
         
         var stopWatch = new Stopwatch();
         stopWatch.Start();

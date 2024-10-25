@@ -220,16 +220,16 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var objWithStrings = SaveObjectStrings(objs);
         
         // This is faster.
-        // Parallel.For(0, objs.Length, i =>
-        // {
-        //     SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
-        // });
-        
-        // This is slower.
-        for (int i = 0; i < objs.Length; i++)
+        Parallel.For(0, objs.Length, i =>
         {
             SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
-        }
+        });
+        
+        // This is slower.
+        // for (int i = 0; i < objs.Length; i++)
+        // {
+        //     SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
+        // }
         StructureFileAccess.WriteInFile(sizeOfObject * index + LengthMarkerSize, buffer);
     }
     
@@ -286,6 +286,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var result = new T[count];
         Parallel.For(0, count, i =>
         {
+            // TO Optimize: We need to preload the string file, because the string file is accessed randomly.
             // Random access to the string file to load the string data.
             result[i] = DeserializeBytes(data, sizeOfObject * i);
         });
