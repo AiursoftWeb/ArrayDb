@@ -120,16 +120,15 @@ Underlying string repository statistics:
         {
             if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(bool))
             {
-                size += Unsafe.SizeOf<int>();
+                size += sizeof(int);
             }
             else if (prop.PropertyType == typeof(string))
             {
-                size += Unsafe.SizeOf<long>(); // Size of Offset (stored as long)
-                size += Unsafe.SizeOf<int>(); // Size of Length (stored as int)
+                size += sizeof(long) + sizeof(int); // Size of Offset (stored as long) and Length (stored as int)
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
-                size += Unsafe.SizeOf<long>(); // Size of DateTime (stored as Ticks, which is a long)
+                size += sizeof(long); // DateTime is stored as long
             }
             else
             {
@@ -234,19 +233,19 @@ Underlying string repository statistics:
             {
                 var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
                 prop.SetValue(obj, value == 1);
-                offset += Unsafe.SizeOf<int>();
+                offset += sizeof(int);
             }
             else if (prop.PropertyType == typeof(int))
             {
                 var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
                 prop.SetValue(obj, value);
-                offset += Unsafe.SizeOf<int>();
+                offset += sizeof(int);
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
                 var ticks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
                 prop.SetValue(obj, new DateTime(ticks));
-                offset += Unsafe.SizeOf<long>();
+                offset += sizeof(long);
             }
             else if (prop.PropertyType == typeof(string))
             {
@@ -263,9 +262,9 @@ Underlying string repository statistics:
         foreach (var prop in properties.Where(p => p.PropertyType == typeof(string)))
         {
             var offsetInByteArray = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-            offset += Unsafe.SizeOf<long>();
+            offset += sizeof(long);
             var length = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-            offset += Unsafe.SizeOf<int>();
+            offset += sizeof(int);
             var str = StringRepository.LoadStringContent(offsetInByteArray, length);
             prop.SetValue(obj, str);
         }
