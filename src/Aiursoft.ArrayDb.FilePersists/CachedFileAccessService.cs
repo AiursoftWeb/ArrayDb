@@ -1,10 +1,13 @@
 namespace Aiursoft.ArrayDb.FilePersists;
 
+/// <summary>
+/// Represents a service for accessing and caching file data.
+/// </summary>
 public class CachedFileAccessService(
     string path,
     long initialSizeIfNotExists,
     int pageSize = 1024 * 1024, // 1MB
-    int maxCacheItems = 512) // 512MB
+    int maxCacheItems = 512) // 512 pages cached in memory at most
 {
     private readonly FileAccessService _fileAccessService = new(path, initialSizeIfNotExists);
     private readonly Dictionary<long, byte[]> _cache = new();
