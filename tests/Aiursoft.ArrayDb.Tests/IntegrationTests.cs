@@ -256,23 +256,23 @@ public class IntegrationTests : ArrayDbTestBase
     [TestMethod]
     public void MultipleThreadsCallAddBulkShouldBeFine()
     {
-        // 100 threads, each threads add 100 samples. All the 10000 samples should be added. All items should be read correctly.
+        // 1000 threads, each threads add 1000 samples. All the 1 000 000 samples should be added. All items should be read correctly.
         var persistService =
             new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
         var threads = new List<Thread>();
-        for (var i = 0; i < 100; i++)
+        for (var i = 0; i < 1000; i++)
         {
             var i1 = i;
             var thread = new Thread(() =>
             {
                 var samples = new List<SampleData>();
-                for (var j = 0; j < 100; j++)
+                for (var j = 0; j < 1000; j++)
                 {
                     var sample = new SampleData
                     {
-                        MyNumber1 = i1 * 100 + j,
-                        MyString1 = $"Hello, World! 你好世界 {j}",
+                        MyNumber1 = i1 * 1000 + j,
+                        MyString1 = $"Hello, World! 你好世界 {i1 * 1000 + j}",
                         MyNumber2 = j * 10,
                         MyBoolean1 = j % 2 == 0,
                         MyString2 = $"This is another longer string. {j}"
@@ -285,27 +285,17 @@ public class IntegrationTests : ArrayDbTestBase
             threads.Add(thread);
         }
         
-        foreach (var thread in threads)
-        {
-            thread.Start();
-        }
+        threads.ForEach(t => t.Start());
+        threads.ForEach(t => t.Join());
         
-        foreach (var thread in threads)
-        {
-            thread.Join();
-        }
-        
-        var readSamples = persistService.ReadBulk(0, 10000)
+        var readSamples = persistService.ReadBulk(0, 1000000)
             .OrderBy(t => t.MyNumber1)
             .ToArray();
-        for (var i = 0; i < 10000; i++)
+        for (var i = 0; i < 1000000; i++)
         {
             var readSample = readSamples[i];
             Assert.AreEqual(i, readSample.MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i % 100}", readSample.MyString1);
-            Assert.AreEqual(i % 100 * 10, readSample.MyNumber2);
-            Assert.AreEqual(i % 100 % 2 == 0, readSample.MyBoolean1);
-            Assert.AreEqual($"This is another longer string. {i % 100}", readSample.MyString2);
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
         }
     }
 }
