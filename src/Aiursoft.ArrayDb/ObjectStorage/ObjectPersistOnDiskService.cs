@@ -78,6 +78,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
         var stringProperties = typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
 
+        // Convert the strings to byte[]s
         var strings = new byte[objs.Length * stringsCount][];
         Parallel.For(0, objs.Length, i =>
         {
@@ -96,17 +97,19 @@ public class ObjectPersistOnDiskService<T> where T : new()
             }
         });
 
-        var savedStrings = StringRepository.BulkWriteStringContentAndGetOffsetV2(strings);
+        // Convert the byte[]s to SavedStrings
+        var savedStrings = StringRepository.BulkWriteStringContentAndGetOffsets(strings);
+        
+        // Convert the SavedStrings to ObjectWithPersistedStrings
         var result = new ObjectWithPersistedStrings<T>[objs.Length];
-        for (var i = 0; i < objs.Length; i++)
+        Parallel.For(0, objs.Length, i =>
         {
-            var obj = objs[i];
             result[i] = new ObjectWithPersistedStrings<T>
             {
-                Object = obj,
+                Object = objs[i],
                 Strings = savedStrings.Skip(i * stringsCount).Take(stringsCount)
             };
-        }
+        });
         return result;
     }
     

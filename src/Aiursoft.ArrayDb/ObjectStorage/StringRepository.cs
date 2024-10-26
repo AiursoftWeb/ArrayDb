@@ -48,7 +48,7 @@ public class StringRepository
         return writeOffset;
     }
     
-    public SavedString[] BulkWriteStringContentAndGetOffsetV2(byte[][] processedStrings)
+    public SavedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings)
     {
         var allBytes = processedStrings.SelectMany(x => x).ToArray();
         var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
