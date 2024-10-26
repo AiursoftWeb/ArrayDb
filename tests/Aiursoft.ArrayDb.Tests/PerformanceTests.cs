@@ -88,7 +88,7 @@ public class PerformanceTests : ArrayDbTestBase
             var sample = new SampleData
             {
                 MyNumber1 = i,
-                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyString1 = $"Hello, World! 你好世界！ {i}",
                 MyNumber2 = i * 10,
                 MyBoolean1 = i % 2 == 0,
                 MyString2 = $"This is another longer string. {i}"
@@ -111,7 +111,7 @@ public class PerformanceTests : ArrayDbTestBase
         {
             var readSample = result[i];
             Assert.AreEqual(i, readSample.MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
+            Assert.AreEqual($"Hello, World! 你好世界！ {i}", readSample.MyString1);
             Assert.AreEqual(i * 10, readSample.MyNumber2);
             Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
