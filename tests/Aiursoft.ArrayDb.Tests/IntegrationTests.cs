@@ -201,4 +201,55 @@ public class IntegrationTests : ArrayDbTestBase
         }
         Assert.AreEqual(5, persistService2.Count);
     }
+
+    [TestMethod]
+    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
+    public void ReadOutOfRangeTest()
+    {
+        var persistService =
+            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+
+        // Write 2 samples
+        var samples = new List<SampleData>();
+        for (var i = 0; i < 2; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            samples.Add(sample);
+        }
+        var samplesArray = samples.ToArray();
+        persistService.AddBulk(samplesArray);
+        
+        // Read item 2
+        try
+        {
+            _ = persistService.Read(2);
+            Assert.Fail("Should throw exception.");
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+           Assert.AreEqual("Specified argument was out of the range of valid values. (Parameter 'index')", e.Message); 
+        }
+        
+        // Bulk read, starts from 1, read 2 items
+        try
+        {
+            _ = persistService.ReadBulk(1, 2);
+            Assert.Fail("Should throw exception.");
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+            Assert.AreEqual("Specified argument was out of the range of valid values. (Parameter 'indexFrom')", e.Message);
+        }
+        
+        // However, normal read should not throw exception.
+        var readSample = persistService.Read(1);
+        Assert.AreEqual(1, readSample.MyNumber1);
+    }
 }
