@@ -98,10 +98,11 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         persistService.AddBulk(samplesArray);
         
+        var persistService2 = new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
         // Read 100 0000 times in less than 10 seconds. On my machine 681ms -> 685ms.
-        var result = persistService.ReadBulk(0, 1000000);
+        var result = persistService2.ReadBulk(0, 1000000);
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
         Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
@@ -109,10 +110,6 @@ public class PerformanceTests : ArrayDbTestBase
         for (var i = 0; i < 1000000; i++)
         {
             var readSample = result[i];
-            if (i != readSample.MyNumber1)
-            {
-                
-            }
             Assert.AreEqual(i, readSample.MyNumber1);
             Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
             Assert.AreEqual(i * 10, readSample.MyNumber2);
