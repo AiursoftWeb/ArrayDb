@@ -36,7 +36,6 @@ public class StringRepository
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
 
-    // TODO: This method design also suitable for other types of data, not just string
     private long RequestWriteSpaceAndGetStartOffset(int length)
     {
         long writeOffset;

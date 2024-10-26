@@ -288,7 +288,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
         var result = new T[count];
         Parallel.For(0, count, i =>
         {
-            // TO Optimize: We need to preload the string file, because the string file is accessed randomly.
+            // TODO: Optimize: We need to preload the string file, because the string file is accessed randomly.
             // Random access to the string file to load the string data.
             result[i] = DeserializeBytes(data, sizeOfObject * i);
         });
