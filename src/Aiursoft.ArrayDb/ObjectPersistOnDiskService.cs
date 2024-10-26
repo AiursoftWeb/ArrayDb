@@ -4,10 +4,10 @@ using System.Text;
 
 namespace Aiursoft.ArrayDb;
 
-public class ObjectWithPersistedStrings<T>
+public struct ObjectWithPersistedStrings<T>
 {
     public required T Object;
-    public required IEnumerable<StringInByteArray> Strings;
+    public required IEnumerable<SavedString> Strings;
 }
 
 public static class ToolkitExtensions
@@ -111,10 +111,10 @@ public class ObjectPersistOnDiskService<T> where T : new()
             stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
             var properties = typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
             strings = objs
-                .SelectMany(obj => properties.Select(p => (string)p.GetValue(obj)!))
+                .SelectMany(obj => properties.Select(p => (string?)p.GetValue(obj)))
                 .Select(str =>
                 {
-                    if (string.IsNullOrEmpty(str))
+                    if (str == null)
                     {
                         return new ProcessingString { Length = 0, Bytes = [] };
                     }
@@ -124,10 +124,10 @@ public class ObjectPersistOnDiskService<T> where T : new()
                 .ToArray();
         });
 
-        StringInByteArray[] savedStrings = [];
+        SavedString[] savedStrings = [];
         ToolkitExtensions.RunWithTimedBench("Saving the strings of objects on disk", () =>
         {
-            savedStrings = StringRepository.BulkWriteStringContentAndGetOffsetV2(strings).ToArray();
+            savedStrings = StringRepository.BulkWriteStringContentAndGetOffsetV2(strings);
         });
         
         ObjectWithPersistedStrings<T>[] result = [];

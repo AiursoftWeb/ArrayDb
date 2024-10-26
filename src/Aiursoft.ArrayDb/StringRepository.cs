@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Aiursoft.ArrayDb;
 
-public struct StringInByteArray
+public struct SavedString
 {
     public required long Offset;
     public required int Length;
@@ -37,72 +37,38 @@ public class StringRepository
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
 
-    /// <summary>
-    /// This method writes a string to the file and returns the offset where the string is stored.
-    ///
-    /// This method is multi-thread safe.
-    /// </summary>
-    /// <param name="str"></param>
-    /// <returns></returns>
-    private StringInByteArray WriteStringContentAndGetOffset(string? str)
+    // TODO: This method design also suitable for other types of data, not just string
+    private long RequestWriteSpaceAndGetStartOffset(int length)
     {
-        switch (str)
-        {
-            case "":
-                // -1 offset indicates empty string
-                return new StringInByteArray { Offset = -1, Length = 0 };
-            case null:
-                return new StringInByteArray { Offset = -2, Length = 0 }; // -2 offset indicates null string
-        }
-
-        var stringBytes = Encoding.UTF8.GetBytes(str);
         long writeOffset;
-        lock (_expandSizeLock) // When calling this method multi-threads, different threads are writing to different offsets
+        lock (_expandSizeLock)
         {
             writeOffset = FileEndOffset;
-            FileEndOffset += stringBytes.Length;
+            FileEndOffset += length;
+            _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
         }
-        // TODO IMMEDIATELY: Write all strings in a single write operation
-        // Then calculate the offset of each string
-        _fileAccess.WriteInFile(writeOffset, stringBytes);
-        return new StringInByteArray { Offset = writeOffset, Length = stringBytes.Length };
-        // Warning, DO NOT CALL this method without updating the end offset in the string file.
+        return writeOffset;
     }
-
-    // TODO: Use multiple underlying files (partitions) to store strings
-    // So we can use multiple threads to write strings concurrently
-    public StringInByteArray[] BulkWriteStringContentAndGetOffset(IEnumerable<string> stringsQuery, int stringsCount)
-    {
-        var stringInByteArrays = new StringInByteArray[stringsCount];
-        var index = 0;
-        foreach (var str in stringsQuery)
-        {
-            stringInByteArrays[index++] = WriteStringContentAndGetOffset(str);
-        }
-        
-        // Update the end offset in the string file
-        _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
-        
-        return stringInByteArrays;
-    }
-
-    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffsetV2(ProcessingString[] processedStrings)
+    
+    public SavedString[] BulkWriteStringContentAndGetOffsetV2(ProcessingString[] processedStrings)
     {
         // This version, we fetch all strings and save it in a byte array
         // Then we write the byte array to the file
         // Then we calculate the offset of each string
         var allBytes = processedStrings.SelectMany(p => p.Bytes).ToArray();
-        var writeOffset = FileEndOffset;
+        var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
         _fileAccess.WriteInFile(writeOffset, allBytes);
         var offset = writeOffset;
+        var result = new SavedString[processedStrings.Length];
+        var index = 0;
         foreach (var processedString in processedStrings)
         {
-            var stringInByteArray = new StringInByteArray { Offset = offset, Length = processedString.Length };
+            result[index] = new SavedString { Offset = offset, Length = processedString.Length };
             offset += processedString.Length;
-            yield return stringInByteArray;
+            index++;
         }
-        FileEndOffset = offset;
-        _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
+
+        return result;
     }
 
     public string? LoadStringContent(long offset, int length)

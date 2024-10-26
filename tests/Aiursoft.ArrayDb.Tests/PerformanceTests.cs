@@ -68,12 +68,12 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 120 seconds. On my machine: 37292ms -> 24595ms -> 15177ms -> 14934ms -> 14595ms
+        // Write 100 0000 times in less than 3 seconds. On my machine: 42148ms -> 37292ms -> 24595ms -> 15177ms -> 14934ms -> 14595ms -> 1060ms
         stopWatch.Start();
         persistService.AddBulk(samplesArray);
         stopWatch.Stop();
         Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 120 * 1000);
+        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 3);
     }
     
     [TestMethod]
@@ -108,6 +108,10 @@ public class PerformanceTests : ArrayDbTestBase
         for (var i = 0; i < 1000000; i++)
         {
             var readSample = result[i];
+            if (i != readSample.MyNumber1)
+            {
+                
+            }
             Assert.AreEqual(i, readSample.MyNumber1);
             Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
             Assert.AreEqual(i * 10, readSample.MyNumber2);
