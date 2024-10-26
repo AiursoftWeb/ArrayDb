@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.FilePersists;
+using Aiursoft.ArrayDb.FilePersists.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests;
@@ -8,7 +9,7 @@ namespace Aiursoft.ArrayDb.Tests;
 public class CachedFileAccessServiceTests
 {
     private const string TestFilePath = "testfile.bin";
-    private const long InitialSizeIfNotExists = 10 * 1024 * 1024; // 10 MB
+    private const long InitialSize = 10 * 1024 * 1024; // 10 MB
     private const int PageSize = 0x100000; // 1 MB
 
     [NotNull]
@@ -25,7 +26,11 @@ public class CachedFileAccessServiceTests
         }
 
         // Initialize the CachedFileAccessService
-        _service = new CachedFileAccessService(TestFilePath, InitialSizeIfNotExists, pageSize: PageSize);
+        _service = new CachedFileAccessService(TestFilePath, 
+            initialUnderlyingFileSizeIfNotExists: InitialSize, 
+            cachePageSize: PageSize, 
+            maxCachedPagesCount: 512,
+            hotCacheItems: 16);
     }
 
     [TestCleanup]
@@ -106,7 +111,7 @@ public class CachedFileAccessServiceTests
         }
 
         Assert.AreEqual(1, _service.RemoveFromCacheCount);
-        Assert.AreEqual(513, _service.LoadToCacheCount);
+        Assert.AreEqual(513, _service.CacheMissCount);
     }
 
     [TestMethod]
@@ -123,7 +128,6 @@ public class CachedFileAccessServiceTests
         Assert.AreEqual(0, _service.CacheMissCount);
         Assert.AreEqual(0, _service.CacheWipeCount);
         Assert.AreEqual(0, _service.LruUpdateCount);
-        Assert.AreEqual(0, _service.LoadToCacheCount);
         Assert.AreEqual(0, _service.RemoveFromCacheCount);
     }
 

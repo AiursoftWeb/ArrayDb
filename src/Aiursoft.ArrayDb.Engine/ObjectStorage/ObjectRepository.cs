@@ -1,7 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Engine.Models;
 using Aiursoft.ArrayDb.FilePersists;
+using Aiursoft.ArrayDb.FilePersists.Services;
 
 namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
 
@@ -19,6 +21,40 @@ public class ObjectRepository<T> where T : new()
     // Underlying store
     public readonly CachedFileAccessService StructureFileAccess;
     public readonly StringRepository StringRepository;
+    
+    // Statistics
+    public int SingleAppendCount;
+    public int BulkAppendCount;
+    public int ReadCount;
+    public int ReadBulkCount;
+    
+    [ExcludeFromCodeCoverage]
+    public void ResetAllStatistics()
+    {
+        SingleAppendCount = 0;
+        BulkAppendCount = 0;
+        ReadCount = 0;
+        ReadBulkCount = 0;
+    }
+    
+    public string OutputStatistics()
+    {
+        return $@"
+Object repository with item type {typeof(T).Name} statistics:
+
+* Stored objects count: {Count}
+* Single append events count: {SingleAppendCount}
+* Bulk   append events count: {BulkAppendCount}
+* Read      events count: {ReadCount}
+* Read bulk events count: {ReadBulkCount}
+
+Underlying structure file access service statistics:
+{StructureFileAccess.OutputCacheReport().AppendTabsEachLineHead()}
+
+Underlying string repository statistics:
+{StringRepository.OutputStatistics().AppendTabsEachLineHead()}
+";
+    }
 
     /// <summary>
     /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
@@ -26,11 +62,30 @@ public class ObjectRepository<T> where T : new()
     /// <param name="structureFilePath">The path to the file that stores the structure of the objects.</param>
     /// <param name="stringFilePath">The path to the file that stores the string data.</param>
     /// <param name="initialSizeIfNotExists">The initial size of the file if it does not exist.</param>
+    /// <param name="cachePageSize">The size of the cache page.</param>
+    /// <param name="maxCachedPagesCount">The maximum number of pages cached in memory.</param>
+    /// <param name="hotCacheItems">The number of most recent pages that are considered hot and will not be moved even if they are used.</param>
     /// <typeparam name="T"></typeparam>
-    public ObjectRepository(string structureFilePath, string stringFilePath, long initialSizeIfNotExists)
+    public ObjectRepository(
+        string structureFilePath, 
+        string stringFilePath, 
+        long initialSizeIfNotExists = Consts.DefaultFileSize,
+        int cachePageSize = Consts.CachePageSize,
+        int maxCachedPagesCount = Consts.MaxCachedPagesCount,
+        int hotCacheItems = Consts.HotCacheItems)
     {
-        StructureFileAccess = new(structureFilePath, initialSizeIfNotExists);
-        StringRepository = new(stringFilePath, initialSizeIfNotExists);
+        StructureFileAccess = new(
+            path: structureFilePath,
+            initialUnderlyingFileSizeIfNotExists: initialSizeIfNotExists,
+            cachePageSize: cachePageSize,
+            maxCachedPagesCount: maxCachedPagesCount,
+            hotCacheItems: hotCacheItems);
+        StringRepository = new(
+            stringFilePath: stringFilePath,
+            initialUnderlyingFileSizeIfNotExists: initialSizeIfNotExists,
+            cachePageSize: cachePageSize,
+            maxCachedPagesCount: maxCachedPagesCount,
+            hotCacheItems: hotCacheItems);
         Count = GetItemsCount();
     }
     
@@ -237,6 +292,7 @@ public class ObjectRepository<T> where T : new()
     public void Add(T obj)
     {
         var indexToWrite = RequestWriteSpaceAndGetStartOffset(1);
+        Interlocked.Increment(ref SingleAppendCount);
         WriteIndex(indexToWrite, obj);
     }
     
@@ -256,6 +312,7 @@ public class ObjectRepository<T> where T : new()
     {
         var indexToWrite = RequestWriteSpaceAndGetStartOffset(objs.Length);
         WriteBulk(indexToWrite, objs);
+        Interlocked.Increment(ref BulkAppendCount);
     }
     
     [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
@@ -267,6 +324,7 @@ public class ObjectRepository<T> where T : new()
         }
         var sizeOfObject = GetItemSize();
         var data = StructureFileAccess.ReadInFile(sizeOfObject * index + CountMarkerSize, sizeOfObject);
+        Interlocked.Increment(ref ReadCount);
         return DeserializeBytes(data);
     }
 
@@ -286,6 +344,7 @@ public class ObjectRepository<T> where T : new()
             // Random access to the string file to load the string data.
             result[i] = DeserializeBytes(data, sizeOfObject * i);
         });
+        Interlocked.Increment(ref ReadBulkCount);
         return result;
     }
 }

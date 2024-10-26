@@ -1,15 +1,18 @@
-namespace Aiursoft.ArrayDb.FilePersists;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Aiursoft.ArrayDb.FilePersists.Services;
 
 /// <summary>
 /// Represents a service for accessing and caching file data.
 /// </summary>
 public class CachedFileAccessService(
     string path,
-    long initialSizeIfNotExists,
-    int pageSize = 1024 * 1024, // 1MB
-    int maxCacheItems = 512) // 512 pages cached in memory at most
+    long initialUnderlyingFileSizeIfNotExists, // 16 MB
+    int cachePageSize, // 16 MB
+    int maxCachedPagesCount, // 64 pages cached in memory at most (1 GB)
+    int hotCacheItems) // most recent 16 pages are considered hot and will not be moved even they are used
 {
-    private readonly FileAccessService _fileAccessService = new(path, initialSizeIfNotExists);
+    private readonly FileAccessService _underlyingAccessService = new(path, initialUnderlyingFileSizeIfNotExists);
     private readonly Dictionary<long, byte[]> _cache = new();
     private readonly LinkedList<long> _lruList = new();
     private readonly object _cacheLock = new();
@@ -17,16 +20,15 @@ public class CachedFileAccessService(
     public int CacheMissCount;
     public int CacheWipeCount;
     public int LruUpdateCount;
-    public int LoadToCacheCount;
     public int RemoveFromCacheCount;
     
+    [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
         CacheHitCount = 0;
         CacheMissCount = 0;
         CacheWipeCount = 0;
         LruUpdateCount = 0;
-        LoadToCacheCount = 0;
         RemoveFromCacheCount = 0;
     }
 
@@ -35,13 +37,14 @@ public class CachedFileAccessService(
         return $@"
 Cache usage report:
 
-* Underlying file path: {_fileAccessService.Path}
 * Cache hit count: {CacheHitCount}
 * Cache miss count: {CacheMissCount}
 * Cache wipe count: {CacheWipeCount}
-* LRU update count: {LruUpdateCount}
-* Load to cache count: {LoadToCacheCount}
-* Remove from cache count: {RemoveFromCacheCount}
+* Page move last events count: {LruUpdateCount}
+* Remove from cache events count: {RemoveFromCacheCount}
+
+Underlying file access service statistics:
+{_underlyingAccessService.OutputStatistics().AppendTabsEachLineHead()}
 ";
     }
 
@@ -50,8 +53,8 @@ Cache usage report:
         // Clear cache for the pages that will be overwritten
         lock (_cacheLock)
         {
-            var startPage = offset / pageSize;
-            var endPage = (offset + data.Length) / pageSize;
+            var startPage = offset / cachePageSize;
+            var endPage = (offset + data.Length) / cachePageSize;
             for (var page = startPage; page <= endPage; page++)
             {
                 if (_cache.ContainsKey(page))
@@ -63,7 +66,7 @@ Cache usage report:
             }
         }
 
-        _fileAccessService.WriteInFile(offset, data);
+        _underlyingAccessService.WriteInFile(offset, data);
     }
 
     public byte[] ReadInFile(long offset, int length)
@@ -74,9 +77,9 @@ Cache usage report:
 
         while (length > 0)
         {
-            var pageOffset = currentOffset / pageSize;
-            var pageStart = (int)(currentOffset % pageSize);
-            var bytesToRead = Math.Min(length, pageSize - pageStart);
+            var pageOffset = currentOffset / cachePageSize;
+            var pageStart = (int)(currentOffset % cachePageSize);
+            var bytesToRead = Math.Min(length, cachePageSize - pageStart);
 
             var pageData = GetPageFromCache(pageOffset);
             Array.Copy(pageData, pageStart, result, resultOffset, bytesToRead);
@@ -105,7 +108,7 @@ Cache usage report:
                 return cache;
             }
 
-            var pageData = _fileAccessService.ReadInFile(pageOffset * pageSize, pageSize);
+            var pageData = _underlyingAccessService.ReadInFile(pageOffset * cachePageSize, cachePageSize);
             AddToCache(pageOffset, pageData);
             Interlocked.Increment(ref CacheMissCount);
             return pageData;
@@ -114,15 +117,13 @@ Cache usage report:
 
     private bool ShouldUpdateLru(long pageOffset)
     {
-        const int veryRecentPageAccessLimit = 0x10; // 16
-
         var pointer = _lruList.Last;
         if (pointer == null)
         {
             // No item in LRU list
             return false;
         }
-        for (var i = 0; i < veryRecentPageAccessLimit; i++)
+        for (var i = 0; i < hotCacheItems; i++)
         {
             if (pointer!.Value == pageOffset)
             {
@@ -139,7 +140,7 @@ Cache usage report:
     {
         lock (_cacheLock)
         {
-            while (_cache.Count >= maxCacheItems && _lruList.Count > 0)
+            while (_cache.Count >= maxCachedPagesCount && _lruList.Count > 0)
             {
                 var oldestPage = _lruList.First!.Value;
                 _lruList.RemoveFirst();
@@ -149,7 +150,6 @@ Cache usage report:
             
             _cache[pageOffset] = data;
             _lruList.AddLast(pageOffset);
-            Interlocked.Increment(ref LoadToCacheCount);
         }
     }
 }

@@ -1,4 +1,6 @@
-namespace Aiursoft.ArrayDb.FilePersists;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Aiursoft.ArrayDb.FilePersists.Services;
 
 public class FileAccessService
 {
@@ -9,6 +11,7 @@ public class FileAccessService
     private long _currentSize;
     private readonly object _expandSizeLock = new();
     
+    [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
         SeekWriteCount = 0;
@@ -21,10 +24,10 @@ public class FileAccessService
         return $@"
 File access service statistics:
 
-* Underlying file path: {Path}
-* Seek write count: {SeekWriteCount}
-* Seek read count: {SeekReadCount}
-* Expand size count: {ExpandSizeCount}
+* File path: {Path}
+* Actual Seek write events count: {SeekWriteCount}
+* Actual Seek read  events count: {SeekReadCount}
+* Expand physical file size events count: {ExpandSizeCount}
 ";
     }
     

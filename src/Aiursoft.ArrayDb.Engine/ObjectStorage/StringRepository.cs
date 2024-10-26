@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Aiursoft.ArrayDb.Engine.Models;
 using Aiursoft.ArrayDb.FilePersists;
+using Aiursoft.ArrayDb.FilePersists.Services;
 
 namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
 
@@ -17,14 +19,52 @@ public class StringRepository
     
     // Underlying storage
     private readonly CachedFileAccessService _fileAccess;
+    
+    // Statistics
+    public int RequestWriteSpaceCount;
+    public int LoadStringContentCount;
+    public int BulkWriteStringsCount;
+    
+    [ExcludeFromCodeCoverage]
+    public void ResetAllStatistics()
+    {
+        RequestWriteSpaceCount = 0;
+        LoadStringContentCount = 0;
+        BulkWriteStringsCount = 0;
+    }
+    
+    public string OutputStatistics()
+    {
+        return $@"
+String repository statistics:
+
+* Logical file end offset: {FileEndOffset}
+* Request write space events count: {RequestWriteSpaceCount}
+* Load string content events count: {LoadStringContentCount}
+* Bulk write strings events count: {BulkWriteStringsCount}
+
+Underlying cached file access service statistics:
+{_fileAccess.OutputCacheReport().AppendTabsEachLineHead()}
+";
+    }
 
     /// <summary>
     /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
     /// It manages the strings' offsets in the file and provides methods to save new strings and retrieve existing ones.
     /// </summary>
-    public StringRepository(string stringFilePath, long initialSizeIfNotExists)
+    public StringRepository(
+        string stringFilePath, 
+        long initialUnderlyingFileSizeIfNotExists, 
+        int cachePageSize, 
+        int maxCachedPagesCount,
+        int hotCacheItems)
     {
-        _fileAccess = new(stringFilePath, initialSizeIfNotExists);
+        _fileAccess = new(
+            path: stringFilePath,
+            initialUnderlyingFileSizeIfNotExists: initialUnderlyingFileSizeIfNotExists,
+            cachePageSize: cachePageSize,
+            maxCachedPagesCount: maxCachedPagesCount,
+            hotCacheItems: hotCacheItems);
         FileEndOffset = GetStringFileEndOffset();
     }
 
@@ -45,6 +85,7 @@ public class StringRepository
             FileEndOffset += length;
             _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
         }
+        Interlocked.Increment(ref RequestWriteSpaceCount);
         return writeOffset;
     }
     
@@ -63,11 +104,13 @@ public class StringRepository
             index++;
         }
 
+        Interlocked.Increment(ref BulkWriteStringsCount);
         return result;
     }
 
     public string? LoadStringContent(long offset, int length)
     {
+        Interlocked.Increment(ref LoadStringContentCount);
         switch (offset)
         {
             case -1:

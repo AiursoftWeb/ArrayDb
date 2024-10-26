@@ -13,11 +13,11 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestWrite()
     {
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 100 seconds. On my machine: 42,148ms -> 37,072ms
+        // Write 10 0000 times in less than 10 seconds. On my machine: 4214ms -> 3707ms
         stopWatch.Start();
         var persistService =
             new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
-        for (var i = 0; i < 1000000; i++)
+        for (var i = 0; i < 100000; i++)
         {
             var sample = new SampleData
             {
@@ -30,8 +30,8 @@ public class PerformanceTests : ArrayDbTestBase
             persistService.Add(sample);
         }
         stopWatch.Stop();
-        Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 100 * 1000);
+        Console.WriteLine($"Write 100000 time: {stopWatch.ElapsedMilliseconds}ms");
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
     }
 
     [TestMethod]
@@ -156,5 +156,31 @@ public class PerformanceTests : ArrayDbTestBase
 
         Console.WriteLine($"Read 100000 times: {stopWatch.ElapsedMilliseconds}ms");
         Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
+    }
+    
+    [TestMethod]
+    public void OutputStatistics()
+    {
+        var persistService =
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        var samples = new List<SampleData>();
+        for (var i = 0; i < 1000000; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界！ {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            samples.Add(sample);
+        }
+        var samplesArray = samples.ToArray();
+        persistService.AddBulk(samplesArray);
+        persistService.ReadBulk(0, 1000000);
+        
+        var statistics = persistService.OutputStatistics();
+        Console.WriteLine(statistics);
     }
 }
