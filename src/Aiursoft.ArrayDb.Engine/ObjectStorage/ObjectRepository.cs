@@ -100,6 +100,18 @@ Underlying string repository statistics:
         var buffer = BitConverter.GetBytes(length);
         StructureFileAccess.WriteInFile(0, buffer);
     }
+    
+    private long RequestWriteSpaceAndGetStartOffset(int itemsCount)
+    {
+        long writeOffset;
+        lock (_expandLengthLock)
+        {
+            writeOffset = Count;
+            Count += itemsCount;
+            SaveCount(Count);
+        }
+        return writeOffset;
+    }
 
     public int GetItemSize()
     {
@@ -295,19 +307,13 @@ Underlying string repository statistics:
         Interlocked.Increment(ref SingleAppendCount);
         WriteIndex(indexToWrite, obj);
     }
-    
-    private long RequestWriteSpaceAndGetStartOffset(int itemsCount)
-    {
-        long writeOffset;
-        lock (_expandLengthLock)
-        {
-            writeOffset = Count;
-            Count += itemsCount;
-            SaveCount(Count);
-        }
-        return writeOffset;
-    }
-    
+
+    /// <summary>
+    /// Add objects in bulk.
+    ///
+    /// This method is thread-safe. You can call it from multiple threads.
+    /// </summary>
+    /// <param name="objs">Array of objects to add in bulk.</param>
     public void AddBulk(T[] objs)
     {
         var indexToWrite = RequestWriteSpaceAndGetStartOffset(objs.Length);

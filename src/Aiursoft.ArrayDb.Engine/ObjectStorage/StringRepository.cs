@@ -88,8 +88,16 @@ Underlying cached file access service statistics:
         Interlocked.Increment(ref RequestWriteSpaceCount);
         return writeOffset;
     }
-    
-    public SavedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings)
+
+    /// <summary>
+    /// BulkWriteStringContentAndGetOffsets method is used for writing multiple strings' content into a file and retrieving their offsets within the file.
+    /// It writes the processed strings in parallel for improved performance and thread safety.
+    ///
+    /// This method is thread-safe. You can call it from multiple threads simultaneously.
+    /// </summary>
+    /// <param name="processedStrings">An array of byte arrays representing the processed strings to be written.</param>
+    /// <returns>An array of SavedString objects containing the offsets and lengths of each processed string in the file.</returns>
+    public SavedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings) // Multi-thread safe
     {
         var allBytes = processedStrings.SelectMany(x => x).ToArray();
         var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
