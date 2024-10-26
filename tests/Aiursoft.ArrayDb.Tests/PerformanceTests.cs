@@ -32,6 +32,20 @@ public class PerformanceTests : ArrayDbTestBase
         Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
         Assert.IsTrue(stopWatch.ElapsedMilliseconds < 100 * 1000);
     }
+
+    [TestMethod]
+    public void TenTimesBulkWriteAverage()
+    {
+        var time = ToolkitExtensions.RunWithTimedBench("Bench multiple bulk write", () =>
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                Init();
+                PerformanceTestBulkWrite();
+            }
+        });
+        Assert.IsTrue(time.TotalSeconds < 20);
+    }
     
     [TestMethod]
     public void PerformanceTestBulkWrite()

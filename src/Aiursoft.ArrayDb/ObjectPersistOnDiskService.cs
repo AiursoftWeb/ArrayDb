@@ -15,12 +15,12 @@ public static class ToolkitExtensions
     // ReSharper disable once FieldCanBeMadeReadOnly.Global
     public static bool ShowBench = true;
     
-    public static void RunWithTimedBench(string actionName, Action action)
+    public static TimeSpan RunWithTimedBench(string actionName, Action action)
     {
         if (!ShowBench)
         {
             action();
-            return;
+            return TimeSpan.Zero;
         }
         
         if (string.IsNullOrWhiteSpace(actionName))
@@ -33,6 +33,7 @@ public static class ToolkitExtensions
         action();
         stopwatch.Stop();
         Console.WriteLine($"{actionName} took {stopwatch.ElapsedMilliseconds} ms.");
+        return stopwatch.Elapsed;
     }
 }
 
