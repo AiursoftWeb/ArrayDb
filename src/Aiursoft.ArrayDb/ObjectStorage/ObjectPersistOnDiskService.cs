@@ -116,32 +116,23 @@ public class ObjectPersistOnDiskService<T> where T : new()
     // OWPST to bytes.
     private void SerializeBytes(ObjectWithPersistedStrings<T> objWithStrings, byte[] buffer, int offset)
     {
-        // Save the object properties
-        var innerObject = objWithStrings.Object;
         var properties = typeof(T).GetProperties();
         foreach (var prop in properties)
         {
             if (prop.PropertyType == typeof(bool))
             {
-                // Bool should be stored as 1 or 0
-                var value = (bool)prop.GetValue(innerObject)! ? 1 : 0;
-                Unsafe.WriteUnaligned(ref buffer[offset], value);
-                offset += Unsafe.SizeOf<int>();
+                Unsafe.WriteUnaligned(ref buffer[offset], (bool)prop.GetValue(objWithStrings.Object)! ? 1 : 0);
+                offset += sizeof(int);
             }
             else if (prop.PropertyType == typeof(int))
             {
-                // Int should be stored as int
-                var value = prop.GetValue(innerObject);
-                Unsafe.WriteUnaligned(ref buffer[offset], (int)value!);
-                offset += Unsafe.SizeOf<int>();
+                Unsafe.WriteUnaligned(ref buffer[offset], (int)prop.GetValue(objWithStrings.Object)!);
+                offset += sizeof(int);
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
-                // DateTime should be stored as Ticks (long)
-                var dateTimeValue = (DateTime)prop.GetValue(innerObject)!;
-                var ticks = dateTimeValue.Ticks;
-                Unsafe.WriteUnaligned(ref buffer[offset], ticks);
-                offset += Unsafe.SizeOf<long>();
+                Unsafe.WriteUnaligned(ref buffer[offset], ((DateTime)prop.GetValue(objWithStrings.Object)!).Ticks);
+                offset += sizeof(long);
             }
             else if (prop.PropertyType == typeof(string))
             {
@@ -153,17 +144,17 @@ public class ObjectPersistOnDiskService<T> where T : new()
                 throw new Exception($"Unsupported property type: {prop.PropertyType}");
             }
         }
-        
+
         // Save the strings (Actually, the offsets and lengths of the strings)
-        foreach (var stringInByteArray in objWithStrings.Strings)
+        foreach (var str in objWithStrings.Strings)
         {
-            Unsafe.WriteUnaligned(ref buffer[offset], stringInByteArray.Offset);
-            offset += Unsafe.SizeOf<long>();
-            Unsafe.WriteUnaligned(ref buffer[offset], stringInByteArray.Length);
-            offset += Unsafe.SizeOf<int>();
+            Unsafe.WriteUnaligned(ref buffer[offset], str.Offset);
+            offset += sizeof(long);
+            Unsafe.WriteUnaligned(ref buffer[offset], str.Length);
+            offset += sizeof(int);
         }
     }
-    
+
     // Bytes to T
     private T DeserializeBytes(byte[] buffer, int offset = 0)
     {
