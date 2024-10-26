@@ -89,7 +89,7 @@ public class CachedFileAccessService(
             // No item in LRU list
             return false;
         }
-        for (int i = 0; i < veryRecentPageAccessLimit; i++)
+        for (var i = 0; i < veryRecentPageAccessLimit; i++)
         {
             if (pointer!.Value == pageOffset)
             {

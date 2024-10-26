@@ -49,12 +49,9 @@ public class StringRepository
         return writeOffset;
     }
     
-    public SavedString[] BulkWriteStringContentAndGetOffsetV2(ProcessingString[] processedStrings)
+    public SavedString[] BulkWriteStringContentAndGetOffsetV2(byte[][] processedStrings)
     {
-        // This version, we fetch all strings and save it in a byte array
-        // Then we write the byte array to the file
-        // Then we calculate the offset of each string
-        var allBytes = processedStrings.SelectMany(p => p.Bytes).ToArray();
+        var allBytes = processedStrings.SelectMany(x => x).ToArray();
         var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
         _fileAccess.WriteInFile(writeOffset, allBytes);
         var offset = writeOffset;
