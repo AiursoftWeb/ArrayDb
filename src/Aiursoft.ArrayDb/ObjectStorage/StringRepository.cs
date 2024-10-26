@@ -1,12 +1,8 @@
 using System.Text;
+using Aiursoft.ArrayDb.FileSystem;
+using Aiursoft.ArrayDb.Models;
 
-namespace Aiursoft.ArrayDb;
-
-public struct SavedString
-{
-    public required long Offset;
-    public required int Length;
-}
+namespace Aiursoft.ArrayDb.ObjectStorage;
 
 /// <summary>
 /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
@@ -14,10 +10,13 @@ public struct SavedString
 /// </summary>
 public class StringRepository
 {
-    private readonly CachedFileAccessService _fileAccess;
+    // Save the offset.
     public long FileEndOffset;
+    private const int EndOffsetSize = sizeof(long);
     private readonly object _expandSizeLock = new();
-    private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset
+    
+    // Underlying storage
+    private readonly CachedFileAccessService _fileAccess;
 
     /// <summary>
     /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
@@ -86,10 +85,4 @@ public class StringRepository
             }
         }
     }
-}
-
-public class ProcessingString
-{
-    public int Length;
-    public required byte[] Bytes;
 }

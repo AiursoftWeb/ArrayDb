@@ -1,3 +1,4 @@
+using Aiursoft.ArrayDb.ObjectStorage;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests;
@@ -89,7 +90,7 @@ public class IntegrationTests : ArrayDbTestBase
         var persistService2 =
             new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
-        var length = persistService2.Length;
+        var length = persistService2.Count;
         Assert.AreEqual(2, length);
         var offSet = persistService2.StringRepository.FileEndOffset;
         Assert.AreEqual(47, offSet);
@@ -198,6 +199,6 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
         }
-        Assert.AreEqual(5, persistService2.Length);
+        Assert.AreEqual(5, persistService2.Count);
     }
 }

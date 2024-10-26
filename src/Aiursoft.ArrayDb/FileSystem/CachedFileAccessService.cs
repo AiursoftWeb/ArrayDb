@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb;
+namespace Aiursoft.ArrayDb.FileSystem;
 
 public class CachedFileAccessService(
     string path,
