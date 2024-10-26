@@ -13,6 +13,22 @@ public class CachedFileAccessService(
     private readonly Dictionary<long, byte[]> _cache = new();
     private readonly LinkedList<long> _lruList = new();
     private readonly object _cacheLock = new();
+    public int CacheHitCount;
+    public int CacheMissCount;
+    public int CacheWipeCount;
+    public int LruUpdateCount;
+    public int LoadToCacheCount;
+    public int RemoveFromCacheCount;
+    
+    public void ResetAllStatistics()
+    {
+        CacheHitCount = 0;
+        CacheMissCount = 0;
+        CacheWipeCount = 0;
+        LruUpdateCount = 0;
+        LoadToCacheCount = 0;
+        RemoveFromCacheCount = 0;
+    }
 
     public void WriteInFile(long offset, byte[] data)
     {
@@ -27,6 +43,7 @@ public class CachedFileAccessService(
                 {
                     _cache.Remove(page);
                     _lruList.Remove(page);
+                    Interlocked.Increment(ref CacheWipeCount);
                 }
             }
         }
@@ -67,12 +84,15 @@ public class CachedFileAccessService(
                 {
                     _lruList.Remove(pageOffset);
                     _lruList.AddLast(pageOffset);
+                    Interlocked.Increment(ref LruUpdateCount);
                 }
+                Interlocked.Increment(ref CacheHitCount);
                 return cache;
             }
 
             var pageData = _fileAccessService.ReadInFile(pageOffset * pageSize, pageSize);
             AddToCache(pageOffset, pageData);
+            Interlocked.Increment(ref CacheMissCount);
             return pageData;
         }
     }
@@ -109,10 +129,12 @@ public class CachedFileAccessService(
                 var oldestPage = _lruList.First!.Value;
                 _lruList.RemoveFirst();
                 _cache.Remove(oldestPage);
+                Interlocked.Increment(ref RemoveFromCacheCount);
             }
             
             _cache[pageOffset] = data;
             _lruList.AddLast(pageOffset);
+            Interlocked.Increment(ref LoadToCacheCount);
         }
     }
 }
