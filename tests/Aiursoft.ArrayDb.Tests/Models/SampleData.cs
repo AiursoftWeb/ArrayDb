@@ -1,4 +1,4 @@
-﻿namespace Aiursoft.ArrayDb.Tests;
+﻿namespace Aiursoft.ArrayDb.Tests.Models;
 
 public class SampleData
 {
@@ -7,5 +7,4 @@ public class SampleData
     public int MyNumber2 { get; init; }
     public bool MyBoolean1 { get; init; }
     public string? MyString2 { get; init; }
-    public DateTime MyDateTime { get; set; } = DateTime.UtcNow;
 }

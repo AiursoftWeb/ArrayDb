@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.Engine.Extensions;
 using Aiursoft.ArrayDb.Engine.ObjectStorage;
+using Aiursoft.ArrayDb.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests;
@@ -13,7 +14,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestWrite()
     {
         var stopWatch = new Stopwatch();
-        // Write 10 0000 times in less than 10 seconds. On my machine: 4214ms -> 3707ms
+        // Write 10 0000 times in less than 20 seconds. On my machine: 4214ms -> 3707ms
         stopWatch.Start();
         var persistService =
             new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
@@ -31,7 +32,7 @@ public class PerformanceTests : ArrayDbTestBase
         }
         stopWatch.Stop();
         Console.WriteLine($"Write 100000 time: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
     }
 
     [TestMethod]

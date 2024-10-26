@@ -9,6 +9,17 @@ namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
 
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
+///
+/// Supported types:
+/// * int
+/// * bool
+/// * string Stored as Offset and Length
+/// * DateTime Stored as DateTime.Ticks
+/// * long
+/// * float
+/// * double
+/// * TimeSpan Stored as TimeSpan.Ticks
+/// * Guid Stored as 16 bytes
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class ObjectRepository<T> where T : new()
@@ -128,7 +139,27 @@ Underlying string repository statistics:
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
-                size += sizeof(long); // DateTime is stored as long
+                size += sizeof(long); // DateTime is stored as DateTime.Ticks, which is a long.
+            }
+            else if (prop.PropertyType == typeof(long))
+            {
+                size += sizeof(long);
+            }
+            else if (prop.PropertyType == typeof(float))
+            {
+                size += sizeof(float);
+            }
+            else if (prop.PropertyType == typeof(double))
+            {
+                size += sizeof(double);
+            }
+            else if (prop.PropertyType == typeof(TimeSpan))
+            {
+                size += sizeof(long); // TimeSpan is stored as TimeSpan.Ticks, which is a long.
+            }
+            else if (prop.PropertyType == typeof(Guid))
+            {
+                size += 16; // Guid is stored as 16 bytes.
             }
             else
             {
@@ -185,25 +216,54 @@ Underlying string repository statistics:
         var properties = typeof(T).GetProperties();
         foreach (var prop in properties)
         {
-            if (prop.PropertyType == typeof(bool))
+            if (prop.PropertyType == typeof(int))
+            {
+                Unsafe.WriteUnaligned(ref buffer[offset], (int)prop.GetValue(objWithStrings.Object)!);
+                offset += sizeof(int);
+            }
+            else if (prop.PropertyType == typeof(bool))
             {
                 Unsafe.WriteUnaligned(ref buffer[offset], (bool)prop.GetValue(objWithStrings.Object)! ? 1 : 0);
                 offset += sizeof(int);
             }
-            else if (prop.PropertyType == typeof(int))
+            else if (prop.PropertyType == typeof(string))
             {
-                Unsafe.WriteUnaligned(ref buffer[offset], (int)prop.GetValue(objWithStrings.Object)!);
-                offset += sizeof(int);
+                // String should be ignored here. It is stored in the string file.
+                // Later at the end of the method, we will save the offsets and lengths of the strings.
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
                 Unsafe.WriteUnaligned(ref buffer[offset], ((DateTime)prop.GetValue(objWithStrings.Object)!).Ticks);
                 offset += sizeof(long);
             }
-            else if (prop.PropertyType == typeof(string))
+            else if (prop.PropertyType == typeof(long))
             {
-                // String should be ignored here. It is stored in the string file.
-                // Later at the end of the method, we will save the offsets and lengths of the strings.
+                Unsafe.WriteUnaligned(ref buffer[offset], (long)prop.GetValue(objWithStrings.Object)!);
+                offset += sizeof(long);
+            }
+            else if (prop.PropertyType == typeof(float))
+            {
+                Unsafe.WriteUnaligned(ref buffer[offset], (float)prop.GetValue(objWithStrings.Object)!);
+                offset += sizeof(float);
+            }
+            else if (prop.PropertyType == typeof(double))
+            {
+                Unsafe.WriteUnaligned(ref buffer[offset], (double)prop.GetValue(objWithStrings.Object)!);
+                offset += sizeof(double);
+            }
+            else if (prop.PropertyType == typeof(TimeSpan))
+            {
+                Unsafe.WriteUnaligned(ref buffer[offset], ((TimeSpan)prop.GetValue(objWithStrings.Object)!).Ticks);
+                offset += sizeof(long);
+            }
+            else if (prop.PropertyType == typeof(Guid))
+            {
+                var guidBytes = ((Guid)prop.GetValue(objWithStrings.Object)!).ToByteArray();
+                for (var i = 0; i < 16; i++)
+                {
+                    buffer[offset + i] = guidBytes[i];
+                }
+                offset += 16;
             }
             else
             {
@@ -229,17 +289,22 @@ Underlying string repository statistics:
         var properties = typeof(T).GetProperties();
         foreach (var prop in properties)
         {
-            if (prop.PropertyType == typeof(bool))
+            if (prop.PropertyType == typeof(int))
+            {
+                var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
+                prop.SetValue(obj, value);
+                offset += sizeof(int);
+            }
+            else if (prop.PropertyType == typeof(bool))
             {
                 var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
                 prop.SetValue(obj, value == 1);
                 offset += sizeof(int);
             }
-            else if (prop.PropertyType == typeof(int))
+            else if (prop.PropertyType == typeof(string))
             {
-                var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-                prop.SetValue(obj, value);
-                offset += sizeof(int);
+                // String should be ignored here. It is loaded from the string file.
+                // Later at the end of the method, we will load the strings.
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
@@ -247,10 +312,39 @@ Underlying string repository statistics:
                 prop.SetValue(obj, new DateTime(ticks));
                 offset += sizeof(long);
             }
-            else if (prop.PropertyType == typeof(string))
+            else if (prop.PropertyType == typeof(long))
             {
-                // String should be ignored here. It is loaded from the string file.
-                // Later at the end of the method, we will load the strings.
+                var value = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
+                prop.SetValue(obj, value);
+                offset += sizeof(long);
+            }
+            else if (prop.PropertyType == typeof(float))
+            {
+                var value = Unsafe.ReadUnaligned<float>(ref buffer[offset]);
+                prop.SetValue(obj, value);
+                offset += sizeof(float);
+            }
+            else if (prop.PropertyType == typeof(double))
+            {
+                var value = Unsafe.ReadUnaligned<double>(ref buffer[offset]);
+                prop.SetValue(obj, value);
+                offset += sizeof(double);
+            }
+            else if (prop.PropertyType == typeof(TimeSpan))
+            {
+                var ticks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
+                prop.SetValue(obj, new TimeSpan(ticks));
+                offset += sizeof(long);
+            }
+            else if (prop.PropertyType == typeof(Guid))
+            {
+                var guidBytes = new byte[16];
+                for (var i = 0; i < 16; i++)
+                {
+                    guidBytes[i] = buffer[offset + i];
+                }
+                prop.SetValue(obj, new Guid(guidBytes));
+                offset += 16;
             }
             else
             {

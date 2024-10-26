@@ -1,4 +1,5 @@
 using Aiursoft.ArrayDb.Engine.ObjectStorage;
+using Aiursoft.ArrayDb.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests;
@@ -108,6 +109,33 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(2 * 10, readSample2.MyNumber2);
         Assert.AreEqual(3 % 2 == 0, readSample2.MyBoolean1);
         Assert.AreEqual(string.Empty, readSample2.MyString2);
+    }
+    
+    [TestMethod]
+    public void ComplicatedSampleDataTest()
+    {
+        var persistService =
+            new ObjectRepository<ComplicatedSampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        
+        var sample = new ComplicatedSampleData
+        {
+            MyString1 = "Hello, World! 你好世界！",
+            MyDateTime1 = DateTime.Now,
+            MyLong1 = 1234567890,
+            MyFloat1 = 123.456f,
+            MyDouble1 = 123.456,
+            MyTimeSpan1 = TimeSpan.FromDays(1),
+            MyGuid1 = Guid.NewGuid()
+        };
+        persistService.AddBulk([sample]);
+        var result = persistService.ReadBulk(indexFrom:0, count:1);
+        Assert.AreEqual(sample.MyString1, result[0].MyString1);
+        Assert.AreEqual(sample.MyDateTime1, result[0].MyDateTime1);
+        Assert.AreEqual(sample.MyLong1, result[0].MyLong1);
+        Assert.AreEqual(sample.MyFloat1, result[0].MyFloat1);
+        Assert.AreEqual(sample.MyDouble1, result[0].MyDouble1);
+        Assert.AreEqual(sample.MyTimeSpan1, result[0].MyTimeSpan1);
+        Assert.AreEqual(sample.MyGuid1, result[0].MyGuid1);
     }
 
     [TestMethod]
