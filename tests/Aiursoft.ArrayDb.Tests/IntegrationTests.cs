@@ -11,7 +11,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void WriteAndReadTests()
     {
         var persistService =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
         for (var i = 0; i < 1; i++)
         {
@@ -42,7 +42,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void WriteAndReadEmptyString()
     {
         var persistService =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
         var sample = new SampleData
         {
@@ -66,7 +66,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void RebootTest()
     {
         var persistService =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
         var sample = new SampleData
         {
@@ -88,7 +88,7 @@ public class IntegrationTests : ArrayDbTestBase
         persistService.Add(sample2);
         
         var persistService2 =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
         var length = persistService2.Count;
         Assert.AreEqual(2, length);
@@ -114,7 +114,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void AddBulkAndReadBulk()
     {
         var persistService =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
@@ -133,7 +133,7 @@ public class IntegrationTests : ArrayDbTestBase
         persistService.AddBulk(samplesArray);
         
         var persistService2 =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
         var readSamples = persistService2.ReadBulk(0, 2);
         for (var i = 0; i < 2; i++)
@@ -153,7 +153,7 @@ public class IntegrationTests : ArrayDbTestBase
     {
         // Bulk write 2 samples
         var persistService =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
@@ -187,7 +187,7 @@ public class IntegrationTests : ArrayDbTestBase
         
         // Read all 5 samples
         var persistService2 =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         
         var readSamples = persistService2.ReadBulk(0, 5);
         for (var i = 0; i < 5; i++)
@@ -207,7 +207,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void ReadOutOfRangeTest()
     {
         var persistService =
-            new ObjectPersistOnDiskService<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
 
         // Write 2 samples
         var samples = new List<SampleData>();

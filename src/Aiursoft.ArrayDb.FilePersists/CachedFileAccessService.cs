@@ -30,6 +30,21 @@ public class CachedFileAccessService(
         RemoveFromCacheCount = 0;
     }
 
+    public string OutputCacheReport()
+    {
+        return $@"
+Cache usage report:
+
+* Underlying file path: {_fileAccessService.Path}
+* Cache hit count: {CacheHitCount}
+* Cache miss count: {CacheMissCount}
+* Cache wipe count: {CacheWipeCount}
+* LRU update count: {LruUpdateCount}
+* Load to cache count: {LoadToCacheCount}
+* Remove from cache count: {RemoveFromCacheCount}
+";
+    }
+
     public void WriteInFile(long offset, byte[] data)
     {
         // Clear cache for the pages that will be overwritten

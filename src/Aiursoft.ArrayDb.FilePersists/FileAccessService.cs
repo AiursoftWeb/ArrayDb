@@ -2,13 +2,35 @@ namespace Aiursoft.ArrayDb.FilePersists;
 
 public class FileAccessService
 {
-    private readonly string _path;
+    public readonly string Path;
+    public int SeekWriteCount;
+    public int SeekReadCount;
+    public int ExpandSizeCount;
     private long _currentSize;
     private readonly object _expandSizeLock = new();
+    
+    public void ResetAllStatistics()
+    {
+        SeekWriteCount = 0;
+        SeekReadCount = 0;
+        ExpandSizeCount = 0;
+    }
+    
+    public string OutputStatistics()
+    {
+        return $@"
+File access service statistics:
 
+* Underlying file path: {Path}
+* Seek write count: {SeekWriteCount}
+* Seek read count: {SeekReadCount}
+* Expand size count: {ExpandSizeCount}
+";
+    }
+    
     public FileAccessService(string path, long initialSizeIfNotExists)
     {
-        _path = path;
+        Path = path;
         if (!File.Exists(path))
         {
             using var fs = File.Create(path);
@@ -26,14 +48,16 @@ public class FileAccessService
             {
                 _currentSize *= 2;
             }
-            using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
+            using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
             fs.SetLength(_currentSize);
+            Interlocked.Increment(ref ExpandSizeCount);
         }
 
-        using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Write))
+        using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Write))
         {
             fs.Seek(offset, SeekOrigin.Begin);
             fs.Write(data);
+            Interlocked.Increment(ref SeekWriteCount);
         }
     }
 
@@ -45,15 +69,17 @@ public class FileAccessService
             {
                 _currentSize *= 2;
             }
-            using var fs = new FileStream(_path, FileMode.Open, FileAccess.Write);
+            using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
             fs.SetLength(_currentSize);
+            Interlocked.Increment(ref ExpandSizeCount);
         }
 
-        using (var fs = new FileStream(_path, FileMode.Open, FileAccess.Read))
+        using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Read))
         {
             fs.Seek(offset, SeekOrigin.Begin);
             var buffer = new byte[length];
             var read = fs.Read(buffer, 0, length);
+            Interlocked.Increment(ref SeekReadCount);
             if (read != length)
             {
                 throw new Exception("Failed to read the expected length of data");

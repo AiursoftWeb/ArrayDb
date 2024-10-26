@@ -9,7 +9,7 @@ namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectPersistOnDiskService<T> where T : new()
+public class ObjectRepository<T> where T : new()
 {
     // Save the offset
     public long Count;
@@ -27,7 +27,7 @@ public class ObjectPersistOnDiskService<T> where T : new()
     /// <param name="stringFilePath">The path to the file that stores the string data.</param>
     /// <param name="initialSizeIfNotExists">The initial size of the file if it does not exist.</param>
     /// <typeparam name="T"></typeparam>
-    public ObjectPersistOnDiskService(string structureFilePath, string stringFilePath, long initialSizeIfNotExists)
+    public ObjectRepository(string structureFilePath, string stringFilePath, long initialSizeIfNotExists)
     {
         StructureFileAccess = new(structureFilePath, initialSizeIfNotExists);
         StringRepository = new(stringFilePath, initialSizeIfNotExists);
