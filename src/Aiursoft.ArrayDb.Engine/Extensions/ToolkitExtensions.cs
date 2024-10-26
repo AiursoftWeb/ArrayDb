@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Aiursoft.ArrayDb.Extensions;
+namespace Aiursoft.ArrayDb.Engine.Extensions;
 
 public static class ToolkitExtensions
 {

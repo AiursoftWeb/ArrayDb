@@ -5,11 +5,13 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E598DD69-F1C1-4E86-9500-1BE6A1556B7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb", "src\Aiursoft.ArrayDb\Aiursoft.ArrayDb.csproj", "{9B715672-55B7-4CD9-8962-B5B6DB0F4C89}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{06B1DE51-B0F0-4473-B183-DD164B8C440B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Tests", "tests\Aiursoft.ArrayDb.Tests\Aiursoft.ArrayDb.Tests.csproj", "{E6B3955F-F1B8-410A-A33B-79E10F6C056F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Engine", "src\Aiursoft.ArrayDb.Engine\Aiursoft.ArrayDb.Engine.csproj", "{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.FilePersists", "src\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj", "{22550501-7473-44A1-8D8C-E72B37400350}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,17 +22,22 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{9B715672-55B7-4CD9-8962-B5B6DB0F4C89} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F} = {06B1DE51-B0F0-4473-B183-DD164B8C440B}
+		{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{22550501-7473-44A1-8D8C-E72B37400350} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9B715672-55B7-4CD9-8962-B5B6DB0F4C89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9B715672-55B7-4CD9-8962-B5B6DB0F4C89}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9B715672-55B7-4CD9-8962-B5B6DB0F4C89}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9B715672-55B7-4CD9-8962-B5B6DB0F4C89}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22550501-7473-44A1-8D8C-E72B37400350}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22550501-7473-44A1-8D8C-E72B37400350}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22550501-7473-44A1-8D8C-E72B37400350}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22550501-7473-44A1-8D8C-E72B37400350}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.FileSystem;
+namespace Aiursoft.ArrayDb.FilePersists;
 
 public class FileAccessService
 {
