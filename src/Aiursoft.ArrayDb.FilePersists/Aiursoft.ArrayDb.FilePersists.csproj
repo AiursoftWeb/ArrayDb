@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.FilePersists</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.FilePersists</RootNamespace>
@@ -15,5 +15,13 @@
     <Description>Nuget package of 'FilePersists' provided by Aiursoft</Description>
     <PackageId>Aiursoft.ArrayDb.FilePersists</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="." />
+  </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.Engine</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.Engine</RootNamespace>
@@ -13,14 +13,16 @@
     <Company>ArrayDb</Company>
     <Product>ArrayDb</Product>
     <Description>Nuget package of 'ArrayDb' provided by ArrayDb</Description>
-    <PackageId>Aiursoft.ArrayDb</PackageId>
+    <PackageId>Aiursoft.ArrayDb.Engine</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj" />
+    <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
 </Project>
