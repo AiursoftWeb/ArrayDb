@@ -86,6 +86,25 @@ public class StringRepository
         return stringInByteArrays;
     }
 
+    public IEnumerable<StringInByteArray> BulkWriteStringContentAndGetOffsetV2(ProcessingString[] processedStrings)
+    {
+        // This version, we fetch all strings and save it in a byte array
+        // Then we write the byte array to the file
+        // Then we calculate the offset of each string
+        var allBytes = processedStrings.SelectMany(p => p.Bytes).ToArray();
+        var writeOffset = FileEndOffset;
+        _fileAccess.WriteInFile(writeOffset, allBytes);
+        var offset = writeOffset;
+        foreach (var processedString in processedStrings)
+        {
+            var stringInByteArray = new StringInByteArray { Offset = offset, Length = processedString.Length };
+            offset += processedString.Length;
+            yield return stringInByteArray;
+        }
+        FileEndOffset = offset;
+        _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
+    }
+
     public string? LoadStringContent(long offset, int length)
     {
         switch (offset)
@@ -101,4 +120,10 @@ public class StringRepository
             }
         }
     }
+}
+
+public class ProcessingString
+{
+    public int Length;
+    public required byte[] Bytes;
 }

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Aiursoft.ArrayDb;
 
@@ -102,19 +103,30 @@ public class ObjectPersistOnDiskService<T> where T : new()
     // T to OWPST
     private ObjectWithPersistedStrings<T>[] SaveObjectStrings(T[] objs)
     {
-        IEnumerable<string> stringsQuery = [];
+        ProcessingString[] strings = [];
         int stringsCount = 0;
         ToolkitExtensions.RunWithTimedBench("Extracting strings from objects", () =>
         {
             stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
             var properties = typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
-            stringsQuery = objs.SelectMany(obj => properties.Select(p => (string)p.GetValue(obj)!));
+            strings = objs
+                .SelectMany(obj => properties.Select(p => (string)p.GetValue(obj)!))
+                .Select(str =>
+                {
+                    if (string.IsNullOrEmpty(str))
+                    {
+                        return new ProcessingString { Length = 0, Bytes = [] };
+                    }
+                    var stringBytes = Encoding.UTF8.GetBytes(str);
+                    return new ProcessingString { Length = stringBytes.Length, Bytes = stringBytes };
+                })
+                .ToArray();
         });
 
         StringInByteArray[] savedStrings = [];
         ToolkitExtensions.RunWithTimedBench("Saving the strings of objects on disk", () =>
         {
-            savedStrings = StringRepository.BulkWriteStringContentAndGetOffset(stringsQuery, stringsCount * objs.Length);
+            savedStrings = StringRepository.BulkWriteStringContentAndGetOffsetV2(strings).ToArray();
         });
         
         ObjectWithPersistedStrings<T>[] result = [];

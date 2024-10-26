@@ -49,7 +49,7 @@ public class IntegrationTests : ArrayDbTestBase
             MyString1 = string.Empty,
             MyNumber2 = 2 * 10,
             MyBoolean1 = 3 % 2 == 0,
-            MyString2 = null
+            MyString2 = null // All null strings will be converted to empty string.
         };
         persistService.Add(sample);
         var readSample = persistService.Read(0);
@@ -57,7 +57,7 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(string.Empty, readSample.MyString1);
         Assert.AreEqual(2 * 10, readSample.MyNumber2);
         Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1);
-        Assert.AreEqual(null, readSample.MyString2);
+        Assert.AreEqual(string.Empty, readSample.MyString2);
     }
 
     [TestMethod]
@@ -73,7 +73,7 @@ public class IntegrationTests : ArrayDbTestBase
             MyString1 = "我和我的祖国",
             MyNumber2 = 2 * 10,
             MyBoolean1 = 3 % 2 == 0,
-            MyString2 = null
+            MyString2 = null // All null strings will be converted to empty string.
         };
         var sample2 = new SampleData
         {
@@ -81,7 +81,7 @@ public class IntegrationTests : ArrayDbTestBase
             MyString1 = "我和我的祖国啊",
             MyNumber2 = 2 * 10,
             MyBoolean1 = 3 % 2 == 0,
-            MyString2 = null
+            MyString2 = null // All null strings will be converted to empty string.
         };
         persistService.Add(sample);
         persistService.Add(sample2);
@@ -99,14 +99,14 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual("我和我的祖国", readSample.MyString1);
         Assert.AreEqual(2 * 10, readSample.MyNumber2);
         Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1);
-        Assert.AreEqual(null, readSample.MyString2);
+        Assert.AreEqual(string.Empty, readSample.MyString2);
         
         var readSample2 = persistService2.Read(1);
         Assert.AreEqual(1, readSample2.MyNumber1);
         Assert.AreEqual("我和我的祖国啊", readSample2.MyString1);
         Assert.AreEqual(2 * 10, readSample2.MyNumber2);
         Assert.AreEqual(3 % 2 == 0, readSample2.MyBoolean1);
-        Assert.AreEqual(null, readSample2.MyString2);
+        Assert.AreEqual(string.Empty, readSample2.MyString2);
     }
 
     [TestMethod]
