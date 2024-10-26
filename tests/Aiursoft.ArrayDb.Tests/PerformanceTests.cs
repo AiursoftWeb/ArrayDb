@@ -70,7 +70,7 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         
         var stopWatch = new Stopwatch();
-        // Write 100 0000 times in less than 5 seconds. On my machine: 42148ms -> 37292ms -> 24595ms -> 15177ms -> 14934ms -> 14595ms -> 1060ms -> 680ms -> 643ms -> 530ms -> 352ms
+        // Write 100 0000 times in less than 5 seconds. On my machine: 42148ms -> 37292ms -> 24595ms -> 15177ms -> 14934ms -> 14595ms -> 1060ms -> 680ms -> 643ms -> 530ms -> 352ms -> 308ms
         stopWatch.Start();
         persistService.AddBulk(samplesArray);
         stopWatch.Stop();
