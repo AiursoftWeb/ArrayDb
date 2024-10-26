@@ -8,7 +8,6 @@ namespace Aiursoft.ArrayDb.Tests;
 [TestClass]
 public class PerformanceTests : ArrayDbTestBase
 {
-    
     [TestMethod]
     [Obsolete(message: "I understand that reading item one by one is slow, but this test need to cover the scenario.")]
     public void PerformanceTestWrite()

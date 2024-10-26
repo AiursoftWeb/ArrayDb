@@ -71,7 +71,7 @@ public class IntegrationTests : ArrayDbTestBase
         var sample = new SampleData
         {
             MyNumber1 = 1,
-            MyString1 = "我和我的祖国",
+            MyString1 = "我和我的祖国 Oh",
             MyNumber2 = 2 * 10,
             MyBoolean1 = 3 % 2 == 0,
             MyString2 = null // All null strings will be converted to empty string.
@@ -79,7 +79,7 @@ public class IntegrationTests : ArrayDbTestBase
         var sample2 = new SampleData
         {
             MyNumber1 = 1,
-            MyString1 = "我和我的祖国啊",
+            MyString1 = "My country and I 啊",
             MyNumber2 = 2 * 10,
             MyBoolean1 = 3 % 2 == 0,
             MyString2 = null // All null strings will be converted to empty string.
@@ -93,18 +93,18 @@ public class IntegrationTests : ArrayDbTestBase
         var length = persistService2.Count;
         Assert.AreEqual(2, length);
         var offSet = persistService2.StringRepository.FileEndOffset;
-        Assert.AreEqual(47, offSet);
+        Assert.AreEqual(49, offSet);
         
         var readSample = persistService2.Read(0);
         Assert.AreEqual(1, readSample.MyNumber1);
-        Assert.AreEqual("我和我的祖国", readSample.MyString1);
+        Assert.AreEqual("我和我的祖国 Oh", readSample.MyString1);
         Assert.AreEqual(2 * 10, readSample.MyNumber2);
         Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1);
         Assert.AreEqual(string.Empty, readSample.MyString2);
         
         var readSample2 = persistService2.Read(1);
         Assert.AreEqual(1, readSample2.MyNumber1);
-        Assert.AreEqual("我和我的祖国啊", readSample2.MyString1);
+        Assert.AreEqual("My country and I 啊", readSample2.MyString1);
         Assert.AreEqual(2 * 10, readSample2.MyNumber2);
         Assert.AreEqual(3 % 2 == 0, readSample2.MyBoolean1);
         Assert.AreEqual(string.Empty, readSample2.MyString2);
