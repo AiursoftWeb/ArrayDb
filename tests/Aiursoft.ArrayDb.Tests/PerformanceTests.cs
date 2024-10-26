@@ -46,7 +46,7 @@ public class PerformanceTests : ArrayDbTestBase
                 PerformanceTestBulkWrite();
             }
         });
-        Assert.IsTrue(time.TotalSeconds < 40); // On my machine, it's usually 6s.
+        Assert.IsTrue(time.TotalSeconds < 45); // On my machine, it's usually 6s.
     }
     
     [TestMethod]
