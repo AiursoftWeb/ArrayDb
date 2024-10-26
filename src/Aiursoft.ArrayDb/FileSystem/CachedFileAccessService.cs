@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb;
+namespace Aiursoft.ArrayDb.FileSystem;
 
 public class CachedFileAccessService(
     string path,
@@ -54,25 +54,20 @@ public class CachedFileAccessService(
         return result;
     }
 
-
     private byte[] GetPageFromCache(long pageOffset)
     {
         lock (_cacheLock)
         {
             if (_cache.TryGetValue(pageOffset, out var cache))
             {
-                // Cache hit. Update LRU list
-                var needUpdateLru = ShouldUpdateLru(pageOffset);
-                if (needUpdateLru)
+                if (ShouldUpdateLru(pageOffset))
                 {
                     _lruList.Remove(pageOffset);
                     _lruList.AddLast(pageOffset);
                 }
-
                 return cache;
             }
 
-            // Cache miss. Read from file
             var pageData = _fileAccessService.ReadInFile(pageOffset * pageSize, pageSize);
             AddToCache(pageOffset, pageData);
             return pageData;
@@ -89,7 +84,7 @@ public class CachedFileAccessService(
             // No item in LRU list
             return false;
         }
-        for (int i = 0; i < veryRecentPageAccessLimit; i++)
+        for (var i = 0; i < veryRecentPageAccessLimit; i++)
         {
             if (pointer!.Value == pageOffset)
             {

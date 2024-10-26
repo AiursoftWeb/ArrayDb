@@ -1,6 +1,8 @@
 using System.Text;
+using Aiursoft.ArrayDb.FileSystem;
+using Aiursoft.ArrayDb.Models;
 
-namespace Aiursoft.ArrayDb;
+namespace Aiursoft.ArrayDb.ObjectStorage;
 
 /// <summary>
 /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
@@ -8,10 +10,13 @@ namespace Aiursoft.ArrayDb;
 /// </summary>
 public class StringRepository
 {
-    private readonly CachedFileAccessService _fileAccess;
+    // Save the offset.
     public long FileEndOffset;
+    private const int EndOffsetSize = sizeof(long);
     private readonly object _expandSizeLock = new();
-    private const int EndOffsetSize = sizeof(long); // We reserve the first 8 bytes for EndOffset
+    
+    // Underlying storage
+    private readonly CachedFileAccessService _fileAccess;
 
     /// <summary>
     /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.
@@ -31,34 +36,34 @@ public class StringRepository
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
 
-    public (long offset, int stringLength) WriteStringContentAndGetOffset(string? str)
+    private long RequestWriteSpaceAndGetStartOffset(int length)
     {
-        switch (str)
+        long writeOffset;
+        lock (_expandSizeLock)
         {
-            case "":
-                return (-1, 0); // -1 offset indicates empty string
-            case null:
-                return (-2, 0); // -2 offset indicates null string
+            writeOffset = FileEndOffset;
+            FileEndOffset += length;
+            _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
+        }
+        return writeOffset;
+    }
+    
+    public SavedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings)
+    {
+        var allBytes = processedStrings.SelectMany(x => x).ToArray();
+        var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
+        _fileAccess.WriteInFile(writeOffset, allBytes);
+        var offset = writeOffset;
+        var result = new SavedString[processedStrings.Length];
+        var index = 0;
+        foreach (var processedString in processedStrings)
+        {
+            result[index] = new SavedString { Offset = offset, Length = processedString.Length };
+            offset += processedString.Length;
+            index++;
         }
 
-        var stringBytes = Encoding.UTF8.GetBytes(str);
-
-        long currentOffset;
-        lock (_expandSizeLock) // Lock to prevent multiple threads from expanding the file size at the same time
-        {
-            currentOffset = FileEndOffset;
-            var newOffset = currentOffset + stringBytes.Length;
-            FileEndOffset = newOffset;
-        }
-        
-        // Save the string content to the string file
-        _fileAccess.WriteInFile(currentOffset, stringBytes);
-        
-        // Update the end offset in the string file
-        // TODO: This should be done asynchronously to avoid blocking the main thread.
-        _fileAccess.WriteInFile(0, BitConverter.GetBytes(FileEndOffset));
-
-        return (currentOffset, stringBytes.Length);
+        return result;
     }
 
     public string? LoadStringContent(long offset, int length)
