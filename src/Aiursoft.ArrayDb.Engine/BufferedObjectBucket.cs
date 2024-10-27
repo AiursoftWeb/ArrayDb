@@ -85,27 +85,29 @@ Underlying object bucket statistics:
 
     public void AddBuffered(T obj)
     {
-        // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
-        if (IsHot)
+        // Only single thread. Or multiple threads may QueueAddBulk and StartCooldown at the same time.
+        lock (_bufferWriteLock)
         {
-            Interlocked.Increment(ref RequestHotWriteCount);
-            lock (_bufferWriteLock)
+            // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
+            if (IsHot)
             {
+                Interlocked.Increment(ref RequestHotWriteCount);
                 if (_buffer.Count >= maxBufferedItemsCount)
                 {
                     WaitUntilCoolAsync().Wait();
                 }
+
                 // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
                 _buffer.Enqueue(obj);
             }
-        }
-        // Is cold status, directly queue add then start cooldown
-        else
-        {
-            Interlocked.Increment(ref RequestColdWriteCount);
-            // Add and start cooldown
-            QueueAddBulk([obj]);
-            StartCooldown();
+            // Is cold status, directly queue add then start cooldown
+            else
+            {
+                Interlocked.Increment(ref RequestColdWriteCount);
+                // Add and start cooldown
+                QueueAddBulk([obj]);
+                StartCooldown();
+            }
         }
     }
     
