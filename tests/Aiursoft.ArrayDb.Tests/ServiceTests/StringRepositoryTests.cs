@@ -1,16 +1,17 @@
 using System.Text;
+using Aiursoft.ArrayDb.Tests.Base;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 
 [TestClass]
-public class StringRepositoryTests
+public class StringRepositoryTests : ArrayDbTestBase
 {
     [TestMethod]
     public void MultipleThreadsBulkWriteStringContentShouldBeThreadSafe()
     {
         // Path to a temporary file for testing
-        var tempFilePath = "testStringData.bin";
+        var tempFilePath = "sampleDataStrings.bin";
 
         // Initialize the StringRepository with suitable file and cache settings
         var stringRepository = new StringRepository.ObjectStorage.StringRepository(
