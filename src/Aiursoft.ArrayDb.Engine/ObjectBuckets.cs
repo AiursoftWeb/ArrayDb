@@ -80,10 +80,10 @@ Underlying string repository statistics:
     public ObjectBuckets(
         string structureFilePath, 
         string stringFilePath, 
-        long initialSizeIfNotExists = Consts.DefaultFileSize,
-        int cachePageSize = Consts.CachePageSize,
-        int maxCachedPagesCount = Consts.MaxCachedPagesCount,
-        int hotCacheItems = Consts.HotCacheItems)
+        long initialSizeIfNotExists = Consts.DefaultPhysicalFileSize,
+        int cachePageSize = Consts.ReadCachePageSize,
+        int maxCachedPagesCount = Consts.MaxReadCachedPagesCount,
+        int hotCacheItems = Consts.ReadCacheHotCacheItems)
     {
         StructureFileAccess = new(
             path: structureFilePath,

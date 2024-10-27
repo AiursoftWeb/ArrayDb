@@ -15,11 +15,9 @@ namespace Aiursoft.ArrayDb.WriteBuffer;
 /// <param name="maxCooldownMilliseconds">The maximum cooldown time in milliseconds. Suggested value is 1000 * 16. Because the queue may not be able to handle the high frequency of writes. According to the remaining tasks in the queue, increase the next cooldown time. But not more than 16 times the initial cooldown time.</param>
 public class BufferedObjectBuckets<T>(
     ObjectBuckets<T> innerBucket,
-    int maxBufferedItemsCount = 0x1000000,// 16M
-    // Don't set this too small. Because only write large data in bulk can be efficient.
-    // Don't set this too large. Because it will cause huge latency for the write operation.
-    int initialCooldownMilliseconds = 1000,
-    int maxCooldownMilliseconds = 1000 * 16)
+    int maxBufferedItemsCount = Consts.MaxWriteBufferCachedItemsCount,
+    int initialCooldownMilliseconds = Consts.WriteBufferInitialCooldownMilliseconds,
+    int maxCooldownMilliseconds = Consts.WriteBufferMaxCooldownMilliseconds)
     where T : new()
 {
     private readonly TasksQueue _tasksQueue = new();
