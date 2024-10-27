@@ -1,5 +1,4 @@
 using System.Text;
-using Aiursoft.ArrayDb.Engine.ObjectStorage;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests;
@@ -14,7 +13,7 @@ public class StringRepositoryTests
         var tempFilePath = "testStringData.bin";
 
         // Initialize the StringRepository with suitable file and cache settings
-        var stringRepository = new StringRepository(
+        var stringRepository = new StringRepository.ObjectStorage.StringRepository(
             stringFilePath: tempFilePath,
             initialUnderlyingFileSizeIfNotExists: 0x10000,
             cachePageSize: 1024,

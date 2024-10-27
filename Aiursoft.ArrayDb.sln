@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Engine", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.FilePersists", "src\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj", "{22550501-7473-44A1-8D8C-E72B37400350}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.StringRepository", "src\Aiursoft.ArrayDb.StringRepository\Aiursoft.ArrayDb.StringRepository.csproj", "{5C343DE2-E0C1-4760-89CF-4F345EF73E70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,7 @@ Global
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F} = {06B1DE51-B0F0-4473-B183-DD164B8C440B}
 		{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 		{22550501-7473-44A1-8D8C-E72B37400350} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{5C343DE2-E0C1-4760-89CF-4F345EF73E70} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -39,5 +42,9 @@ Global
 		{22550501-7473-44A1-8D8C-E72B37400350}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22550501-7473-44A1-8D8C-E72B37400350}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22550501-7473-44A1-8D8C-E72B37400350}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C343DE2-E0C1-4760-89CF-4F345EF73E70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C343DE2-E0C1-4760-89CF-4F345EF73E70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C343DE2-E0C1-4760-89CF-4F345EF73E70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C343DE2-E0C1-4760-89CF-4F345EF73E70}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.6</Version>
+    <Version>1.0.1</Version>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.ArrayDb.Engine</AssemblyName>
-    <RootNamespace>Aiursoft.ArrayDb.Engine</RootNamespace>
+    <AssemblyName>Aiursoft.ArrayDb.StringRepository</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.StringRepository</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Company>ArrayDb</Company>
-    <Product>ArrayDb</Product>
-    <Description>Nuget package of 'ArrayDb' provided by ArrayDb</Description>
-    <PackageId>Aiursoft.ArrayDb.Engine</PackageId>
+    <Company>Aiursoft</Company>
+    <Product>StringRepository</Product>
+    <Description>Nuget package of 'StringRepository' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.StringRepository</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
@@ -22,7 +22,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
-    <ProjectReference Include="..\Aiursoft.ArrayDb.StringRepository\Aiursoft.ArrayDb.StringRepository.csproj" />
   </ItemGroup>
 </Project>

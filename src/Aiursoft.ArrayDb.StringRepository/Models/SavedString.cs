@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.Engine.Models;
+namespace Aiursoft.ArrayDb.StringRepository.Models;
 
 public struct SavedString
 {

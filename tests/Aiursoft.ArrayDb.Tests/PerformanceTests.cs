@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Aiursoft.ArrayDb.Engine.Extensions;
 using Aiursoft.ArrayDb.Engine.ObjectStorage;
 using Aiursoft.ArrayDb.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,7 +16,7 @@ public class PerformanceTests : ArrayDbTestBase
         // Write 10 0000 times in less than 20 seconds. On my machine: 4214ms -> 3707ms
         stopWatch.Start();
         var persistService =
-            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         for (var i = 0; i < 100000; i++)
         {
             var sample = new SampleData
@@ -38,14 +37,15 @@ public class PerformanceTests : ArrayDbTestBase
     [TestMethod]
     public void TenTimesBulkWriteAverage()
     {
-        var time = ToolkitExtensions.RunWithTimedBench("Bench multiple bulk write", () =>
+        var watch = new Stopwatch();
+        watch.Start();
+        for (var i = 0; i < 10; i++)
         {
-            for (var i = 0; i < 10; i++)
-            {
-                Init();
-                PerformanceTestBulkWrite();
-            }
-        });
+            Init();
+            PerformanceTestBulkWrite();
+        }
+        watch.Stop();
+        var time = watch.Elapsed;
         Assert.IsTrue(time.TotalSeconds < 45); // On my machine, it's usually 6s.
     }
     
@@ -53,7 +53,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestBulkWrite()
     {
         var persistService =
-            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         var samples = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
@@ -82,7 +82,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestBulkRead()
     {
         var persistService =
-            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         var samples = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
@@ -99,7 +99,7 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         persistService.AddBulk(samplesArray);
         
-        var persistService2 = new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+        var persistService2 = new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
         // Read 100 0000 times in less than 10 seconds. On my machine 681ms -> 685ms.
@@ -125,7 +125,7 @@ public class PerformanceTests : ArrayDbTestBase
     {
         // Read 100 0000 times in less than 10 seconds. On my machine: 760ms -> 912ms
         var persistService =
-            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         var list = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
@@ -163,7 +163,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void OutputStatistics()
     {
         var persistService =
-            new ObjectRepository<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
+            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin", 0x10000);
         var samples = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {

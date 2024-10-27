@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Aiursoft.ArrayDb.Engine.Models;
 using Aiursoft.ArrayDb.FilePersists;
 using Aiursoft.ArrayDb.FilePersists.Services;
+using Aiursoft.ArrayDb.StringRepository.Models;
 
-namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
+namespace Aiursoft.ArrayDb.StringRepository.ObjectStorage;
 
 /// <summary>
 /// StringRepository is a class designed to handle the storage and retrieval of string data within a specified file.

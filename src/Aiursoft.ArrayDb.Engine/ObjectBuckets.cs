@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Aiursoft.ArrayDb.Engine.Models;
 using Aiursoft.ArrayDb.FilePersists;
 using Aiursoft.ArrayDb.FilePersists.Services;
+using Aiursoft.ArrayDb.StringRepository.Models;
 
 namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
 
@@ -22,7 +22,7 @@ namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
 /// * Guid Stored as 16 bytes
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectRepository<T> where T : new()
+public class ObjectBuckets<T> where T : new()
 {
     // Save the offset
     public long Count;
@@ -31,7 +31,7 @@ public class ObjectRepository<T> where T : new()
     
     // Underlying store
     public readonly CachedFileAccessService StructureFileAccess;
-    public readonly StringRepository StringRepository;
+    public readonly StringRepository.ObjectStorage.StringRepository StringRepository;
     
     // Statistics
     public int SingleAppendCount;
@@ -77,7 +77,7 @@ Underlying string repository statistics:
     /// <param name="maxCachedPagesCount">The maximum number of pages cached in memory.</param>
     /// <param name="hotCacheItems">The number of most recent pages that are considered hot and will not be moved even if they are used.</param>
     /// <typeparam name="T"></typeparam>
-    public ObjectRepository(
+    public ObjectBuckets(
         string structureFilePath, 
         string stringFilePath, 
         long initialSizeIfNotExists = Consts.DefaultFileSize,
