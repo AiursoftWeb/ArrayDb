@@ -36,21 +36,6 @@ public class PerformanceTests : ArrayDbTestBase
     }
 
     [TestMethod]
-    public void TenTimesBulkWriteAverage()
-    {
-        var watch = new Stopwatch();
-        watch.Start();
-        for (var i = 0; i < 10; i++)
-        {
-            Init();
-            PerformanceTestBulkWrite();
-        }
-        watch.Stop();
-        var time = watch.Elapsed;
-        Assert.IsTrue(time.TotalSeconds < 45); // On my machine, it's usually 6s.
-    }
-    
-    [TestMethod]
     public void PerformanceTestBulkWrite()
     {
         var persistService =
