@@ -30,7 +30,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
             buffer.AddBuffered(sample);
         }
         stopWatch.Stop();
-        
+        Console.WriteLine(buffer.OutputStatistics());
         Console.WriteLine($"Write 10000000 times: {stopWatch.ElapsedMilliseconds}ms");
         // Read 1000 0000 times in less than 50 seconds. On my machine 5975ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);

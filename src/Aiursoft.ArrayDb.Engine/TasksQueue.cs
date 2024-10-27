@@ -12,6 +12,8 @@ public class TasksQueue
 
     public Task Engine { get; private set; } = Task.CompletedTask;
     
+    public int PendingTasksCount => _pendingTaskFactories.Count;
+    
     /// <summary>
     /// Adds a new task to the queue.
     /// </summary>

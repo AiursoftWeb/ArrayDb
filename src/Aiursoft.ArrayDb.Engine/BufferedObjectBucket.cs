@@ -7,12 +7,14 @@ public class BufferedObjectBuckets<T>(
     ObjectBuckets<T> innerBucket,
     // Don't set this too small. Because only write large data in bulk can be efficient.
     // Don't set this too large. Because it will cause huge latency for the write operation.
-    int cooldownMilliseconds = 1000)
+    int initialCooldownMilliseconds = 1000,
+    int maxCooldownMilliseconds = 1000 * 16)
     where T : new()
 {
     private readonly TasksQueue _tasksQueue = new();
     private readonly List<T> _buffer = [];
     private readonly object _bufferWriteLock = new();
+    private int _cooldownMilliseconds = initialCooldownMilliseconds;
     
     // Statistics
     public int RequestHotWriteCount;
@@ -45,6 +47,7 @@ Buffered object repository with item type {typeof(T).Name} statistics:
 * Actual write events count: {ActualWriteCount}
 * Cool down events count: {CoolDownEventsCount}
 * Inserted items count record (Top 20): {string.Join(", ", InsertItemsCountRecord.Take(20))}
+* Current cooldown milliseconds: {_cooldownMilliseconds}
 
 Underlying object bucket statistics:
 {innerBucket.OutputStatistics().AppendTabsEachLineHead()}
@@ -95,7 +98,13 @@ Underlying object bucket statistics:
         // Now this instance is hot. Wait for cooldown to flush the buffer.
         CoolDownTimingTask = Task.Run(async () =>
         {
-            await Task.Delay(cooldownMilliseconds);
+            await Task.Delay(_cooldownMilliseconds);
+
+            // Consider the high frequency of writes, the queue may not be able to handle it.
+            // According to the remaining tasks in the queue, increase the next cooldown time.
+            // But not more than 16 times the initial cooldown time.
+            var updatedCooldownMilliseconds = (_tasksQueue.PendingTasksCount + 1) * initialCooldownMilliseconds;
+            _cooldownMilliseconds = Math.Min(updatedCooldownMilliseconds, maxCooldownMilliseconds);
 
             lock (_bufferWriteLock)
             {
@@ -103,10 +112,13 @@ Underlying object bucket statistics:
                 {
                     // Add and restart cooldown
                     QueueAddBulk(_buffer.ToArray());
-                    StartCooldown();
-                    
                     // Clear the buffer
                     _buffer.Clear();
+                    StartCooldown();
+                }
+                else
+                {
+                    _cooldownMilliseconds = initialCooldownMilliseconds;
                 }
             }
         });
