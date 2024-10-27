@@ -28,6 +28,10 @@ public class PerformanceTestBuffered : ArrayDbTestBase
                 MyString2 = $"This is another longer string. {i}"
             };
             await buffer.AddAsync(sample);
+            if ( i % 10000 == 0)
+            {
+                Console.WriteLine(buffer.AvailableSlots);
+            }
         }
         stopWatch.Stop();
 

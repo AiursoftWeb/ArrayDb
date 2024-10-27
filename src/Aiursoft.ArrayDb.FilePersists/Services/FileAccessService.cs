@@ -10,6 +10,7 @@ public class FileAccessService
     public int ExpandSizeCount;
     private long _currentSize;
     private readonly object _expandSizeLock = new();
+    private readonly long _initialSizeIfNotExists;
     
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
@@ -21,19 +22,25 @@ public class FileAccessService
     
     public string OutputStatistics()
     {
-        return $@"
+        lock (_expandSizeLock)
+        {
+            return $@"
 File access service statistics:
 
 * File path: {Path}
+* Initial size if not exists (in MB): {_initialSizeIfNotExists / 1024 / 1024}
 * Actual Seek write events count: {SeekWriteCount}
 * Actual Seek read  events count: {SeekReadCount}
 * Expand physical file size events count: {ExpandSizeCount}
+* Current physical file size (in MB): {_currentSize / 1024 / 1024}
 ";
+        }
     }
     
     public FileAccessService(string path, long initialSizeIfNotExists)
     {
         Path = path;
+        _initialSizeIfNotExists = initialSizeIfNotExists;
         if (!File.Exists(path))
         {
             using var fs = File.Create(path);
@@ -47,13 +54,17 @@ File access service statistics:
     {
         lock (_expandSizeLock)
         {
-            while (offset + data.Length > _currentSize)
+            if (offset + data.Length > _currentSize)
             {
-                _currentSize *= 2;
+                while (offset + data.Length > _currentSize)
+                {
+                    _currentSize *= 2;
+                }
+
+                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
+                fs.SetLength(_currentSize);
+                Interlocked.Increment(ref ExpandSizeCount);
             }
-            using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
-            fs.SetLength(_currentSize);
-            Interlocked.Increment(ref ExpandSizeCount);
         }
 
         using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Write))
@@ -68,13 +79,17 @@ File access service statistics:
     {
         lock (_expandSizeLock)
         {
-            while (offset + length > _currentSize)
+            if (offset + length > _currentSize)
             {
-                _currentSize *= 2;
+                while (offset + length > _currentSize)
+                {
+                    _currentSize *= 2;
+                }
+
+                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
+                fs.SetLength(_currentSize);
+                Interlocked.Increment(ref ExpandSizeCount);
             }
-            using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
-            fs.SetLength(_currentSize);
-            Interlocked.Increment(ref ExpandSizeCount);
         }
 
         using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Read))

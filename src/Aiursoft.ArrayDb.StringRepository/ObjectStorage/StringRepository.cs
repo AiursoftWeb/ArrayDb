@@ -38,7 +38,7 @@ public class StringRepository
         return $@"
 String repository statistics:
 
-* Logical file end offset: {FileEndOffset}
+* Logical file end offset (in MB): {FileEndOffset / 1024 / 1024}
 * Request write space events count: {RequestWriteSpaceCount}
 * Load string content events count: {LoadStringContentCount}
 * Bulk write strings events count: {BulkWriteStringsCount}

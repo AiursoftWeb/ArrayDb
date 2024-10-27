@@ -27,6 +27,8 @@ public class BufferedObjectBuckets<T>(
             }
         }
     }
+    
+    public int AvailableSlots => _bufferSemaphore.CurrentCount;
 
     public Task? CoolDownTimingTask;
 
@@ -68,13 +70,14 @@ public class BufferedObjectBuckets<T>(
             {
                 if (_buffer.Count != 0)
                 {
+                    var bufferItemsCount = _buffer.Count;
                     // Add and restart cooldown
                     QueueAddBulk(_buffer.ToArray());
                     StartCooldown();
                     
                     // Clear the buffer
                     _buffer.Clear();
-                    _bufferSemaphore.Release(bufferCapacity - _buffer.Count);// Available slots = 65536
+                    _bufferSemaphore.Release(bufferItemsCount);
                 }
             }
         });
