@@ -58,6 +58,7 @@ Buffered object repository with item type {typeof(T).Name} statistics:
 * Cool down events count: {CoolDownEventsCount}
 * Inserted items count record (Top 20): {string.Join(", ", InsertItemsCountRecord.Take(20))}
 * Current cooldown milliseconds: {_cooldownMilliseconds}
+* Remaining write tasks count: {_tasksQueue.PendingTasksCount}
 
 Underlying object bucket statistics:
 {innerBucket.OutputStatistics().AppendTabsEachLineHead()}
