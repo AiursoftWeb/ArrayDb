@@ -15,7 +15,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
     public async Task PerformanceTestParallelBufferedWrite()
     {
         var bucket =
-            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin");
+            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(bucket);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -59,7 +59,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
     public async Task PerformanceTestSequentialBufferedWrite()
     {
         var bucket =
-            new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin");
+            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(bucket);
         var stopWatch = new Stopwatch();
         stopWatch.Start();

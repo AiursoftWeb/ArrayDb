@@ -12,7 +12,7 @@ public class StringRepositoryTests : ArrayDbTestBase
     public void MultipleThreadsBulkWriteStringContentShouldBeThreadSafe()
     {
         // Path to a temporary file for testing
-        var tempFilePath = "sampleDataStrings.bin";
+        var tempFilePath = TestFilePathStrings;
 
         // Initialize the StringRepository with suitable file and cache settings
         var stringRepository = new StringRepository.ObjectStorage.StringRepository(

@@ -9,7 +9,6 @@ namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 [DoNotParallelize]
 public class CachedFileAccessServiceTests : ArrayDbTestBase
 {
-    private const string TestFilePath = "sampleDataStrings.bin";
     private const long InitialSize = 10 * 1024 * 1024; // 10 MB
     private const int PageSize = 0x100000; // 1 MB
 
