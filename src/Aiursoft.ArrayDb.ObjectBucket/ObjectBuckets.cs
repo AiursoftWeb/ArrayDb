@@ -28,17 +28,17 @@ public class ObjectBuckets<T> where T : new()
     public long Count;
     private const int CountMarkerSize = sizeof(long);
     private readonly object _expandLengthLock = new();
-    
+
     // Underlying store
     public readonly CachedFileAccessService StructureFileAccess;
     public readonly StringRepository.ObjectStorage.StringRepository StringRepository;
-    
+
     // Statistics
     public int SingleAppendCount;
     public int BulkAppendCount;
     public int ReadCount;
     public int ReadBulkCount;
-    
+
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
@@ -47,13 +47,14 @@ public class ObjectBuckets<T> where T : new()
         ReadCount = 0;
         ReadBulkCount = 0;
     }
-    
+
     public string OutputStatistics()
     {
         return $@"
 Object repository with item type {typeof(T).Name} statistics:
 
 * Stored objects count: {Count}
+* Consumed actual storage space: {GetItemSize() * Count} bytes
 * Single append events count: {SingleAppendCount}
 * Bulk   append events count: {BulkAppendCount}
 * Read      events count: {ReadCount}
@@ -78,8 +79,8 @@ Underlying string repository statistics:
     /// <param name="hotCacheItems">The number of most recent pages that are considered hot and will not be moved even if they are used.</param>
     /// <typeparam name="T"></typeparam>
     public ObjectBuckets(
-        string structureFilePath, 
-        string stringFilePath, 
+        string structureFilePath,
+        string stringFilePath,
         long initialSizeIfNotExists = Consts.DefaultPhysicalFileSize,
         int cachePageSize = Consts.ReadCachePageSize,
         int maxCachedPagesCount = Consts.MaxReadCachedPagesCount,
@@ -99,19 +100,19 @@ Underlying string repository statistics:
             hotCacheItems: hotCacheItems);
         Count = GetItemsCount();
     }
-    
+
     private long GetItemsCount()
     {
         var buffer = StructureFileAccess.ReadInFile(0, CountMarkerSize);
         return BitConverter.ToInt32(buffer, 0);
     }
-    
+
     private void SaveCount(long length)
     {
         var buffer = BitConverter.GetBytes(length);
         StructureFileAccess.WriteInFile(0, buffer);
     }
-    
+
     private long RequestWriteSpaceAndGetStartOffset(int itemsCount)
     {
         long writeOffset;
@@ -121,6 +122,7 @@ Underlying string repository statistics:
             Count += itemsCount;
             SaveCount(Count);
         }
+
         return writeOffset;
     }
 
@@ -129,43 +131,47 @@ Underlying string repository statistics:
         var size = 0;
         foreach (var prop in typeof(T).GetProperties())
         {
-            if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(bool))
+            switch (Type.GetTypeCode(prop.PropertyType))
             {
-                size += sizeof(int);
-            }
-            else if (prop.PropertyType == typeof(string))
-            {
-                size += sizeof(long) + sizeof(int); // Size of Offset (stored as long) and Length (stored as int)
-            }
-            else if (prop.PropertyType == typeof(DateTime))
-            {
-                size += sizeof(long); // DateTime is stored as DateTime.Ticks, which is a long.
-            }
-            else if (prop.PropertyType == typeof(long))
-            {
-                size += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(float))
-            {
-                size += sizeof(float);
-            }
-            else if (prop.PropertyType == typeof(double))
-            {
-                size += sizeof(double);
-            }
-            else if (prop.PropertyType == typeof(TimeSpan))
-            {
-                size += sizeof(long); // TimeSpan is stored as TimeSpan.Ticks, which is a long.
-            }
-            else if (prop.PropertyType == typeof(Guid))
-            {
-                size += 16; // Guid is stored as 16 bytes.
-            }
-            else
-            {
-                throw new Exception($"Unsupported property type: {prop.PropertyType}");
+                case TypeCode.Int32:
+                    size += sizeof(int);
+                    break;
+                case TypeCode.Boolean:
+                    size += sizeof(bool);
+                    break;
+                case TypeCode.String:
+                    size += sizeof(long) + sizeof(int); // Offset as long and Length as int.
+                    break;
+                case TypeCode.DateTime:
+                    size += sizeof(long); // DateTime.Ticks is stored as long.
+                    break;
+                case TypeCode.Int64:
+                    size += sizeof(long);
+                    break;
+                case TypeCode.Single:
+                    size += sizeof(float);
+                    break;
+                case TypeCode.Double:
+                    size += sizeof(double);
+                    break;
+                default:
+                    if (prop.PropertyType == typeof(TimeSpan))
+                    {
+                        size += sizeof(long); // TimeSpan.Ticks is stored as long.
+                    }
+                    else if (prop.PropertyType == typeof(Guid))
+                    {
+                        size += 16; // Guid occupies 16 bytes.
+                    }
+                    else
+                    {
+                        throw new Exception($"Unsupported property type: {prop.PropertyType}");
+                    }
+
+                    break;
             }
         }
+
         return size;
     }
 
@@ -196,7 +202,7 @@ Underlying string repository statistics:
 
         // Convert the byte[]s to SavedStrings
         var savedStrings = StringRepository.BulkWriteStringContentAndGetOffsets(strings);
-        
+
         // Convert the SavedStrings to ObjectWithPersistedStrings
         var result = new ObjectWithPersistedStrings<T>[objs.Length];
         Parallel.For(0, objs.Length, i =>
@@ -209,65 +215,73 @@ Underlying string repository statistics:
         });
         return result;
     }
-    
+
     // OWPST to bytes.
     private void SerializeBytes(ObjectWithPersistedStrings<T> objWithStrings, byte[] buffer, int offset)
     {
         var properties = typeof(T).GetProperties();
         foreach (var prop in properties)
         {
-            if (prop.PropertyType == typeof(int))
+            switch (Type.GetTypeCode(prop.PropertyType))
             {
-                Unsafe.WriteUnaligned(ref buffer[offset], (int)prop.GetValue(objWithStrings.Object)!);
-                offset += sizeof(int);
-            }
-            else if (prop.PropertyType == typeof(bool))
-            {
-                Unsafe.WriteUnaligned(ref buffer[offset], (bool)prop.GetValue(objWithStrings.Object)! ? 1 : 0);
-                offset += sizeof(int);
-            }
-            else if (prop.PropertyType == typeof(string))
-            {
-                // String should be ignored here. It is stored in the string file.
-                // Later at the end of the method, we will save the offsets and lengths of the strings.
-            }
-            else if (prop.PropertyType == typeof(DateTime))
-            {
-                Unsafe.WriteUnaligned(ref buffer[offset], ((DateTime)prop.GetValue(objWithStrings.Object)!).Ticks);
-                offset += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(long))
-            {
-                Unsafe.WriteUnaligned(ref buffer[offset], (long)prop.GetValue(objWithStrings.Object)!);
-                offset += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(float))
-            {
-                Unsafe.WriteUnaligned(ref buffer[offset], (float)prop.GetValue(objWithStrings.Object)!);
-                offset += sizeof(float);
-            }
-            else if (prop.PropertyType == typeof(double))
-            {
-                Unsafe.WriteUnaligned(ref buffer[offset], (double)prop.GetValue(objWithStrings.Object)!);
-                offset += sizeof(double);
-            }
-            else if (prop.PropertyType == typeof(TimeSpan))
-            {
-                Unsafe.WriteUnaligned(ref buffer[offset], ((TimeSpan)prop.GetValue(objWithStrings.Object)!).Ticks);
-                offset += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(Guid))
-            {
-                var guidBytes = ((Guid)prop.GetValue(objWithStrings.Object)!).ToByteArray();
-                for (var i = 0; i < 16; i++)
-                {
-                    buffer[offset + i] = guidBytes[i];
-                }
-                offset += 16;
-            }
-            else
-            {
-                throw new Exception($"Unsupported property type: {prop.PropertyType}");
+                case TypeCode.Int32:
+                    Unsafe.WriteUnaligned(ref buffer[offset], (int)prop.GetValue(objWithStrings.Object)!);
+                    offset += sizeof(int);
+                    break;
+
+                case TypeCode.Boolean:
+                    Unsafe.WriteUnaligned(ref buffer[offset], (bool)prop.GetValue(objWithStrings.Object)! ? 1 : 0);
+                    offset += sizeof(bool);
+                    break;
+
+                case TypeCode.String:
+                    // String should be ignored here. It is stored in the string file.
+                    // Offsets and lengths of the strings will be saved at the end of the method.
+                    break;
+
+                case TypeCode.DateTime:
+                    Unsafe.WriteUnaligned(ref buffer[offset], ((DateTime)prop.GetValue(objWithStrings.Object)!).Ticks);
+                    offset += sizeof(long);
+                    break;
+
+                case TypeCode.Int64:
+                    Unsafe.WriteUnaligned(ref buffer[offset], (long)prop.GetValue(objWithStrings.Object)!);
+                    offset += sizeof(long);
+                    break;
+
+                case TypeCode.Single:
+                    Unsafe.WriteUnaligned(ref buffer[offset], (float)prop.GetValue(objWithStrings.Object)!);
+                    offset += sizeof(float);
+                    break;
+
+                case TypeCode.Double:
+                    Unsafe.WriteUnaligned(ref buffer[offset], (double)prop.GetValue(objWithStrings.Object)!);
+                    offset += sizeof(double);
+                    break;
+
+                default:
+                    if (prop.PropertyType == typeof(TimeSpan))
+                    {
+                        Unsafe.WriteUnaligned(ref buffer[offset],
+                            ((TimeSpan)prop.GetValue(objWithStrings.Object)!).Ticks);
+                        offset += sizeof(long);
+                    }
+                    else if (prop.PropertyType == typeof(Guid))
+                    {
+                        var guidBytes = ((Guid)prop.GetValue(objWithStrings.Object)!).ToByteArray();
+                        for (var i = 0; i < 16; i++)
+                        {
+                            buffer[offset + i] = guidBytes[i];
+                        }
+
+                        offset += 16;
+                    }
+                    else
+                    {
+                        throw new Exception($"Unsupported property type: {prop.PropertyType}");
+                    }
+
+                    break;
             }
         }
 
@@ -289,69 +303,76 @@ Underlying string repository statistics:
         var properties = typeof(T).GetProperties();
         foreach (var prop in properties)
         {
-            if (prop.PropertyType == typeof(int))
+            switch (Type.GetTypeCode(prop.PropertyType))
             {
-                var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-                prop.SetValue(obj, value);
-                offset += sizeof(int);
-            }
-            else if (prop.PropertyType == typeof(bool))
-            {
-                var value = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-                prop.SetValue(obj, value == 1);
-                offset += sizeof(int);
-            }
-            else if (prop.PropertyType == typeof(string))
-            {
-                // String should be ignored here. It is loaded from the string file.
-                // Later at the end of the method, we will load the strings.
-            }
-            else if (prop.PropertyType == typeof(DateTime))
-            {
-                var ticks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                prop.SetValue(obj, new DateTime(ticks));
-                offset += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(long))
-            {
-                var value = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                prop.SetValue(obj, value);
-                offset += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(float))
-            {
-                var value = Unsafe.ReadUnaligned<float>(ref buffer[offset]);
-                prop.SetValue(obj, value);
-                offset += sizeof(float);
-            }
-            else if (prop.PropertyType == typeof(double))
-            {
-                var value = Unsafe.ReadUnaligned<double>(ref buffer[offset]);
-                prop.SetValue(obj, value);
-                offset += sizeof(double);
-            }
-            else if (prop.PropertyType == typeof(TimeSpan))
-            {
-                var ticks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                prop.SetValue(obj, new TimeSpan(ticks));
-                offset += sizeof(long);
-            }
-            else if (prop.PropertyType == typeof(Guid))
-            {
-                var guidBytes = new byte[16];
-                for (var i = 0; i < 16; i++)
-                {
-                    guidBytes[i] = buffer[offset + i];
-                }
-                prop.SetValue(obj, new Guid(guidBytes));
-                offset += 16;
-            }
-            else
-            {
-                throw new Exception($"Unsupported property type: {prop.PropertyType}");
+                case TypeCode.Int32:
+                    var intValue = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
+                    prop.SetValue(obj, intValue);
+                    offset += sizeof(int);
+                    break;
+
+                case TypeCode.Boolean:
+                    var boolValue = Unsafe.ReadUnaligned<bool>(ref buffer[offset]);
+                    prop.SetValue(obj, boolValue);
+                    offset += sizeof(bool);
+                    break;
+
+                case TypeCode.String:
+                    // String should be ignored here. It is loaded from the string file.
+                    // Strings will be loaded at the end of the method.
+                    break;
+
+                case TypeCode.DateTime:
+                    var dateTimeTicks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
+                    prop.SetValue(obj, new DateTime(dateTimeTicks));
+                    offset += sizeof(long);
+                    break;
+
+                case TypeCode.Int64:
+                    var longValue = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
+                    prop.SetValue(obj, longValue);
+                    offset += sizeof(long);
+                    break;
+
+                case TypeCode.Single:
+                    var floatValue = Unsafe.ReadUnaligned<float>(ref buffer[offset]);
+                    prop.SetValue(obj, floatValue);
+                    offset += sizeof(float);
+                    break;
+
+                case TypeCode.Double:
+                    var doubleValue = Unsafe.ReadUnaligned<double>(ref buffer[offset]);
+                    prop.SetValue(obj, doubleValue);
+                    offset += sizeof(double);
+                    break;
+
+                default:
+                    if (prop.PropertyType == typeof(TimeSpan))
+                    {
+                        var timeSpanTicks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
+                        prop.SetValue(obj, new TimeSpan(timeSpanTicks));
+                        offset += sizeof(long);
+                    }
+                    else if (prop.PropertyType == typeof(Guid))
+                    {
+                        var guidBytes = new byte[16];
+                        for (var i = 0; i < 16; i++)
+                        {
+                            guidBytes[i] = buffer[offset + i];
+                        }
+
+                        prop.SetValue(obj, new Guid(guidBytes));
+                        offset += 16;
+                    }
+                    else
+                    {
+                        throw new Exception($"Unsupported property type: {prop.PropertyType}");
+                    }
+
+                    break;
             }
         }
-        
+
         // Load the object strings.
         foreach (var prop in properties.Where(p => p.PropertyType == typeof(string)))
         {
@@ -362,10 +383,10 @@ Underlying string repository statistics:
             var str = StringRepository.LoadStringContent(offsetInByteArray, length);
             prop.SetValue(obj, str);
         }
-        
+
         return obj;
     }
-    
+
     [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     private void WriteIndex(long index, T obj)
     {
@@ -376,24 +397,21 @@ Underlying string repository statistics:
         SerializeBytes(objWithStrings, buffer, 0);
         StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
     }
-    
+
     private void WriteBulk(long index, T[] objs)
     {
         var sizeOfObject = GetItemSize();
         var buffer = new byte[sizeOfObject * objs.Length];
         // Save the strings.
         var objWithStrings = SaveObjectStrings(objs);
-        
+
         // Sequential write. Serialize objects in parallel.
-        Parallel.For(0, objs.Length, i =>
-        {
-            SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
-        });
-        
+        Parallel.For(0, objs.Length, i => { SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i); });
+
         // Sequential write. Write binary data to disk.
         StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
     }
-    
+
     [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     public void Add(T obj)
     {
@@ -414,7 +432,7 @@ Underlying string repository statistics:
         WriteBulk(indexToWrite, objs);
         Interlocked.Increment(ref BulkAppendCount);
     }
-    
+
     [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
     public T Read(int index)
     {
@@ -422,6 +440,7 @@ Underlying string repository statistics:
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
+
         var sizeOfObject = GetItemSize();
         var data = StructureFileAccess.ReadInFile(sizeOfObject * index + CountMarkerSize, sizeOfObject);
         Interlocked.Increment(ref ReadCount);
@@ -443,6 +462,7 @@ Underlying string repository statistics:
         {
             throw new ArgumentOutOfRangeException(nameof(indexFrom));
         }
+
         var sizeOfObject = GetItemSize();
         // Sequential read. Load binary data from disk and deserialize them in parallel.
         var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + CountMarkerSize, sizeOfObject * count);
@@ -457,4 +477,3 @@ Underlying string repository statistics:
         return result;
     }
 }
-
