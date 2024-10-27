@@ -116,6 +116,15 @@ Underlying cached file access service statistics:
         return result;
     }
 
+    /// <summary>
+    /// LoadStringContent method is used for loading a string's content from a file based on its offset and length.
+    /// It reads the string content from the file and returns it as a string.
+    ///
+    /// This method is thread-safe. You can call it from multiple threads simultaneously.
+    /// </summary>
+    /// <param name="offset">The offset of the string in the file.</param>
+    /// <param name="length">The length of the string in bytes.</param>
+    /// <returns>The string content of the specified offset and length.</returns>
     public string? LoadStringContent(long offset, int length)
     {
         Interlocked.Increment(ref LoadStringContentCount);

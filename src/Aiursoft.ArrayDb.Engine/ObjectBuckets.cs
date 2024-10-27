@@ -5,7 +5,7 @@ using Aiursoft.ArrayDb.FilePersists;
 using Aiursoft.ArrayDb.FilePersists.Services;
 using Aiursoft.ArrayDb.StringRepository.Models;
 
-namespace Aiursoft.ArrayDb.Engine.ObjectStorage;
+namespace Aiursoft.ArrayDb.Engine;
 
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
@@ -124,7 +124,7 @@ Underlying string repository statistics:
         return writeOffset;
     }
 
-    public int GetItemSize()
+    private int GetItemSize()
     {
         var size = 0;
         foreach (var prop in typeof(T).GetProperties())
@@ -366,6 +366,7 @@ Underlying string repository statistics:
         return obj;
     }
     
+    [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     private void WriteIndex(long index, T obj)
     {
         var sizeOfObject = GetItemSize();
@@ -427,6 +428,15 @@ Underlying string repository statistics:
         return DeserializeBytes(data);
     }
 
+    /// <summary>
+    /// Read objects in bulk.
+    /// 
+    /// This method is thread-safe. You can call it from multiple threads.
+    /// </summary>
+    /// <param name="indexFrom">Start index of the objects to read.</param>
+    /// <param name="count">Number of objects to read.</param>
+    /// <returns>An array of objects read from the file.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the indexFrom is less than 0 or indexFrom + count is greater than the total number of objects.</exception>
     public T[] ReadBulk(int indexFrom, int count)
     {
         if (indexFrom < 0 || indexFrom + count > Count)
