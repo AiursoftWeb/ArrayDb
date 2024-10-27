@@ -15,7 +15,8 @@ public class BufferedObjectBuckets<T>(
     private readonly object _bufferWriteLock = new();
     
     // Statistics
-    public int RequestWriteCount;
+    public int RequestHotWriteCount;
+    public int RequestColdWriteCount;
     public int QueuedWriteCount;
     public int ActualWriteCount;
     public int CoolDownEventsCount;
@@ -24,10 +25,12 @@ public class BufferedObjectBuckets<T>(
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
-        RequestWriteCount = 0;
+        RequestHotWriteCount = 0;
+        RequestColdWriteCount = 0;
         QueuedWriteCount = 0;
         ActualWriteCount = 0;
         CoolDownEventsCount = 0;
+        InsertItemsCountRecord.Clear();
     }
     
     public string OutputStatistics()
@@ -35,7 +38,9 @@ public class BufferedObjectBuckets<T>(
         return $@"
 Buffered object repository with item type {typeof(T).Name} statistics:
 
-* Request write events count: {RequestWriteCount}
+* Request write events count: {RequestHotWriteCount + RequestColdWriteCount}
+* Requested hot write events count: {RequestHotWriteCount}
+* Requested cold write events count: {RequestColdWriteCount}
 * Queued write events count: {QueuedWriteCount}
 * Actual write events count: {ActualWriteCount}
 * Cool down events count: {CoolDownEventsCount}
@@ -64,11 +69,10 @@ Underlying object bucket statistics:
 
     public void AddBuffered(T obj)
     {
-        Interlocked.Increment(ref RequestWriteCount);
-        
         // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
         if (IsHot)
         {
+            Interlocked.Increment(ref RequestHotWriteCount);
             lock (_bufferWriteLock)
             {
                 // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
@@ -78,6 +82,7 @@ Underlying object bucket statistics:
         // Is cold status, directly queue add then start cooldown
         else
         {
+            Interlocked.Increment(ref RequestColdWriteCount);
             // Add and start cooldown
             QueueAddBulk([obj]);
             StartCooldown();
