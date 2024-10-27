@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.ArrayDb.Engine</AssemblyName>
-    <RootNamespace>Aiursoft.ArrayDb.Engine</RootNamespace>
+    <AssemblyName>Aiursoft.ArrayDb.ObjectBucket</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.ObjectBucket</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -13,7 +13,7 @@
     <Company>ArrayDb</Company>
     <Product>ArrayDb</Product>
     <Description>Nuget package of 'ArrayDb' provided by ArrayDb</Description>
-    <PackageId>Aiursoft.ArrayDb.Engine</PackageId>
+    <PackageId>Aiursoft.ArrayDb.ObjectBucket</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>

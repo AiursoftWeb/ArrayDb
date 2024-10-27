@@ -5,7 +5,7 @@ using Aiursoft.ArrayDb.FilePersists;
 using Aiursoft.ArrayDb.FilePersists.Services;
 using Aiursoft.ArrayDb.StringRepository.Models;
 
-namespace Aiursoft.ArrayDb.Engine;
+namespace Aiursoft.ArrayDb.ObjectBucket;
 
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.

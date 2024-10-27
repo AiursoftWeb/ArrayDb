@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{06B1DE51
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Tests", "tests\Aiursoft.ArrayDb.Tests\Aiursoft.ArrayDb.Tests.csproj", "{E6B3955F-F1B8-410A-A33B-79E10F6C056F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Engine", "src\Aiursoft.ArrayDb.Engine\Aiursoft.ArrayDb.Engine.csproj", "{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.ObjectBucket", "src\Aiursoft.ArrayDb.ObjectBucket\Aiursoft.ArrayDb.ObjectBucket.csproj", "{A7A0D753-6C06-4BEF-80F8-3EDAF01841DD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.FilePersists", "src\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj", "{22550501-7473-44A1-8D8C-E72B37400350}"
 EndProject

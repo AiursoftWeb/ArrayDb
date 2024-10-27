@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.WriteBuffer</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.WriteBuffer</RootNamespace>
@@ -22,7 +22,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Aiursoft.ArrayDb.Engine\Aiursoft.ArrayDb.Engine.csproj" />
+    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket\Aiursoft.ArrayDb.ObjectBucket.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
 </Project>
