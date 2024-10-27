@@ -24,4 +24,7 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aiursoft.ArrayDb.Consts\Aiursoft.ArrayDb.Consts.csproj" />
+  </ItemGroup>
 </Project>
