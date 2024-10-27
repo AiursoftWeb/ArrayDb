@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.FilePersists;
 
@@ -21,7 +22,7 @@ public class BufferedObjectBuckets<T>(
     where T : new()
 {
     private readonly TasksQueue _tasksQueue = new();
-    private readonly List<T> _buffer = [];
+    private readonly ConcurrentQueue<T> _buffer = [];
     private readonly object _bufferWriteLock = new();
     private readonly int _initialCooldownMilliseconds = initialCooldownMilliseconds;
     private int _cooldownMilliseconds = initialCooldownMilliseconds;
@@ -50,6 +51,7 @@ public class BufferedObjectBuckets<T>(
         return $@"
 Buffered object repository with item type {typeof(T).Name} statistics:
 
+* Current instance status: {(IsHot ? "Hot" : "Cold")}
 * Request write events count: {RequestHotWriteCount + RequestColdWriteCount}
 * Requested hot write events count: {RequestHotWriteCount}
 * Requested cold write events count: {RequestColdWriteCount}
@@ -94,7 +96,7 @@ Underlying object bucket statistics:
                     WaitUntilCoolAsync().Wait();
                 }
                 // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
-                _buffer.Add(obj);
+                _buffer.Enqueue(obj);
             }
         }
         // Is cold status, directly queue add then start cooldown
@@ -123,7 +125,7 @@ Underlying object bucket statistics:
 
             lock (_bufferWriteLock)
             {
-                if (_buffer.Count != 0)
+                if (!_buffer.IsEmpty)
                 {
                     // Add and restart cooldown
                     QueueAddBulk(_buffer.ToArray());
@@ -144,9 +146,12 @@ Underlying object bucket statistics:
         Interlocked.Increment(ref QueuedWriteCount);
         _tasksQueue.QueueNew(() =>
         {
+            // Statistics
             Interlocked.Increment(ref ActualWriteCount);
             InsertItemsCountRecord.Add(objs.Length);
-            return Task.Run(() => innerBucket.AddBulk(objs));
+            
+            // Add to the underlying bucket
+            innerBucket.AddBulk(objs);
         });
     }
 

@@ -7,7 +7,7 @@ namespace Aiursoft.ArrayDb.Engine;
 /// </summary>
 public class TasksQueue
 {
-    private readonly ConcurrentQueue<Func<Task>> _pendingTaskFactories = new();
+    private readonly ConcurrentQueue<Action> _pendingTaskFactories = new();
     private readonly object _loc = new();
 
     public Task Engine { get; private set; } = Task.CompletedTask;
@@ -18,7 +18,7 @@ public class TasksQueue
     /// Adds a new task to the queue.
     /// </summary>
     /// <param name="taskFactory">A factory method that creates the task to be added to the queue.</param>
-    public void QueueNew(Func<Task> taskFactory)
+    public void QueueNew(Action taskFactory)
     {
         _pendingTaskFactories.Enqueue(taskFactory);
 
@@ -29,10 +29,7 @@ public class TasksQueue
                 return;
             }
 
-            Engine = Task.Run(async () =>
-            {
-                await RunTasks();
-            });
+            Engine = Task.Run(RunTasks);
         }
     }
 
@@ -42,11 +39,11 @@ public class TasksQueue
     /// Never call this method directly. Because this class is used to protect the methods to be executed in a single thread.
     /// </summary>
     /// <returns>A task that represents the completion of all the tasks in the queue.</returns>
-    private async Task RunTasks()
+    private void RunTasks()
     {
         while (_pendingTaskFactories.TryDequeue(out var taskFactory))
         {
-            await taskFactory();
+            taskFactory();
         }
     }
 }
