@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests.PerformanceTests;
 
 [TestClass]
+[DoNotParallelize]
 public class PerformanceTestBuffered : ArrayDbTestBase
 {
     [TestMethod]

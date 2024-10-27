@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Aiursoft.ArrayDb.Tests.Base;
 
 [TestClass]
+[DoNotParallelize]
 public abstract class ArrayDbTestBase
 {
     public static readonly object LockObject = new();
@@ -15,7 +16,6 @@ public abstract class ArrayDbTestBase
             File.Delete("sampleData.bin");
         if (File.Exists("sampleDataStrings.bin"))
             File.Delete("sampleDataStrings.bin");
-
     }
 
     [TestCleanup]

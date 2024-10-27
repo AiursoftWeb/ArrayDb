@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 
 [TestClass]
+[DoNotParallelize]
 public class BufferedObjectBucketsTests : ArrayDbTestBase
 {
     [TestMethod]

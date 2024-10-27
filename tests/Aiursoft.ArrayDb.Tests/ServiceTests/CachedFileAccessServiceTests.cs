@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 
 [TestClass]
+[DoNotParallelize]
 public class CachedFileAccessServiceTests : ArrayDbTestBase
 {
     private const string TestFilePath = "sampleDataStrings.bin";

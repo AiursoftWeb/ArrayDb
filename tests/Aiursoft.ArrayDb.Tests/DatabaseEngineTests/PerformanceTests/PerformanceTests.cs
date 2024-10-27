@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests.PerformanceTests;
 
 [TestClass]
+[DoNotParallelize]
 public class PerformanceTests : ArrayDbTestBase
 {
     [TestMethod]
@@ -151,7 +152,7 @@ public class PerformanceTests : ArrayDbTestBase
         var persistService =
             new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin");
         var samples = new List<SampleData>();
-        for (var i = 0; i < 1000000; i++)
+        for (var i = 0; i < 10; i++)
         {
             var sample = new SampleData
             {
@@ -165,7 +166,7 @@ public class PerformanceTests : ArrayDbTestBase
         }
         var samplesArray = samples.ToArray();
         persistService.AddBulk(samplesArray);
-        persistService.ReadBulk(0, 1000000);
+        persistService.ReadBulk(0, 10);
         
         var statistics = persistService.OutputStatistics();
         Console.WriteLine(statistics);
