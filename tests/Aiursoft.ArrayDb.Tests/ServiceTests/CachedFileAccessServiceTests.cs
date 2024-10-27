@@ -1,13 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.FilePersists.Services;
+using Aiursoft.ArrayDb.Tests.Base;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 
 [TestClass]
-public class CachedFileAccessServiceTests
+public class CachedFileAccessServiceTests : ArrayDbTestBase
 {
-    private const string TestFilePath = "testfile.bin";
+    private const string TestFilePath = "sampleDataStrings.bin";
     private const long InitialSize = 10 * 1024 * 1024; // 10 MB
     private const int PageSize = 0x100000; // 1 MB
 

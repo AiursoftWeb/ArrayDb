@@ -10,15 +10,21 @@ public abstract class ArrayDbTestBase
     [TestInitialize]
     public void Init()
     {
-        File.Delete("sampleData.bin");
-        File.Delete("sampleDataStrings.bin");
         Monitor.Enter(LockObject);
+        if (File.Exists("sampleData.bin"))
+            File.Delete("sampleData.bin");
+        if (File.Exists("sampleDataStrings.bin"))
+            File.Delete("sampleDataStrings.bin");
 
     }
 
     [TestCleanup]
     public void TestCleanup()
     {
+        if (File.Exists("sampleData.bin"))
+            File.Delete("sampleData.bin");
+        if (File.Exists("sampleDataStrings.bin"))
+            File.Delete("sampleDataStrings.bin");
         Monitor.Exit(LockObject);
     }
 }
