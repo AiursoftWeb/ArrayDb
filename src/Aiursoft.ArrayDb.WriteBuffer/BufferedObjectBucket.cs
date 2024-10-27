@@ -1,8 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Aiursoft.ArrayDb.Engine;
 using Aiursoft.ArrayDb.FilePersists;
 
-namespace Aiursoft.ArrayDb.Engine;
+namespace Aiursoft.ArrayDb.WriteBuffer;
 
 /// <summary>
 /// Represents a class for managing buffered objects in buckets.

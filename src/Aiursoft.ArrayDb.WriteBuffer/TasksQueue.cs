@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Aiursoft.ArrayDb.Engine;
+namespace Aiursoft.ArrayDb.WriteBuffer;
 
 /// <summary>
 /// Implements a task queue that can be used to add tasks to a queue and execute them one by one.

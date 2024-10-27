@@ -19,6 +19,6 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.6.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.Engine\Aiursoft.ArrayDb.Engine.csproj" />
+    <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.WriteBuffer\Aiursoft.ArrayDb.WriteBuffer.csproj" />
   </ItemGroup>
 </Project>

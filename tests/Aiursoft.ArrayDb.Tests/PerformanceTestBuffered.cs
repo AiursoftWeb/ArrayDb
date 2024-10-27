@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.Engine;
 using Aiursoft.ArrayDb.Tests.Models;
+using Aiursoft.ArrayDb.WriteBuffer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests;
