@@ -3,8 +3,17 @@ using Aiursoft.ArrayDb.FilePersists;
 
 namespace Aiursoft.ArrayDb.Engine;
 
+/// <summary>
+/// Represents a class for managing buffered objects in buckets.
+/// </summary>
+/// <typeparam name="T">The type of objects to be stored in the buckets.</typeparam>
+/// <param name="innerBucket">The underlying object bucket to store the objects.</param>
+/// <param name="maxBufferedItemsCount">The maximum number of items that can be buffered before writing to the disk. Suggested value is maxCooldownMilliseconds * 1000. Because usual computer can insert around 1000 items per millisecond.</param>
+/// <param name="initialCooldownMilliseconds">The initial cooldown time in milliseconds. Suggested value is 1000. Small value will cause data fragmentation. Large value will cause latency.</param>
+/// <param name="maxCooldownMilliseconds">The maximum cooldown time in milliseconds. Suggested value is 1000 * 16. Because the queue may not be able to handle the high frequency of writes. According to the remaining tasks in the queue, increase the next cooldown time. But not more than 16 times the initial cooldown time.</param>
 public class BufferedObjectBuckets<T>(
     ObjectBuckets<T> innerBucket,
+    int maxBufferedItemsCount = 0x1000000,// 16M
     // Don't set this too small. Because only write large data in bulk can be efficient.
     // Don't set this too large. Because it will cause huge latency for the write operation.
     int initialCooldownMilliseconds = 1000,
@@ -14,6 +23,7 @@ public class BufferedObjectBuckets<T>(
     private readonly TasksQueue _tasksQueue = new();
     private readonly List<T> _buffer = [];
     private readonly object _bufferWriteLock = new();
+    private readonly int _initialCooldownMilliseconds = initialCooldownMilliseconds;
     private int _cooldownMilliseconds = initialCooldownMilliseconds;
     
     // Statistics
@@ -78,6 +88,10 @@ Underlying object bucket statistics:
             Interlocked.Increment(ref RequestHotWriteCount);
             lock (_bufferWriteLock)
             {
+                if (_buffer.Count >= maxBufferedItemsCount)
+                {
+                    WaitUntilCoolAsync().Wait();
+                }
                 // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
                 _buffer.Add(obj);
             }
@@ -103,7 +117,7 @@ Underlying object bucket statistics:
             // Consider the high frequency of writes, the queue may not be able to handle it.
             // According to the remaining tasks in the queue, increase the next cooldown time.
             // But not more than 16 times the initial cooldown time.
-            var updatedCooldownMilliseconds = (_tasksQueue.PendingTasksCount + 1) * initialCooldownMilliseconds;
+            var updatedCooldownMilliseconds = (_tasksQueue.PendingTasksCount + 1) * _initialCooldownMilliseconds;
             _cooldownMilliseconds = Math.Min(updatedCooldownMilliseconds, maxCooldownMilliseconds);
 
             lock (_bufferWriteLock)
@@ -118,7 +132,7 @@ Underlying object bucket statistics:
                 }
                 else
                 {
-                    _cooldownMilliseconds = initialCooldownMilliseconds;
+                    _cooldownMilliseconds = _initialCooldownMilliseconds;
                 }
             }
         });
