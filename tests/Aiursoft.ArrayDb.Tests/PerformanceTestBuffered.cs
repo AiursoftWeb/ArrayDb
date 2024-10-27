@@ -9,7 +9,7 @@ namespace Aiursoft.ArrayDb.Tests;
 public class PerformanceTestBuffered : ArrayDbTestBase
 {
     [TestMethod]
-    public async Task PerformanceTestBulkWrite()
+    public async Task PerformanceTestBufferedWrite()
     {
         var bucket =
             new ObjectBuckets<SampleData>("sampleData.bin", "sampleDataStrings.bin");

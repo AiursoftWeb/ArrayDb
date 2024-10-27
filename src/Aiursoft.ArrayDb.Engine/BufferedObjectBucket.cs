@@ -11,7 +11,7 @@ public class BufferedObjectBuckets<T>(
     where T : new()
 {
     private readonly TasksQueue _tasksQueue = new();
-    private readonly List<T> _buffer = new();
+    private readonly List<T> _buffer = [];
     private readonly object _bufferWriteLock = new();
     
     // Statistics
@@ -19,7 +19,7 @@ public class BufferedObjectBuckets<T>(
     public int QueuedWriteCount;
     public int ActualWriteCount;
     public int CoolDownEventsCount;
-    public List<int> InsertItemsCountRecord = new();
+    public readonly List<int> InsertItemsCountRecord = [];
     
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
@@ -121,7 +121,7 @@ Underlying object bucket statistics:
     /// <summary>
     /// If you inserted some data, then you call the `Sync` method, it will return a task, that when all the data is written to the disk, it will be completed.
     ///
-    /// This method is used to ensure the data we inserted before clalled this method is written to the disk.
+    /// This method is used to ensure the data we inserted before called this method is written to the disk.
     /// </summary>
     public async Task SyncAsync()
     {
