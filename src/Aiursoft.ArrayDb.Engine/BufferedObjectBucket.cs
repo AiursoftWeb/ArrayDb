@@ -1,19 +1,51 @@
+using System.Diagnostics.CodeAnalysis;
+using Aiursoft.ArrayDb.FilePersists;
+
 namespace Aiursoft.ArrayDb.Engine;
 
 public class BufferedObjectBuckets<T>(
     ObjectBuckets<T> innerBucket,
-    int bufferCapacity = 65536,
     // Don't set this too small. Because only write large data in bulk can be efficient.
     // Don't set this too large. Because it will cause huge latency for the write operation.
     int cooldownMilliseconds = 1000)
     where T : new()
 {
     private readonly TasksQueue _tasksQueue = new();
-    private readonly List<T> _buffer = new(bufferCapacity);
+    private readonly List<T> _buffer = new();
     private readonly object _bufferWriteLock = new();
+    
+    // Statistics
+    public int RequestWriteCount;
+    public int QueuedWriteCount;
+    public int ActualWriteCount;
+    public int CoolDownEventsCount;
+    public List<int> InsertItemsCountRecord = new();
+    
+    [ExcludeFromCodeCoverage]
+    public void ResetAllStatistics()
+    {
+        RequestWriteCount = 0;
+        QueuedWriteCount = 0;
+        ActualWriteCount = 0;
+        CoolDownEventsCount = 0;
+    }
+    
+    public string OutputStatistics()
+    {
+        return $@"
+Buffered object repository with item type {typeof(T).Name} statistics:
 
-    // Initial status: 65536 available slots
-    private readonly SemaphoreSlim _bufferSemaphore = new(bufferCapacity, bufferCapacity);
+* Request write events count: {RequestWriteCount}
+* Queued write events count: {QueuedWriteCount}
+* Actual write events count: {ActualWriteCount}
+* Cool down events count: {CoolDownEventsCount}
+* Inserted items count record (Top 20): {string.Join(", ", InsertItemsCountRecord.Take(20))}
+
+Underlying object bucket statistics:
+{innerBucket.OutputStatistics().AppendTabsEachLineHead()}
+";
+    }
+
     public bool IsCold => CoolDownTimingTask?.IsCompleted ?? true;
     public bool IsHot => !IsCold;
 
@@ -28,28 +60,14 @@ public class BufferedObjectBuckets<T>(
         }
     }
     
-    public int AvailableSlots => _bufferSemaphore.CurrentCount;
-
     public Task? CoolDownTimingTask;
 
-    public async Task AddAsync(T obj)
+    public void AddBuffered(T obj)
     {
-        // Wait until there's at least one slot available
-        // Available slots -= 1
-        await _bufferSemaphore.WaitAsync();
+        Interlocked.Increment(ref RequestWriteCount);
         
-        // Is cold status, directly queue add then start cooldown
-        if (IsCold)
-        {
-            // Add and start cooldown
-            QueueAddBulk([obj]);
-            StartCooldown();
-
-            // Available slots += 1
-            _bufferSemaphore.Release(1);
-        }
         // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
-        else
+        if (IsHot)
         {
             lock (_bufferWriteLock)
             {
@@ -57,10 +75,18 @@ public class BufferedObjectBuckets<T>(
                 _buffer.Add(obj);
             }
         }
+        // Is cold status, directly queue add then start cooldown
+        else
+        {
+            // Add and start cooldown
+            QueueAddBulk([obj]);
+            StartCooldown();
+        }
     }
     
     private void StartCooldown()
     {
+        Interlocked.Increment(ref CoolDownEventsCount);
         // Now this instance is hot. Wait for cooldown to flush the buffer.
         CoolDownTimingTask = Task.Run(async () =>
         {
@@ -70,14 +96,12 @@ public class BufferedObjectBuckets<T>(
             {
                 if (_buffer.Count != 0)
                 {
-                    var bufferItemsCount = _buffer.Count;
                     // Add and restart cooldown
                     QueueAddBulk(_buffer.ToArray());
                     StartCooldown();
                     
                     // Clear the buffer
                     _buffer.Clear();
-                    _bufferSemaphore.Release(bufferItemsCount);
                 }
             }
         });
@@ -85,18 +109,32 @@ public class BufferedObjectBuckets<T>(
 
     private void QueueAddBulk(T[] objs)
     {
-        _tasksQueue.QueueNew(() => Task.Run(() => innerBucket.AddBulk(objs)));
+        Interlocked.Increment(ref QueuedWriteCount);
+        _tasksQueue.QueueNew(() =>
+        {
+            Interlocked.Increment(ref ActualWriteCount);
+            InsertItemsCountRecord.Add(objs.Length);
+            return Task.Run(() => innerBucket.AddBulk(objs));
+        });
     }
 
     /// <summary>
     /// If you inserted some data, then you call the `Sync` method, it will return a task, that when all the data is written to the disk, it will be completed.
+    ///
+    /// This method is used to ensure the data we inserted before clalled this method is written to the disk.
     /// </summary>
-    public async Task Sync()
+    public async Task SyncAsync()
     {
         await WaitUntilCoolAsync();
-        await WaitUntilWriteCompleteAsync();
+        await WaitWriteCompleteAsync();
     }
     
+    /// <summary>
+    /// If you inserted some data, then you call the `WaitUntilCoolAsync` method, it will return a task, that when all the data is cleared from buffer and started writing to the disk, it will be completed.
+    ///
+    /// This method is used to ensure the data is started writing to the disk.
+    /// </summary>
+    /// <returns></returns>
     public Task WaitUntilCoolAsync()
     {
         if (IsHot)
@@ -106,7 +144,13 @@ public class BufferedObjectBuckets<T>(
         return Task.CompletedTask;
     }
     
-    public Task WaitUntilWriteCompleteAsync()
+    /// <summary>
+    /// When the data started writing to the disk, you can call this method to wait until the writing is completed.
+    ///
+    /// This method is used to ensure the datta started writing was ultimately written to the disk. 
+    /// </summary>
+    /// <returns></returns>
+    public Task WaitWriteCompleteAsync()
     {
         return _tasksQueue.Engine;
     }

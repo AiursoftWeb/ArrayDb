@@ -11,7 +11,7 @@ public class TasksQueue
     private readonly object _loc = new();
 
     public Task Engine { get; private set; } = Task.CompletedTask;
-
+    
     /// <summary>
     /// Adds a new task to the queue.
     /// </summary>
