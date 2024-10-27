@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.Engine;
-using Aiursoft.ArrayDb.Tests.Models;
+using Aiursoft.ArrayDb.Tests.Base;
+using Aiursoft.ArrayDb.Tests.Base.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Aiursoft.ArrayDb.Tests;
+namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests.PerformanceTests;
 
 [TestClass]
 public class PerformanceTests : ArrayDbTestBase

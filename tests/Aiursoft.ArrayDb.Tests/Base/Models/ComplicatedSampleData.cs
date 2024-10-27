@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.Tests.Models;
+namespace Aiursoft.ArrayDb.Tests.Base.Models;
 
 public class ComplicatedSampleData
 {

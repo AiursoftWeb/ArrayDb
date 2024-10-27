@@ -1,9 +1,10 @@
 using Aiursoft.ArrayDb.Engine;
-using Aiursoft.ArrayDb.Tests.Models;
+using Aiursoft.ArrayDb.Tests.Base;
+using Aiursoft.ArrayDb.Tests.Base.Models;
 using Aiursoft.ArrayDb.WriteBuffer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Aiursoft.ArrayDb.Tests;
+namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 
 [TestClass]
 public class BufferedObjectBucketsTests : ArrayDbTestBase

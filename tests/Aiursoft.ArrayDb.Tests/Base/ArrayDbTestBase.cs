@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Aiursoft.ArrayDb.Tests;
+namespace Aiursoft.ArrayDb.Tests.Base;
 
 [TestClass]
 public abstract class ArrayDbTestBase

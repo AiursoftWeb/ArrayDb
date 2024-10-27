@@ -1,7 +1,7 @@
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Aiursoft.ArrayDb.Tests;
+namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 
 [TestClass]
 public class StringRepositoryTests

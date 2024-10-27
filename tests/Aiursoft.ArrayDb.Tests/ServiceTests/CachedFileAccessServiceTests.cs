@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.FilePersists.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Aiursoft.ArrayDb.Tests;
+namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 
 [TestClass]
 public class CachedFileAccessServiceTests
