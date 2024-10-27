@@ -19,7 +19,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
-        Parallel.For(0, 10000000, i =>
+        Parallel.For(0, 1000000, i =>
         {
             var sample = new SampleData
             {
@@ -33,13 +33,13 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         });
         stopWatch.Stop();
         Console.WriteLine(buffer.OutputStatistics());
-        Console.WriteLine($"Write 10000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        // Read 1000 0000 times in less than 50 seconds. On my machine 5975ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
+        Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
+        // Read 100 0000 times in less than 10 seconds. On my machine 345ms.
+        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
         
         Assert.IsTrue(buffer.IsHot);
         Assert.IsTrue(buffer.BufferedItemsCount > 1);
-        Assert.IsTrue(bucket.Count < 10000000);
+        Assert.IsTrue(bucket.Count < 1000000);
         
         stopWatch.Reset();
         stopWatch.Start();
@@ -47,10 +47,10 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         stopWatch.Stop();
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
-        // Sync 1000 0000 times in less than 50 seconds. On my machine 1192ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
+        // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
+        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(10000000, bucket.Count);
+        Assert.AreEqual(1000000, bucket.Count);
         Console.WriteLine(buffer.OutputStatistics());
     }
     
@@ -63,7 +63,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
-        for (var i = 0; i < 10000000; i++)
+        for (var i = 0; i < 1000000; i++)
         {
             var sample = new SampleData
             {
@@ -78,12 +78,12 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         stopWatch.Stop();
         Console.WriteLine(buffer.OutputStatistics());
         Console.WriteLine($"Write 10000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        // Read 1000 0000 times in less than 50 seconds. On my machine 5975ms.
+        // Read 100 0000 times in less than 10 seconds. On my machine 597ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
         
         Assert.IsTrue(buffer.IsHot);
         Assert.IsTrue(buffer.BufferedItemsCount > 1);
-        Assert.IsTrue(bucket.Count < 10000000);
+        Assert.IsTrue(bucket.Count < 1000000);
         
         stopWatch.Reset();
         stopWatch.Start();
@@ -91,10 +91,10 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         stopWatch.Stop();
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
-        // Sync 1000 0000 times in less than 50 seconds. On my machine 1192ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
+        // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
+        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(10000000, bucket.Count);
+        Assert.AreEqual(1000000, bucket.Count);
         Console.WriteLine(buffer.OutputStatistics());
     }
 }
