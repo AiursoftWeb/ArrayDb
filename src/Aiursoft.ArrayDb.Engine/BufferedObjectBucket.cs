@@ -85,7 +85,7 @@ Underlying object bucket statistics:
 
     public void AddBuffered(T obj)
     {
-        // Only single thread. Or multiple threads may QueueAddBulk and StartCooldown at the same time.
+        // Only single thread. Or multiple threads may believe this is Code at the same time.
         lock (_bufferWriteLock)
         {
             // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
@@ -94,6 +94,7 @@ Underlying object bucket statistics:
                 Interlocked.Increment(ref RequestHotWriteCount);
                 if (_buffer.Count >= maxBufferedItemsCount)
                 {
+                    // If buffer is full, wait until the buffer is cleared.
                     WaitUntilCoolAsync().Wait();
                 }
 
@@ -111,6 +112,7 @@ Underlying object bucket statistics:
         }
     }
     
+    // This method should never execute in parallel!!!
     private void StartCooldown()
     {
         Interlocked.Increment(ref CoolDownEventsCount);
@@ -153,7 +155,15 @@ Underlying object bucket statistics:
             InsertItemsCountRecord.Add(objs.Length);
             
             // Add to the underlying bucket
-            innerBucket.AddBulk(objs);
+            try
+            {
+                innerBucket.AddBulk(objs);
+            }
+            catch (Exception e)
+            {
+                // We couldn't throw the exception here. Because the task queue will be stopped.
+                Console.WriteLine(e);
+            }
         });
     }
 
