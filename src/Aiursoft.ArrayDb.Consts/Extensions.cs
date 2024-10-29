@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.FilePersists;
+namespace Aiursoft.ArrayDb.Consts;
 
 public static class StringExtensions
 {

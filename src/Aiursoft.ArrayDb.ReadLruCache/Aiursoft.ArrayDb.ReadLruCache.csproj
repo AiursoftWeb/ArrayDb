@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Aiursoft.ArrayDb.ReadLruCache</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.ReadLruCache</RootNamespace>
+    <IsTestProject>false</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj" />
+  </ItemGroup>
+</Project>
