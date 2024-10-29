@@ -94,8 +94,8 @@ public class IntegrationTests : ArrayDbTestBase
         var persistService2 =
             new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
         
-        var length = persistService2.SpaceProvisionedItemsCount;
-        Assert.AreEqual(2, length);
+        Assert.AreEqual(2, persistService2.SpaceProvisionedItemsCount);
+        Assert.AreEqual(2, persistService2.ArchivedItemsCount);
         var offSet = persistService2.StringRepository.FileEndOffset;
         Assert.AreEqual(49, offSet);
         

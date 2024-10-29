@@ -25,9 +25,10 @@ namespace Aiursoft.ArrayDb.ObjectBucket;
 public class ObjectBuckets<T> where T : new()
 {
     // Save the offset
+    // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
     public long SpaceProvisionedItemsCount;
     public long ArchivedItemsCount;
-    private const int CountMarkerSize = sizeof(long);
+    private const int CountMarkerSize = sizeof(long) + sizeof(long);
     private readonly object _expandLengthLock = new();
 
     // Underlying store
@@ -100,19 +101,28 @@ Underlying string repository statistics:
             cachePageSize: cachePageSize,
             maxCachedPagesCount: maxCachedPagesCount,
             hotCacheItems: hotCacheItems);
-        SpaceProvisionedItemsCount = GetItemsCount();
-        ArchivedItemsCount = SpaceProvisionedItemsCount;
+        (SpaceProvisionedItemsCount,ArchivedItemsCount) = GetItemsCount();
+        if (SpaceProvisionedItemsCount != ArchivedItemsCount)
+        {
+            throw new Exception("The space provisioned items count and archived items count are not equal. The file may be corrupted. Is the process crashed in the middle of writing?");
+        }
     }
 
-    private long GetItemsCount()
+    private (long provisioned, long archived) GetItemsCount()
     {
-        var buffer = StructureFileAccess.ReadInFile(0, CountMarkerSize);
-        return BitConverter.ToInt32(buffer, 0);
+        var provisionedAndArchived = StructureFileAccess.ReadInFile(0, CountMarkerSize);
+        var provisioned = BitConverter.ToInt64(provisionedAndArchived);
+        var archived = BitConverter.ToInt64(provisionedAndArchived, sizeof(long));
+        return (provisioned, archived);
     }
 
-    private void SaveCount(long length)
+    private void SaveCount(long provisioned, long archived)
     {
-        var buffer = BitConverter.GetBytes(length);
+        var provisionedBytes = BitConverter.GetBytes(provisioned);
+        var archivedBytes = BitConverter.GetBytes(archived);
+        var buffer = new byte[CountMarkerSize];
+        provisionedBytes.CopyTo(buffer, 0);
+        archivedBytes.CopyTo(buffer, sizeof(long));
         StructureFileAccess.WriteInFile(0, buffer);
     }
 
@@ -123,10 +133,19 @@ Underlying string repository statistics:
         {
             writeOffset = SpaceProvisionedItemsCount;
             SpaceProvisionedItemsCount += itemsCount;
-            SaveCount(SpaceProvisionedItemsCount);
+            SaveCount(SpaceProvisionedItemsCount, ArchivedItemsCount);
         }
 
         return writeOffset;
+    }
+    
+    private void SetArchivedAsProvisioned()
+    {
+        lock (_expandLengthLock)
+        {
+            ArchivedItemsCount = SpaceProvisionedItemsCount;
+            SaveCount(SpaceProvisionedItemsCount, ArchivedItemsCount);
+        }
     }
 
     private int GetItemSize()
@@ -421,7 +440,7 @@ Underlying string repository statistics:
         var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(1);
         Interlocked.Increment(ref SingleAppendCount);
         WriteIndex(indexToWrite, obj);
-        ArchivedItemsCount = SpaceProvisionedItemsCount;
+        SetArchivedAsProvisioned();
     }
 
     /// <summary>
@@ -435,7 +454,7 @@ Underlying string repository statistics:
         var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(objs.Length);
         WriteBulk(indexToWrite, objs);
         Interlocked.Increment(ref BulkAppendCount);
-        ArchivedItemsCount = SpaceProvisionedItemsCount;
+        SetArchivedAsProvisioned();
     }
 
     [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
