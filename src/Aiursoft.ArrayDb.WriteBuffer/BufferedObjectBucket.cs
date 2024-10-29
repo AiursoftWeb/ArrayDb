@@ -82,7 +82,7 @@ Underlying object bucket statistics:
     
     public Task? CoolDownTimingTask;
 
-    public void AddBuffered(T obj)
+    public void AddBuffered(params T[] objs)
     {
         // Only single thread. Or multiple threads may believe this is Code at the same time.
         lock (_bufferWriteLock)
@@ -91,21 +91,24 @@ Underlying object bucket statistics:
             if (IsHot)
             {
                 Interlocked.Increment(ref RequestHotWriteCount);
-                if (_buffer.Count >= maxBufferedItemsCount)
+                if (_buffer.Count + objs.Length >= maxBufferedItemsCount)
                 {
                     // If buffer is full, wait until the buffer is cleared.
                     WaitUntilCoolAsync().Wait();
                 }
 
                 // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
-                _buffer.Enqueue(obj);
+                foreach (var obj in objs)
+                {
+                    _buffer.Enqueue(obj);
+                }
             }
             // Is cold status, directly queue add then start cooldown
             else
             {
                 Interlocked.Increment(ref RequestColdWriteCount);
                 // Add and start cooldown
-                QueueAddBulk([obj]);
+                QueueAddBulk(objs);
                 StartCooldown();
             }
         }

@@ -35,6 +35,50 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     }
 
     [TestMethod]
+    public async Task TestAddBufferedCollection()
+    {
+        var persistService = new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+        var buffer = new BufferedObjectBuckets<SampleData>(persistService);
+        Assert.IsTrue(buffer.IsCold);
+        
+        var sampleDatas = new[]
+        {
+            new SampleData
+            {
+                MyNumber1 = 1,
+                MyString1 = "Hello, World! 你好世界",
+                MyNumber2 = 2,
+                MyBoolean1 = true,
+                MyString2 = "This is a string"
+            },
+            new SampleData
+            {
+                MyNumber1 = 2,
+                MyString1 = "Hello, World! 你好世界",
+                MyNumber2 = 3,
+                MyBoolean1 = true,
+                MyString2 = "This is a string"
+            },
+            new SampleData
+            {
+                MyNumber1 = 3,
+                MyString1 = "Hello, World! 你好世界",
+                MyNumber2 = 4,
+                MyBoolean1 = true,
+                MyString2 = "This is a string"
+            }
+        };
+        buffer.AddBuffered(sampleDatas);
+        Assert.IsTrue(buffer.IsHot);
+        
+        await Task.Delay(1010);
+        Assert.IsTrue(buffer.IsCold);
+        
+        // Data actually written.
+        Assert.AreEqual(3, persistService.Count);
+    }
+
+    [TestMethod]
     public async Task WriteWhenHotNotActuallyWritten()
     {
         var persistService = new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
