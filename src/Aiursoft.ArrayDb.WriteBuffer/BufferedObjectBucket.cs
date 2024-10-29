@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.Consts;
 using Aiursoft.ArrayDb.ObjectBucket;
-using Aiursoft.ArrayDb.FilePersists;
 
 namespace Aiursoft.ArrayDb.WriteBuffer;
 
@@ -95,7 +94,7 @@ Underlying object bucket statistics:
                 if (_buffer.Count + objs.Length >= maxBufferedItemsCount)
                 {
                     // If buffer is full, wait until the buffer is cleared.
-                    WaitUntilCoolAsync().Wait();
+                    WaitCurrentCoolDownTaskAsync().Wait();
                 }
 
                 // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
@@ -177,7 +176,7 @@ Underlying object bucket statistics:
     /// </summary>
     public async Task SyncAsync()
     {
-        await WaitUntilCoolAsync();
+        await WaitCurrentCoolDownTaskAsync();
         await WaitWriteCompleteAsync();
     }
     
@@ -187,7 +186,7 @@ Underlying object bucket statistics:
     /// This method is used to ensure the data is started writing to the disk.
     /// </summary>
     /// <returns></returns>
-    public Task WaitUntilCoolAsync()
+    public Task WaitCurrentCoolDownTaskAsync()
     {
         if (IsHot)
         {
