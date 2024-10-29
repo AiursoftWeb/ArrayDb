@@ -52,6 +52,7 @@ public class ObjectBuckets<T> where T : new()
 
     public string OutputStatistics()
     {
+        // ReSharper disable once InconsistentlySynchronizedField
         return $@"
 Object repository with item type {typeof(T).Name} statistics:
 
