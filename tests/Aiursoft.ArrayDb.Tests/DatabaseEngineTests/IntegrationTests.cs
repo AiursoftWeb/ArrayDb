@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
@@ -93,7 +94,7 @@ public class IntegrationTests : ArrayDbTestBase
         var persistService2 =
             new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
         
-        var length = persistService2.Count;
+        var length = persistService2.SpaceProvisionedItemsCount;
         Assert.AreEqual(2, length);
         var offSet = persistService2.StringRepository.FileEndOffset;
         Assert.AreEqual(49, offSet);
@@ -229,7 +230,8 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
         }
-        Assert.AreEqual(5, persistService2.Count);
+        Assert.AreEqual(5, persistService2.SpaceProvisionedItemsCount);
+        Assert.AreEqual(5, persistService2.ArchivedItemsCount);
     }
 
     [TestMethod]
@@ -327,5 +329,44 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual(i, readSample.MyNumber1);
             Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
         }
+    }
+
+    [TestMethod]
+    public async Task AsyncSaveItems()
+    {
+        var persistService =
+            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+        var sampleDataItems = new List<SampleData>();
+        for (var i = 0; i < 100000; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            sampleDataItems.Add(sample);
+        }
+        var addTask = Task.Run(() =>
+        {
+            persistService.AddBulk(sampleDataItems.ToArray());
+        });
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+        Assert.AreEqual(0, persistService.SpaceProvisionedItemsCount);
+        Assert.AreEqual(0, persistService.ArchivedItemsCount);
+        while (persistService.SpaceProvisionedItemsCount == persistService.ArchivedItemsCount)
+        {
+            await Task.Delay(1);
+        }
+        Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount);
+        Assert.AreEqual(0, persistService.ArchivedItemsCount);
+        Console.WriteLine($"Time to provision 10000 items: {stopWatch.ElapsedMilliseconds}ms");
+        await addTask;
+        Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount);
+        Assert.AreEqual(100000, persistService.ArchivedItemsCount);
+        Console.WriteLine($"Time to archive 10000 items: {stopWatch.ElapsedMilliseconds}ms");
     }
 }

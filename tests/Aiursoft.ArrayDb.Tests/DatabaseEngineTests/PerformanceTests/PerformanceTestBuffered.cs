@@ -40,7 +40,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         
         Assert.IsTrue(buffer.IsHot);
         Assert.IsTrue(buffer.BufferedItemsCount > 1);
-        Assert.IsTrue(bucket.Count < 1000000);
+        Assert.IsTrue(bucket.SpaceProvisionedItemsCount < 1000000);
         
         stopWatch.Reset();
         stopWatch.Start();
@@ -51,7 +51,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(1000000, bucket.Count);
+        Assert.AreEqual(1000000, bucket.SpaceProvisionedItemsCount);
         Console.WriteLine(buffer.OutputStatistics());
     }
     
@@ -84,7 +84,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         
         Assert.IsTrue(buffer.IsHot);
         Assert.IsTrue(buffer.BufferedItemsCount > 1);
-        Assert.IsTrue(bucket.Count < 1000000);
+        Assert.IsTrue(bucket.SpaceProvisionedItemsCount < 1000000);
         
         stopWatch.Reset();
         stopWatch.Start();
@@ -95,7 +95,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 100);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(1000000, bucket.Count);
+        Assert.AreEqual(1000000, bucket.SpaceProvisionedItemsCount);
         Console.WriteLine(buffer.OutputStatistics());
     }
 }

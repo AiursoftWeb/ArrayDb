@@ -31,7 +31,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         Assert.IsTrue(buffer.IsCold);
         
         // Data actually written.
-        Assert.AreEqual(1, persistService.Count);
+        Assert.AreEqual(1, persistService.SpaceProvisionedItemsCount);
     }
 
     [TestMethod]
@@ -75,7 +75,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         Assert.IsTrue(buffer.IsCold);
         
         // Data actually written.
-        Assert.AreEqual(3, persistService.Count);
+        Assert.AreEqual(3, persistService.SpaceProvisionedItemsCount);
     }
 
     [TestMethod]
@@ -96,7 +96,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         // Initial state: Cold and nothing inside.
         Assert.IsTrue(buffer.IsCold);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(0, persistService.Count);
+        Assert.AreEqual(0, persistService.SpaceProvisionedItemsCount);
         
         // Add something. (This is the first write. It's low latency. So it's persisted immediately.)
         buffer.AddBuffered(sampleData);
@@ -105,7 +105,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         // It's hot, however the first write is persisted immediately.
         Assert.IsTrue(buffer.IsHot);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(1, persistService.Count);
+        Assert.AreEqual(1, persistService.SpaceProvisionedItemsCount);
 
         // Add again. (This is the second write. It's high latency. So it's buffered.)
         buffer.AddBuffered(sampleData);
@@ -113,18 +113,18 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         // It's hot, and the second write is buffered.
         Assert.IsTrue(buffer.IsHot);
         Assert.AreEqual(1, buffer.BufferedItemsCount);
-        Assert.AreEqual(1, persistService.Count);
+        Assert.AreEqual(1, persistService.SpaceProvisionedItemsCount);
         
         // Wait until the cooldown. The buffered items should be persisted. However, since it just persisted an item, it's still hot. 
         await Task.Delay(1010);
         Assert.IsTrue(buffer.IsHot);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(2, persistService.Count);
+        Assert.AreEqual(2, persistService.SpaceProvisionedItemsCount);
 
         // Wait until the cooldown. Now it's cold.
         await Task.Delay(1010);
         Assert.IsTrue(buffer.IsCold);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
-        Assert.AreEqual(2, persistService.Count);
+        Assert.AreEqual(2, persistService.SpaceProvisionedItemsCount);
     }
 }

@@ -25,7 +25,8 @@ namespace Aiursoft.ArrayDb.ObjectBucket;
 public class ObjectBuckets<T> where T : new()
 {
     // Save the offset
-    public long Count;
+    public long SpaceProvisionedItemsCount;
+    public long ArchivedItemsCount;
     private const int CountMarkerSize = sizeof(long);
     private readonly object _expandLengthLock = new();
 
@@ -53,8 +54,9 @@ public class ObjectBuckets<T> where T : new()
         return $@"
 Object repository with item type {typeof(T).Name} statistics:
 
-* Stored objects count: {Count}
-* Consumed actual storage space: {GetItemSize() * Count} bytes
+* Space provisioned items count: {SpaceProvisionedItemsCount}
+* Archived items count: {ArchivedItemsCount}
+* Consumed actual storage space: {GetItemSize() * SpaceProvisionedItemsCount} bytes
 * Single append events count: {SingleAppendCount}
 * Bulk   append events count: {BulkAppendCount}
 * Read      events count: {ReadCount}
@@ -98,7 +100,8 @@ Underlying string repository statistics:
             cachePageSize: cachePageSize,
             maxCachedPagesCount: maxCachedPagesCount,
             hotCacheItems: hotCacheItems);
-        Count = GetItemsCount();
+        SpaceProvisionedItemsCount = GetItemsCount();
+        ArchivedItemsCount = SpaceProvisionedItemsCount;
     }
 
     private long GetItemsCount()
@@ -113,14 +116,14 @@ Underlying string repository statistics:
         StructureFileAccess.WriteInFile(0, buffer);
     }
 
-    private long RequestWriteSpaceAndGetStartOffset(int itemsCount)
+    private long ProvisionWriteSpaceAndGetStartOffset(int itemsCount)
     {
         long writeOffset;
         lock (_expandLengthLock)
         {
-            writeOffset = Count;
-            Count += itemsCount;
-            SaveCount(Count);
+            writeOffset = SpaceProvisionedItemsCount;
+            SpaceProvisionedItemsCount += itemsCount;
+            SaveCount(SpaceProvisionedItemsCount);
         }
 
         return writeOffset;
@@ -415,9 +418,10 @@ Underlying string repository statistics:
     [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     public void Add(T obj)
     {
-        var indexToWrite = RequestWriteSpaceAndGetStartOffset(1);
+        var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(1);
         Interlocked.Increment(ref SingleAppendCount);
         WriteIndex(indexToWrite, obj);
+        ArchivedItemsCount = SpaceProvisionedItemsCount;
     }
 
     /// <summary>
@@ -428,15 +432,16 @@ Underlying string repository statistics:
     /// <param name="objs">Array of objects to add in bulk.</param>
     public void AddBulk(T[] objs)
     {
-        var indexToWrite = RequestWriteSpaceAndGetStartOffset(objs.Length);
+        var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(objs.Length);
         WriteBulk(indexToWrite, objs);
         Interlocked.Increment(ref BulkAppendCount);
+        ArchivedItemsCount = SpaceProvisionedItemsCount;
     }
 
     [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
     public T Read(int index)
     {
-        if (index < 0 || index >= Count)
+        if (index < 0 || index >= SpaceProvisionedItemsCount)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
@@ -458,7 +463,7 @@ Underlying string repository statistics:
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the indexFrom is less than 0 or indexFrom + count is greater than the total number of objects.</exception>
     public T[] ReadBulk(int indexFrom, int count)
     {
-        if (indexFrom < 0 || indexFrom + count > Count)
+        if (indexFrom < 0 || indexFrom + count > SpaceProvisionedItemsCount)
         {
             throw new ArgumentOutOfRangeException(nameof(indexFrom));
         }
