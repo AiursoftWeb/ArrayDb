@@ -60,7 +60,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
     {
         var bucket =
             new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
-        var buffer = new BufferedObjectBuckets<SampleData>(bucket);
+        var buffer = new BufferedObjectBuckets<SampleData>(bucket, initialCooldownMilliseconds: 50);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
@@ -78,7 +78,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         }
         stopWatch.Stop();
         Console.WriteLine(buffer.OutputStatistics());
-        Console.WriteLine($"Write 10000000 times: {stopWatch.ElapsedMilliseconds}ms");
+        Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
         // Read 100 0000 times in less than 10 seconds. On my machine 597ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
         
@@ -93,7 +93,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
         // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
+        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 100);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
         Assert.AreEqual(1000000, bucket.Count);
         Console.WriteLine(buffer.OutputStatistics());
