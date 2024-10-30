@@ -22,7 +22,7 @@ namespace Aiursoft.ArrayDb.ObjectBucket;
 /// * Guid Stored as 16 bytes
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectBuckets<T> where T : new()
+public class ObjectBuckets<T> where T : BucketEntity, new()
 {
     // Save the offset
     // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
@@ -242,6 +242,7 @@ Underlying string repository statistics:
     // OWPST to bytes.
     private void SerializeBytes(ObjectWithPersistedStrings<T> objWithStrings, byte[] buffer, int offset)
     {
+        objWithStrings.Object.CreationTime = DateTime.UtcNow;
         var properties = typeof(T).GetProperties();
         foreach (var prop in properties)
         {

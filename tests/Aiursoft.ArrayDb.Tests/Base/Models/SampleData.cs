@@ -1,6 +1,8 @@
-﻿namespace Aiursoft.ArrayDb.Tests.Base.Models;
+﻿using Aiursoft.ArrayDb.ObjectBucket;
 
-public class SampleData
+namespace Aiursoft.ArrayDb.Tests.Base.Models;
+
+public class SampleData : BucketEntity
 {
     public int MyNumber1 { get; init; }
     public string MyString1 { get; init; } = string.Empty;

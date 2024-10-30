@@ -18,7 +18,7 @@ public class BufferedObjectBuckets<T>(
     int maxBufferedItemsCount = Consts.Consts.MaxWriteBufferCachedItemsCount,
     int initialCooldownMilliseconds = Consts.Consts.WriteBufferInitialCooldownMilliseconds,
     int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)
-    where T : new()
+    where T : BucketEntity, new()
 {
     private readonly TasksQueue _tasksQueue = new();
     private readonly ConcurrentQueue<T> _buffer = [];

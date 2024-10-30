@@ -14,6 +14,7 @@ public class IntegrationTests : ArrayDbTestBase
     [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
     public void WriteAndReadTests()
     {
+        var testStartTime = DateTime.UtcNow;
         var persistService =
             new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
 
@@ -29,6 +30,7 @@ public class IntegrationTests : ArrayDbTestBase
             };
             persistService.Add(sample);
         }
+        var testEndTime = DateTime.UtcNow;
 
         for (var i = 0; i < 1; i++)
         {
@@ -38,6 +40,8 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual(i * 10, readSample.MyNumber2);
             Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
+            Assert.IsTrue(testStartTime < readSample.CreationTime);
+            Assert.IsTrue(testEndTime > readSample.CreationTime);
         }
     }
     
