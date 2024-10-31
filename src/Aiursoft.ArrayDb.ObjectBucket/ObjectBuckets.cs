@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
@@ -52,13 +52,18 @@ public class ObjectBuckets<T> where T : BucketEntity, new()
 
     public string OutputStatistics()
     {
+        long spaceProvisionedItemsCount;
+        lock (_expandLengthLock)
+        {
+            spaceProvisionedItemsCount = SpaceProvisionedItemsCount;
+        }
         // ReSharper disable once InconsistentlySynchronizedField
         return $@"
 Object repository with item type {typeof(T).Name} statistics:
 
-* Space provisioned items count: {SpaceProvisionedItemsCount}
+* Space provisioned items count: {spaceProvisionedItemsCount}
 * Archived items count: {ArchivedItemsCount}
-* Consumed actual storage space: {GetItemSize() * SpaceProvisionedItemsCount} bytes
+* Consumed actual storage space: {GetItemSize() * spaceProvisionedItemsCount} bytes
 * Single append events count: {SingleAppendCount}
 * Bulk   append events count: {BulkAppendCount}
 * Read      events count: {ReadCount}
@@ -462,7 +467,7 @@ Underlying string repository statistics:
     [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
     public T Read(int index)
     {
-        if (index < 0 || index >= SpaceProvisionedItemsCount)
+        if (index < 0 || index >= ArchivedItemsCount)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
@@ -484,7 +489,7 @@ Underlying string repository statistics:
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the indexFrom is less than 0 or indexFrom + count is greater than the total number of objects.</exception>
     public T[] ReadBulk(int indexFrom, int count)
     {
-        if (indexFrom < 0 || indexFrom + count > SpaceProvisionedItemsCount)
+        if (indexFrom < 0 || indexFrom + count > ArchivedItemsCount)
         {
             throw new ArgumentOutOfRangeException(nameof(indexFrom));
         }
