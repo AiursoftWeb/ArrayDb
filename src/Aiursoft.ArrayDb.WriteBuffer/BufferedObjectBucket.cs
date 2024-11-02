@@ -20,6 +20,7 @@ public class BufferedObjectBuckets<T>(
     int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)
     where T : BucketEntity, new()
 {
+    public ObjectBucket<T> InnerBucket => innerBucket;
     private readonly TasksQueue _tasksQueue = new();
     private readonly ConcurrentQueue<T> _buffer = [];
     private readonly object _bufferWriteLock = new();

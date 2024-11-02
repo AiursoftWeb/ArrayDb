@@ -26,9 +26,9 @@ public class ObjectBucket<T> where T : BucketEntity, new()
 {
     // Save the offset
     // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
-    public long SpaceProvisionedItemsCount;
-    public long ArchivedItemsCount;
-    private const int CountMarkerSize = sizeof(long) + sizeof(long);
+    public int SpaceProvisionedItemsCount;
+    public int ArchivedItemsCount;
+    private const int CountMarkerSize = sizeof(int) + sizeof(int);
     private readonly object _expandLengthLock = new();
 
     // Underlying store
@@ -114,21 +114,21 @@ Underlying string repository statistics:
         }
     }
 
-    private (long provisioned, long archived) GetItemsCount()
+    private (int provisioned, int archived) GetItemsCount()
     {
         var provisionedAndArchived = StructureFileAccess.ReadInFile(0, CountMarkerSize);
-        var provisioned = BitConverter.ToInt64(provisionedAndArchived);
-        var archived = BitConverter.ToInt64(provisionedAndArchived, sizeof(long));
+        var provisioned = BitConverter.ToInt32(provisionedAndArchived, 0);
+        var archived = BitConverter.ToInt32(provisionedAndArchived, sizeof(int));
         return (provisioned, archived);
     }
 
-    private void SaveCount(long provisioned, long archived)
+    private void SaveCount(int provisioned, int archived)
     {
         var provisionedBytes = BitConverter.GetBytes(provisioned);
         var archivedBytes = BitConverter.GetBytes(archived);
         var buffer = new byte[CountMarkerSize];
         provisionedBytes.CopyTo(buffer, 0);
-        archivedBytes.CopyTo(buffer, sizeof(long));
+        archivedBytes.CopyTo(buffer, sizeof(int));
         StructureFileAccess.WriteInFile(0, buffer);
     }
 
