@@ -16,7 +16,7 @@ public class IntegrationTests : ArrayDbTestBase
     {
         var testStartTime = DateTime.UtcNow;
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         for (var i = 0; i < 1; i++)
         {
@@ -50,7 +50,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void WriteAndReadEmptyString()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         var sample = new SampleData
         {
@@ -74,7 +74,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void RebootTest()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         var sample = new SampleData
         {
@@ -96,7 +96,7 @@ public class IntegrationTests : ArrayDbTestBase
         persistService.Add(sample2);
         
         var persistService2 =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         
         Assert.AreEqual(2, persistService2.SpaceProvisionedItemsCount);
         Assert.AreEqual(2, persistService2.ArchivedItemsCount);
@@ -122,7 +122,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void ComplicatedSampleDataTest()
     {
         var persistService =
-            new ObjectBuckets<ComplicatedSampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<ComplicatedSampleData>(TestFilePath, TestFilePathStrings);
         
         var sample = new ComplicatedSampleData
         {
@@ -149,7 +149,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void AddBulkAndReadBulk()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
@@ -168,7 +168,7 @@ public class IntegrationTests : ArrayDbTestBase
         persistService.AddBulk(samplesArray);
         
         var persistService2 =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         var readSamples = persistService2.ReadBulk(0, 2);
         for (var i = 0; i < 2; i++)
@@ -188,7 +188,7 @@ public class IntegrationTests : ArrayDbTestBase
     {
         // Bulk write 2 samples
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
@@ -222,7 +222,7 @@ public class IntegrationTests : ArrayDbTestBase
         
         // Read all 5 samples
         var persistService2 =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         
         var readSamples = persistService2.ReadBulk(0, 5);
         for (var i = 0; i < 5; i++)
@@ -243,7 +243,7 @@ public class IntegrationTests : ArrayDbTestBase
     public void ReadOutOfRangeTest()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         // Write 2 samples
         var samples = new List<SampleData>();
@@ -294,7 +294,7 @@ public class IntegrationTests : ArrayDbTestBase
     {
         // 1000 threads, each threads add 1000 samples. All the 1 000 000 samples should be added. All items should be read correctly.
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         
         var threads = new List<Thread>();
         for (var i = 0; i < 1000; i++)
@@ -339,7 +339,7 @@ public class IntegrationTests : ArrayDbTestBase
     public async Task AsyncSaveItems()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var sampleDataItems = new List<SampleData>();
         for (var i = 0; i < 100000; i++)
         {

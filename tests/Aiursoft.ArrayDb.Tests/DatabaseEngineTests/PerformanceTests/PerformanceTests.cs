@@ -18,7 +18,7 @@ public class PerformanceTests : ArrayDbTestBase
         // Write 10 0000 times in less than 20 seconds. On my machine: 4214ms -> 3707ms
         stopWatch.Start();
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         for (var i = 0; i < 100000; i++)
         {
             var sample = new SampleData
@@ -40,7 +40,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestBulkWrite()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var samples = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
@@ -69,7 +69,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestBulkRead()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var samples = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
@@ -86,7 +86,7 @@ public class PerformanceTests : ArrayDbTestBase
         var samplesArray = samples.ToArray();
         persistService.AddBulk(samplesArray);
         
-        var persistService2 = new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
         // Read 100 0000 times in less than 10 seconds. On my machine 681ms -> 685ms.
@@ -112,7 +112,7 @@ public class PerformanceTests : ArrayDbTestBase
     {
         // Read 100 0000 times in less than 10 seconds. On my machine: 760ms -> 912ms
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var list = new List<SampleData>();
         for (var i = 0; i < 1000000; i++)
         {
@@ -150,7 +150,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void OutputStatistics()
     {
         var persistService =
-            new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var samples = new List<SampleData>();
         for (var i = 0; i < 10; i++)
         {

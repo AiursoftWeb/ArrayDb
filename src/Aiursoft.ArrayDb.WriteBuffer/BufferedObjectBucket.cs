@@ -14,7 +14,7 @@ namespace Aiursoft.ArrayDb.WriteBuffer;
 /// <param name="initialCooldownMilliseconds">The initial cooldown time in milliseconds. Suggested value is 1000. Small value will cause data fragmentation. Large value will cause latency.</param>
 /// <param name="maxCooldownMilliseconds">The maximum cooldown time in milliseconds. Suggested value is 1000 * 16. Because the queue may not be able to handle the high frequency of writes. According to the remaining tasks in the queue, increase the next cooldown time. But not more than 16 times the initial cooldown time.</param>
 public class BufferedObjectBuckets<T>(
-    ObjectBuckets<T> innerBucket,
+    ObjectBucket<T> innerBucket,
     int maxBufferedItemsCount = Consts.Consts.MaxWriteBufferCachedItemsCount,
     int initialCooldownMilliseconds = Consts.Consts.WriteBufferInitialCooldownMilliseconds,
     int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)

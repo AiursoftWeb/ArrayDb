@@ -13,7 +13,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     [TestMethod]
     public async Task CoolHotSwitchTest()
     {
-        var persistService = new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
         Assert.IsTrue(buffer.IsCold);
         var sampleData = new SampleData
@@ -37,7 +37,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     [TestMethod]
     public async Task TestAddBufferedCollection()
     {
-        var persistService = new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
         Assert.IsTrue(buffer.IsCold);
         
@@ -81,7 +81,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     [TestMethod]
     public async Task WriteWhenHotNotActuallyWritten()
     {
-        var persistService = new ObjectBuckets<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
         Assert.IsTrue(buffer.IsCold);
         var sampleData = new SampleData

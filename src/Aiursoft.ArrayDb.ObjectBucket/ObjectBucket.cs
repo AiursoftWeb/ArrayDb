@@ -22,7 +22,7 @@ namespace Aiursoft.ArrayDb.ObjectBucket;
 /// * Guid Stored as 16 bytes
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectBuckets<T> where T : BucketEntity, new()
+public class ObjectBucket<T> where T : BucketEntity, new()
 {
     // Save the offset
     // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
@@ -87,7 +87,7 @@ Underlying string repository statistics:
     /// <param name="maxCachedPagesCount">The maximum number of pages cached in memory.</param>
     /// <param name="hotCacheItems">The number of most recent pages that are considered hot and will not be moved even if they are used.</param>
     /// <typeparam name="T"></typeparam>
-    public ObjectBuckets(
+    public ObjectBucket(
         string structureFilePath,
         string stringFilePath,
         long initialSizeIfNotExists = Consts.Consts.DefaultPhysicalFileSize,
