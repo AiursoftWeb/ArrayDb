@@ -41,6 +41,22 @@ Large-scale writes are significantly faster than reads because ArrayDb optimizes
 
 In contrast, reads require accessing each string or variable-length attribute individually, creating random access patterns due to potential data fragmentation. As a result, reading incurs a higher O(n) disk-seeking time, where n is the element count. ArrayDb uses an LRU cache to reduce physical disk reads, but in multi-threaded reads, this cache introduces high CPU load.
 
+## How to use ArrayDb
+
+Unlike MySQL, working as a process, ArrayDb works as a library. You can use ArrayDb in your C# project by adding the `ArrayDb` NuGet package to your project.
+
+```bash
+mkdir LearnArrayDb
+cd LearnArrayDb
+dotnet new console
+dotnet add package Aiursoft.ArrayDb.Partitions
+```
+
+That's it. Now you have ArrayDb in your project. You can start using it by creating a new `Partition` object.
+
+```csharp
+
+
 ## How to contribute
 
 There are many ways to contribute to the project: logging bugs, submitting pull requests, reporting issues, and creating suggestions.

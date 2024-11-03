@@ -1,15 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <Version>1.0.1</Version>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.ReadLruCache</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.ReadLruCache</RootNamespace>
     <IsTestProject>false</IsTestProject>
-    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Company>Aiursoft</Company>
+    <Product>ReadLruCache</Product>
+    <Description>Nuget package of 'ReadLruCache' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.ReadLruCache</PackageId>
+    <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.ArrayDb.FilePersists\Aiursoft.ArrayDb.FilePersists.csproj" />
+    <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
 </Project>
