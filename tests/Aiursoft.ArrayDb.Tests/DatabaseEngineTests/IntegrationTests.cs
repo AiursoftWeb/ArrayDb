@@ -501,4 +501,37 @@ public class IntegrationTests : ArrayDbTestBase
         }
         Directory.Delete(testPath, true);
     }
+
+    [TestMethod]
+    public async Task DataWithDefaultPartitionKeyName()
+    {
+        var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(testPath);
+        var partitionedService =
+            new PartitionedObjectBucket<DataWithDefaultPartition, int>("my-db2", testPath);
+        for (var i = 0; i < 100; i++)
+        {
+            var sample = new DataWithDefaultPartition
+            {
+                Id = i,
+                PartitionId = i % 10,
+                Message = $"Hello, World! 你好世界 {i}"
+            };
+            partitionedService.Add(sample);
+        }
+        await partitionedService.SyncAsync();
+        var partitionedService2 =
+            new PartitionedObjectBucket<DataWithDefaultPartition, int>("my-db2", testPath);
+        var results = partitionedService2.AsEnumerable(5).ToArray();
+        for (var i = 0; i < 10; i++)
+        {
+            Assert.AreEqual(10, results.Length);
+            for (var j = 0; j < 10; j++)
+            {
+                Assert.AreEqual(5, results[j].PartitionId);
+                Assert.AreEqual(5, results[j].Id % 10);
+            }
+        }
+        
+    }
 }

@@ -2,8 +2,8 @@
 
 namespace Aiursoft.ArrayDb.Partitions;
 
-public abstract class PartitionedBucketEntity<T> : BucketEntity
+public abstract class PartitionedBucketEntity<T> : BucketEntity 
 {
     [PartitionKey]
-    public abstract T PartitionId { get; set; }
+    public virtual T PartitionId { get; set; } = default!;
 }

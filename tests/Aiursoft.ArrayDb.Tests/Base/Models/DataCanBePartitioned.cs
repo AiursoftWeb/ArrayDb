@@ -33,3 +33,9 @@ public class DataCanBePartitionedByString : PartitionedBucketEntity<string>
     public string? Message { get; set; }
     public int Id { get; set; }
 }
+
+public class DataWithDefaultPartition : PartitionedBucketEntity<int>
+{
+    public int Id { get; set; }
+    public string? Message { get; set; }
+}

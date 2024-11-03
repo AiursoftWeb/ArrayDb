@@ -225,6 +225,38 @@ Console.WriteLine("All logs count: " + allLogs.Length);
 
 ## Best practice
 
+### Default partition key
+
+In some cases, you don't want to rename the `PartitionId` property to `ApplicationName` in the entity. You can directly add your own property. And use `PartitionId` to access the partition key.
+
+```csharp
+// This class inherits from PartitionedBucketEntity<string>, so PartitionId is the partition key.
+public class MyLogItem : PartitionedBucketEntity<string>
+{
+    // Fill your own properties here.
+    public string ApplicationName { get; set; } = string.Empty;
+
+    public DateTime HappenTime { get; set; } = DateTime.UtcNow;
+
+    public string LogMessage { get; set; } = string.Empty;
+
+    public int HttpResponseCode { get; set; }
+
+    public string RequestPath { get; set; } = string.Empty;
+    
+    public TimeSpan ResponseTime { get; set; }
+}
+
+var log = new MyLogItem
+{
+    PartitionId = "NextCloud",
+    LogMessage = "A user logged in.",
+    HttpResponseCode = 200,
+    RequestPath = "/account/login",
+    ResponseTime = TimeSpan.FromMilliseconds(100)
+};
+```
+
 ### Rebooting
 
 If your application crashes, you can simply create a new `PartitionedObjectBucket` instance with the same database name and file path to recover the data.
