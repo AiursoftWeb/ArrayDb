@@ -52,10 +52,167 @@ dotnet new console
 dotnet add package Aiursoft.ArrayDb.Partitions
 ```
 
-That's it. Now you have ArrayDb in your project. You can start using it by creating a new `Partition` object.
+That's it. Now you have ArrayDb in your project.
+
+### Building the module
+
+You can start using it by creating a new entity with type: `PartitionedBucketEntity<T>`, where T is the partition key type.
+
+Supported property types are:
+
+* `int`
+* `bool`
+* `string`
+* `DateTime`
+* `long`
+* `float`
+* `double`
+* `TimeSpan`
+* `Guid`
 
 ```csharp
+public class MyLogItem : PartitionedBucketEntity<string>
+{
+    [PartitionKey] 
+    public string ApplicationName { get; set; } = string.Empty;
 
+    [PartitionKey]
+    public override string PartitionId
+    {
+        get => ApplicationName;
+        set => ApplicationName = value;
+    }
+    
+    public DateTime HappenTime { get; set; } = DateTime.UtcNow;
+
+    public string LogMessage { get; set; } = string.Empty;
+
+    public int HttpResponseCode { get; set; }
+
+    public string RequestPath { get; set; } = string.Empty;
+    
+    public TimeSpan ResponseTime { get; set; }
+}
+```
+
+Then you can start using ArrayDb by creating a new `PartitionedBucket<T>` instance.
+
+```csharp
+var databaseName = "my-db";
+var databaseFilePath = "/tmp/my-db";
+Directory.CreateDirectory(databaseFilePath);
+        
+var db = new PartitionedObjectBucket<MyLogItem, string>(databaseName, databaseFilePath);
+```
+
+### Writing data
+
+Now you can start using the `db` instance to write some data.
+
+```csharp
+// Write to the database.
+db.Add(new MyLogItem
+{
+    ApplicationName = "NextCloud",
+    LogMessage = "A user logged in.",
+    HttpResponseCode = 200,
+    RequestPath = "/account/login",
+    ResponseTime = TimeSpan.FromMilliseconds(100)
+});
+
+db.Add(new MyLogItem
+{
+    ApplicationName = "NextCloud",
+    LogMessage = "A user logged out.",
+    HttpResponseCode = 200,
+    RequestPath = "/account/logout",
+    ResponseTime = TimeSpan.FromMilliseconds(50)
+});
+
+db.Add(new MyLogItem
+{
+    ApplicationName = "GitLab",
+    LogMessage = "A user created a new project.",
+    HttpResponseCode = 201,
+    RequestPath = "/projects/new",
+    ResponseTime = TimeSpan.FromMilliseconds(200)
+});
+
+db.Add(new MyLogItem
+{
+    ApplicationName = "Jellyfin",
+    LogMessage = "Server crashed when playing a video.",
+    HttpResponseCode = 500,
+    RequestPath = "/play/video",
+    ResponseTime = TimeSpan.FromMilliseconds(500)
+});
+```
+
+And you can use bulk write to improve performance.
+
+```csharp
+var logs = new List<MyLogItem>();
+for (var i = 0; i < 100; i++)
+{
+    logs.Add(new MyLogItem
+    {
+        ApplicationName = "HomeAssistant",
+        LogMessage = $"A human was detected by the camera {i}.",
+        HttpResponseCode = 200,
+        RequestPath = $"camera/{i}/detect",
+        ResponseTime = TimeSpan.FromMilliseconds(100)
+    });
+}
+db.AddBulk(logs.ToArray());
+```
+
+Calling `SyncAsync()` is **optional**. It will block current thread and flush the data to the disk. However, if you don't call it, the data will also be archived very soon. Only call this to ensure the data is written to the disk.
+
+```csharp
+await db.SyncAsync();
+```
+
+### Reading data
+
+You can read data from the database by using the `db` instance. For example, if you want to read from a specific partition and index, you can simply call `Read` with the partition key and index.
+
+```csharp
+// Read a specific item.
+var specificLog = db.Read(partitionKey: "NextCloud", index: 1);
+Console.WriteLine($"[{specificLog.HappenTime}] {specificLog.LogMessage}");
+```
+
+Calling `Read` has low performance when you need to read a large amount of data. You can use `ReadBulk` to read bulk data.
+
+```csharp
+// Bulk read logs from a specific partition.
+var nextCloudLogs = db.ReadBulk(
+    partitionKey: "NextCloud",
+    indexFrom: 0,
+    count: 2);
+
+foreach (var log in nextCloudLogs)
+{
+    Console.WriteLine($"[{log.HappenTime}] {log.LogMessage}");
+}
+```
+
+You may also want to know how many logs are there in a specific partition. You can use `Count` to get the count of logs in a specific partition.
+
+```csharp
+var nextCloudLogsCount = db.GetPartitionById("NextCloud")
+    .InnerBucket
+    .ArchivedItemsCount;
+Console.WriteLine("NextCloud logs count: " + nextCloudLogsCount);
+```
+
+If you want to get all data from all partitions, you can use `ReadAll` to get all data.
+
+```csharp
+// Read all from the database. (Not recommended for large data)
+var allLogs = db.ReadAll();
+Console.WriteLine("All logs count: " + allLogs.Length);
+```
 
 ## How to contribute
 
