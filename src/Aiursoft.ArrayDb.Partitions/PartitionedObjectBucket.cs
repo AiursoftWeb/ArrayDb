@@ -16,6 +16,7 @@ public class PartitionedObjectBucket<T, TK>(
 {
     private Dictionary<TK, BufferedObjectBuckets<T>> Partitions { get; } = new();
     private readonly object _partitionsLock = new();
+    public int PartitionsCount => Partitions.Count;
     
     public string OutputStatistics()
     {
@@ -39,7 +40,10 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
     {
         lock (_partitionsLock)
         {
-            if (Partitions.TryGetValue(partitionId, out var partition)) return partition;
+            if (Partitions.TryGetValue(partitionId, out var partition))
+            {
+                return partition;
+            }
             var structureFilePath = Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_structure.dat");
             var stringFilePath = Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_string.dat");
             var objectBucket  = new ObjectBucket.ObjectBucket<T>(
@@ -57,7 +61,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
                 maxCooldownMilliseconds: Consts.Consts.WriteBufferMaxCooldownMilliseconds);
             Partitions[partitionId] = buffer;
 
-            return partition!;
+            return buffer;
         }
     }
     
