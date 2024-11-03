@@ -200,16 +200,24 @@ foreach (var log in nextCloudLogs)
 You may also want to know how many logs are there in a specific partition. You can use `Count` to get the count of logs in a specific partition.
 
 ```csharp
-var nextCloudLogsCount = db.GetPartitionById("NextCloud")
-    .InnerBucket
-    .ArchivedItemsCount;
+var nextCloudLogsCount = db.Count("NextCloud");
 Console.WriteLine("NextCloud logs count: " + nextCloudLogsCount);
+```
+
+You can also read the data as an `IEnumerable` by using `AsEnumerable` with a partition key.
+
+```csharp
+var results = db.AsEnumerable(partitionKey: "NextCloud");
+    .Where(t => t.StatusCode == 200)
+    .OrderBy(t => t.HappenTime)
+    .Take(10)
+    .ToArray();
 ```
 
 If you want to get all data from all partitions, you can use `ReadAll` to get all data.
 
 ```csharp
-// Read all from the database. (Not recommended for large data)
+// (Not recommended for large data)
 var allLogs = db.ReadAll();
 Console.WriteLine("All logs count: " + allLogs.Length);
 ```
