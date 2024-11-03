@@ -428,7 +428,6 @@ Underlying string repository statistics:
         return obj;
     }
 
-    [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
     private void WriteIndex(long index, T obj)
     {
         var sizeOfObject = GetItemSize();
@@ -476,7 +475,6 @@ Underlying string repository statistics:
         SetArchivedAsProvisioned();
     }
 
-    [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
     public T Read(int index)
     {
         if (index < 0 || index >= ArchivedItemsCount)
@@ -518,5 +516,20 @@ Underlying string repository statistics:
         });
         Interlocked.Increment(ref ReadBulkCount);
         return result;
+    }
+
+    public IEnumerable<T> AsEnumerable(int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
+    {
+        // Copy the value to a local variable to avoid race condition. The ArchivedItemsCount may be changed by other threads.
+        var archivedItemsCount = ArchivedItemsCount;
+        for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
+        {
+            var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
+            var result = ReadBulk(i, readCount);
+            foreach (var item in result)
+            {
+                yield return item;
+            }
+        }
     }
 }

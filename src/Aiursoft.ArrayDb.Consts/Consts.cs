@@ -99,5 +99,18 @@ public static class Consts
 
     #endregion
 
-
+    /// <summary>
+    /// When reading as enumerable, we couldn't read items one by one. Because it's slow.
+    ///
+    /// We will read items in a batch. This is the size of the batch.
+    ///
+    /// For example, if the page size is 128, and there are totally 2000 items in the bucket. Then there will be 2 pages. The first phase will read 128 items, and the second phase will read 72 items.
+    ///
+    /// Default value is 128.
+    ///
+    /// Setting this too large may cause low performance when only need to read a few items.
+    ///
+    /// Setting this too small may cause repeated disk reading and result in low performance.
+    /// </summary>
+    public const int AsEnumerablePageSize = 0x80;
 }

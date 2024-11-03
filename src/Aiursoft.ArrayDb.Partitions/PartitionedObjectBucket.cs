@@ -172,6 +172,16 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
     {
         return GetPartitionById(partitionKey).InnerBucket.ArchivedItemsCount;
     }
+    
+    public IEnumerable<T> AsEnumerable(TK partitionKey, int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
+    {
+        return GetPartitionById(partitionKey).InnerBucket.AsEnumerable(bufferedReadPageSize)
+            .Select(item =>
+            {
+                item.PartitionId = partitionKey;
+                return item;
+            });
+    }
 
     public Task SyncAsync()
     {

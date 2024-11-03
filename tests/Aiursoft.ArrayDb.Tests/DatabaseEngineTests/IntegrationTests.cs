@@ -376,6 +376,38 @@ public class IntegrationTests : ArrayDbTestBase
     }
     
     [TestMethod]
+    public void TestReadAsEnumerable()
+    {
+        var persistService =
+            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var sampleDataItems = new List<SampleData>();
+        for (var i = 0; i < 200; i++)
+        {
+            var sample = new SampleData
+            {
+                MyNumber1 = i,
+                MyString1 = $"Hello, World! 你好世界 {i}",
+                MyNumber2 = i * 10,
+                MyBoolean1 = i % 2 == 0,
+                MyString2 = $"This is another longer string. {i}"
+            };
+            sampleDataItems.Add(sample);
+        }
+        persistService.AddBulk(sampleDataItems.ToArray());
+        var results = persistService.AsEnumerable(bufferedReadPageSize: 128);
+        var resultsArray = results.ToArray();
+        Assert.AreEqual(200, resultsArray.Length);
+        for (var i = 0; i < 200; i++)
+        {
+            Assert.AreEqual(i, resultsArray[i].MyNumber1);
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", resultsArray[i].MyString1);
+            Assert.AreEqual(i * 10, resultsArray[i].MyNumber2);
+            Assert.AreEqual(i % 2 == 0, resultsArray[i].MyBoolean1);
+            Assert.AreEqual($"This is another longer string. {i}", resultsArray[i].MyString2);
+        }
+    }
+    
+    [TestMethod]
     public async Task TestAddPartitionedReboot()
     {
         // Get Temp path
@@ -434,6 +466,39 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(100, totalCount);
         var countByPartition = partitionedService2.Count("5");
         Assert.AreEqual(10, countByPartition);
+        Directory.Delete(testPath, true);
+    }
+    
+    [TestMethod]
+    public async Task TaskAsEnumerablePartitioned()
+    {
+        // Get Temp path
+        var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(testPath);
+        var partitionedService =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        for (var i = 0; i < 200; i++)
+        {
+            var sample = new DataCanBePartitionedByString
+            {
+                Id = i,
+                ThreadId = (i % 10).ToString(),
+                Message = $"Hello, World! 你好世界 {i}"
+            };
+            partitionedService.Add(sample);
+        }
+        await partitionedService.SyncAsync();
+        
+        var partitionedService2 =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        var results = partitionedService2.AsEnumerable("5", bufferedReadPageSize: 13);
+        var resultsArray = results.ToArray();
+        Assert.AreEqual(20, resultsArray.Length);
+        for (var i = 0; i < 20; i++)
+        {
+            Assert.AreEqual("5", resultsArray[i].PartitionId);
+            Assert.AreEqual("5", (resultsArray[i].Id % 10).ToString());
+        }
         Directory.Delete(testPath, true);
     }
 }
