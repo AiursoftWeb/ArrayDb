@@ -26,6 +26,7 @@ public static class TypeExtensions
                 _ => p.PropertyType == typeof(TimeSpan) || p.PropertyType == typeof(Guid)
             })
             .Where(p => p.GetCustomAttributes(typeof(PartitionKeyAttribute), false).Length == 0)
+            .OrderBy(p => p.Name)
             .ToArray();
     }
 }
