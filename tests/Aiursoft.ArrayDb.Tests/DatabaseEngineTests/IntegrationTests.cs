@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.Partitions;
 using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -372,5 +373,38 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount);
         Assert.AreEqual(100000, persistService.ArchivedItemsCount);
         Console.WriteLine($"Time to archive 10000 items: {stopWatch.ElapsedMilliseconds}ms");
+    }
+    
+    [TestMethod]
+    public async Task TestAddPartitionedReboot()
+    {
+        // Get Temp path
+        var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(testPath);
+        var partitionedService =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        for (var i = 0; i < 100; i++)
+        {
+            var sample = new DataCanBePartitionedByString
+            {
+                Id = i,
+                ThreadId = (i % 10).ToString(),
+                Message = $"Hello, World! 你好世界 {i}"
+            };
+            partitionedService.Add(sample);
+        }
+        await partitionedService.SyncAsync();
+        
+        var partitionedService2 =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        var results = partitionedService2.ReadAll();
+        Assert.AreEqual(10, partitionedService2.PartitionsCount);
+        Assert.AreEqual(100, results.Length);
+        foreach (var result in results)
+        {
+            Assert.AreEqual(result.PartitionId, result.ThreadId);
+            Assert.AreEqual(result.PartitionId, (result.Id % 10).ToString());
+        }
+        Directory.Delete(testPath, true);
     }
 }

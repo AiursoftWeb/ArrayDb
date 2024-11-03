@@ -18,3 +18,18 @@ public class DataCanBePartitioned : PartitionedBucketEntity<int>
     public string? Message { get; set; }
     public int Id { get; set; }
 }
+
+public class DataCanBePartitionedByString : PartitionedBucketEntity<string>
+{
+    [PartitionKey] public string ThreadId { get; set; } = string.Empty;
+
+    [PartitionKey]
+    public override string PartitionId
+    {
+        get => ThreadId;
+        set => ThreadId = value;
+    }
+    
+    public string? Message { get; set; }
+    public int Id { get; set; }
+}

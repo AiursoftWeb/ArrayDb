@@ -4,8 +4,7 @@ using Aiursoft.ArrayDb.WriteBuffer;
 
 namespace Aiursoft.ArrayDb.Partitions;
 
-public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK>, new()
-    where TK : struct
+public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK>, new() where TK : notnull
 {
     private Dictionary<TK, BufferedObjectBuckets<T>> Partitions { get; } = new();
     

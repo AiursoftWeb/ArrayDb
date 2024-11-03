@@ -2,7 +2,7 @@
 
 namespace Aiursoft.ArrayDb.Partitions;
 
-public abstract class PartitionedBucketEntity<T> : BucketEntity where T : struct
+public abstract class PartitionedBucketEntity<T> : BucketEntity
 {
     [PartitionKey]
     public abstract T PartitionId { get; set; }
