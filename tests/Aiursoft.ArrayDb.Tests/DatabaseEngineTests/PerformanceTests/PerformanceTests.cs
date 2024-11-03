@@ -93,6 +93,7 @@ public class PerformanceTests : ArrayDbTestBase
         var result = persistService2.ReadBulk(0, 1000000);
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
+        Console.WriteLine(persistService2.OutputStatistics());
         Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
         
         for (var i = 0; i < 1000000; i++)
