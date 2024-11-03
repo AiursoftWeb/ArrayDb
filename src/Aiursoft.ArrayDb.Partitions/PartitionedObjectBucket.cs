@@ -158,6 +158,21 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         return results.ToArray();
     }
 
+    public int Count()
+    {
+        var totalItemsCount = 0;
+        foreach (var partition in Partitions)
+        {
+            totalItemsCount += partition.Value.InnerBucket.ArchivedItemsCount;
+        }
+        return totalItemsCount;
+    }
+    
+    public int Count(TK partitionKey)
+    {
+        return GetPartitionById(partitionKey).InnerBucket.ArchivedItemsCount;
+    }
+
     public Task SyncAsync()
     {
         var allSyncTasks = Partitions.Select(partition => partition.Value.SyncAsync()).ToArray();

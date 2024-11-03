@@ -407,4 +407,33 @@ public class IntegrationTests : ArrayDbTestBase
         }
         Directory.Delete(testPath, true);
     }
+
+    [TestMethod]
+    public async Task TestCountPartitioned()
+    {
+        // Get Temp path
+        var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(testPath);
+        var partitionedService =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        for (var i = 0; i < 100; i++)
+        {
+            var sample = new DataCanBePartitionedByString
+            {
+                Id = i,
+                ThreadId = (i % 10).ToString(),
+                Message = $"Hello, World! 你好世界 {i}"
+            };
+            partitionedService.Add(sample);
+        }
+        await partitionedService.SyncAsync();
+        
+        var partitionedService2 =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        var totalCount = partitionedService2.Count();
+        Assert.AreEqual(100, totalCount);
+        var countByPartition = partitionedService2.Count("5");
+        Assert.AreEqual(10, countByPartition);
+        Directory.Delete(testPath, true);
+    }
 }
