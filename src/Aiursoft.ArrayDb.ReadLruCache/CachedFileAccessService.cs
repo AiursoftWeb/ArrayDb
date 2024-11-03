@@ -125,9 +125,9 @@ Underlying file access service statistics:
             // No item in LRU list
             return false;
         }
-        for (var i = 0; i < hotCacheItems; i++)
+        for (var i = 0; i < hotCacheItems && pointer != null; i++)
         {
-            if (pointer!.Value == pageOffset)
+            if (pointer.Value == pageOffset)
             {
                 return false;
             }
