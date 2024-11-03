@@ -4,21 +4,67 @@ using Aiursoft.ArrayDb.WriteBuffer;
 
 namespace Aiursoft.ArrayDb.Partitions;
 
-public class PartitionedObjectBucket<T, TK>(
-    string databaseName,
-    string databaseDirectory,
-    long initialSizeIfNotExists = Consts.Consts.DefaultPhysicalFileSize,
-    int cachePageSize = Consts.Consts.ReadCachePageSize,
-    int maxCachedPagesCount = Consts.Consts.MaxReadCachedPagesCount,
-    int hotCacheItems = Consts.Consts.ReadCacheHotCacheItems,
-    int maxBufferedItemsCount = Consts.Consts.MaxWriteBufferCachedItemsCount,
-    int initialCooldownMilliseconds = Consts.Consts.WriteBufferInitialCooldownMilliseconds,
-    int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)
-    where T : PartitionedBucketEntity<TK>, new()
+public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK>, new()
     where TK : struct
 {
     private Dictionary<TK, BufferedObjectBuckets<T>> Partitions { get; } = new();
+    
+    
     private readonly object _partitionsLock = new();
+    private readonly string _databaseName;
+    private readonly string _databaseDirectory;
+    private readonly long _initialSizeIfNotExists;
+    private readonly int _cachePageSize;
+    private readonly int _maxCachedPagesCount;
+    private readonly int _hotCacheItems;
+    private readonly int _maxBufferedItemsCount;
+    private readonly int _initialCooldownMilliseconds;
+    private readonly int _maxCooldownMilliseconds;
+
+    public PartitionedObjectBucket(string databaseName,
+        string databaseDirectory,
+        long initialSizeIfNotExists = Consts.Consts.DefaultPhysicalFileSize,
+        int cachePageSize = Consts.Consts.ReadCachePageSize,
+        int maxCachedPagesCount = Consts.Consts.MaxReadCachedPagesCount,
+        int hotCacheItems = Consts.Consts.ReadCacheHotCacheItems,
+        int maxBufferedItemsCount = Consts.Consts.MaxWriteBufferCachedItemsCount,
+        int initialCooldownMilliseconds = Consts.Consts.WriteBufferInitialCooldownMilliseconds,
+        int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)
+    {
+        _databaseName = databaseName;
+        _databaseDirectory = databaseDirectory;
+        _initialSizeIfNotExists = initialSizeIfNotExists;
+        _cachePageSize = cachePageSize;
+        _maxCachedPagesCount = maxCachedPagesCount;
+        _hotCacheItems = hotCacheItems;
+        _maxBufferedItemsCount = maxBufferedItemsCount;
+        _initialCooldownMilliseconds = initialCooldownMilliseconds;
+        _maxCooldownMilliseconds = maxCooldownMilliseconds;
+        
+        // Init partitions based on existing files
+        var files = Directory.GetFiles(databaseDirectory);
+        foreach (var file in files)
+        {
+            var fileName = Path.GetFileName(file);
+            if (fileName.StartsWith(databaseName) && fileName.EndsWith("_structure.dat"))
+            {
+                var partitionId = fileName.Substring(databaseName.Length + 1, fileName.Length - databaseName.Length - 1 - "_structure.dat".Length);
+                var parrtitionIdTk = (TK)Convert.ChangeType(partitionId, typeof(TK));
+                Partitions[parrtitionIdTk] = new BufferedObjectBuckets<T>(
+                    new ObjectBucket.ObjectBucket<T>(
+                        file,
+                        Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_string.dat"),
+                        initialSizeIfNotExists,
+                        cachePageSize,
+                        maxCachedPagesCount,
+                        hotCacheItems),
+                    maxBufferedItemsCount,
+                    initialCooldownMilliseconds,
+                    maxCooldownMilliseconds);
+            }
+        }
+    }
+
     public int PartitionsCount => Partitions.Count;
 
     public string OutputStatistics()
@@ -48,24 +94,21 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
                 return partition;
             }
 
-            var structureFilePath = Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_structure.dat");
-            var stringFilePath = Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_string.dat");
-            var objectBucket = new ObjectBucket.ObjectBucket<T>(
-                structureFilePath,
-                stringFilePath,
-                initialSizeIfNotExists,
-                cachePageSize,
-                maxCachedPagesCount,
-                hotCacheItems);
+            var structureFilePath = Path.Combine(_databaseDirectory, $"{_databaseName}_{partitionId}_structure.dat");
+            var stringFilePath = Path.Combine(_databaseDirectory, $"{_databaseName}_{partitionId}_string.dat");
+            Partitions[partitionId] = new BufferedObjectBuckets<T>(
+                new ObjectBucket.ObjectBucket<T>(
+                    structureFilePath,
+                    stringFilePath,
+                    _initialSizeIfNotExists,
+                    _cachePageSize,
+                    _maxCachedPagesCount,
+                    _hotCacheItems),
+                maxBufferedItemsCount: _maxBufferedItemsCount,
+                initialCooldownMilliseconds: _initialCooldownMilliseconds,
+                maxCooldownMilliseconds: _maxCooldownMilliseconds);
 
-            var buffer = new BufferedObjectBuckets<T>(
-                objectBucket,
-                maxBufferedItemsCount: maxBufferedItemsCount,
-                initialCooldownMilliseconds: initialCooldownMilliseconds,
-                maxCooldownMilliseconds: maxCooldownMilliseconds);
-            Partitions[partitionId] = buffer;
-
-            return buffer;
+            return Partitions[partitionId];
         }
     }
 
