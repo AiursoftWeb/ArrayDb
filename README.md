@@ -223,6 +223,38 @@ var allLogs = db.ReadAll();
 Console.WriteLine("All logs count: " + allLogs.Length);
 ```
 
+## Best practice
+
+### Rebooting
+
+If your application crashes, you can simply create a new `PartitionedObjectBucket` instance with the same database name and file path to recover the data.
+
+```csharp
+var db = new PartitionedObjectBucket<Log, string>("my-db", dbPath);
+for (var i = 0; i < 100; i++)
+{
+    var sample = new Log
+    {
+        Message = $"Hello, World! 你好世界 {i}",
+        PartitionId = 0
+    };
+    partitionedService.Add(sample);
+}
+await partitionedService.SyncAsync();
+
+// Now the application crashes. After rebooting, you can still get the data.
+
+var db = new PartitionedObjectBucket<Log, string>("my-db", dbPath);
+foreach (var log in db.AsEnumerable(0))
+{
+    Console.WriteLine(log.Message);
+}
+```
+
+However, it is still strongly recommended to keep the `PartitionedObjectBucket` as a singleton in your application. It has inner cache and will improve the performance.
+
+Rebooting the instance will not lose any data before `SyncAsync` is called. But all cache will be lost.
+
 ## How to contribute
 
 There are many ways to contribute to the project: logging bugs, submitting pull requests, reporting issues, and creating suggestions.
