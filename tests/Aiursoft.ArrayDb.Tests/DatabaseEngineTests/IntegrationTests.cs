@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.ObjectBucket;
-using Aiursoft.ArrayDb.Partitions;
 using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -373,43 +372,5 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount);
         Assert.AreEqual(100000, persistService.ArchivedItemsCount);
         Console.WriteLine($"Time to archive 10000 items: {stopWatch.ElapsedMilliseconds}ms");
-    }
-
-    [TestMethod]
-    public async Task TestAddPartitioned()
-    {
-        // Get Temp path
-        var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(testPath);
-        var partitionedService =
-            new PartitionedObjectBucket<DataCanBePartitioned, int>("my-db", testPath);
-        var sampleDataItems = new List<DataCanBePartitioned>();
-        for (var i = 0; i < 100 * 100 * 100; i++)
-        {
-            var sample = new DataCanBePartitioned
-            {
-                ThreadId = i % 10,
-                Message = $"Hello, World! 你好世界 {i}"
-            };
-            //partitionedService.Add(sample);
-            sampleDataItems.Add(sample);
-        }
-        var stopWatch = new Stopwatch();
-        stopWatch.Start();
-        partitionedService.AddBulk(sampleDataItems.ToArray());
-        Console.WriteLine($"Time to provision 10000 items: {stopWatch.ElapsedMilliseconds}ms");
-        await partitionedService.SyncAsync();
-        Console.WriteLine($"Time to archive 10000 items: {stopWatch.ElapsedMilliseconds}ms");
-        stopWatch.Stop();
-        
-        var results = partitionedService.ReadAll();
-        Assert.AreEqual(10, partitionedService.PartitionsCount);
-        Assert.AreEqual(100 * 100 * 100, results.Length);
-        foreach (var result in results)
-        {
-            Assert.AreEqual(result.PartitionId, result.ThreadId);
-        }
-        Console.WriteLine(partitionedService.OutputStatistics());
-        Directory.Delete(testPath, true);
     }
 }

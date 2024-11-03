@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
@@ -7,19 +8,30 @@ using Aiursoft.ArrayDb.StringRepository.Models;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 
+public static class TypeExtensions
+{
+    public static PropertyInfo[] GetPropertiesShouldPersistOnDisk(this Type type)
+    {
+        return type.GetProperties()
+            .Where(p => p is { CanRead: true, CanWrite: true })
+            .Where(p => Type.GetTypeCode(p.PropertyType) switch
+            {
+                TypeCode.Int32 => true,
+                TypeCode.Boolean => true,
+                TypeCode.String => true,
+                TypeCode.DateTime => true,
+                TypeCode.Int64 => true,
+                TypeCode.Single => true,
+                TypeCode.Double => true,
+                _ => p.PropertyType == typeof(TimeSpan) || p.PropertyType == typeof(Guid)
+            })
+            .Where(p => p.GetCustomAttributes(typeof(PartitionKeyAttribute), false).Length == 0)
+            .ToArray();
+    }
+}
+
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
-///
-/// Supported types:
-/// * int
-/// * bool
-/// * string Stored as Offset and Length
-/// * DateTime Stored as DateTime.Ticks
-/// * long
-/// * float
-/// * double
-/// * TimeSpan Stored as TimeSpan.Ticks
-/// * Guid Stored as 16 bytes
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class ObjectBucket<T> where T : BucketEntity, new()
@@ -157,7 +169,7 @@ Underlying string repository statistics:
     private int GetItemSize()
     {
         var size = 0;
-        foreach (var prop in typeof(T).GetProperties())
+        foreach (var prop in typeof(T).GetPropertiesShouldPersistOnDisk())
         {
             switch (Type.GetTypeCode(prop.PropertyType))
             {
@@ -206,8 +218,8 @@ Underlying string repository statistics:
     // T to OWPST
     private ObjectWithPersistedStrings<T>[] SaveObjectStrings(T[] objs)
     {
-        var stringsCount = typeof(T).GetProperties().Count(p => p.PropertyType == typeof(string));
-        var stringProperties = typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
+        var stringsCount = typeof(T).GetPropertiesShouldPersistOnDisk().Count(p => p.PropertyType == typeof(string));
+        var stringProperties = typeof(T).GetPropertiesShouldPersistOnDisk().Where(p => p.PropertyType == typeof(string)).ToArray();
 
         // Convert the strings to byte[]s
         var strings = new byte[objs.Length * stringsCount][];
@@ -248,8 +260,7 @@ Underlying string repository statistics:
     private void SerializeBytes(ObjectWithPersistedStrings<T> objWithStrings, byte[] buffer, int offset)
     {
         objWithStrings.Object.CreationTime = DateTime.UtcNow;
-        var properties = typeof(T).GetProperties();
-        foreach (var prop in properties)
+        foreach (var prop in typeof(T).GetPropertiesShouldPersistOnDisk())
         {
             switch (Type.GetTypeCode(prop.PropertyType))
             {
@@ -329,7 +340,7 @@ Underlying string repository statistics:
     {
         // Load the object basic properties.
         var obj = new T();
-        var properties = typeof(T).GetProperties();
+        var properties = typeof(T).GetPropertiesShouldPersistOnDisk();
         foreach (var prop in properties)
         {
             switch (Type.GetTypeCode(prop.PropertyType))
