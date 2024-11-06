@@ -16,9 +16,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
     private readonly int _cachePageSize;
     private readonly int _maxCachedPagesCount;
     private readonly int _hotCacheItems;
-    private readonly int _maxBufferedItemsCount;
-    private readonly int _initialCooldownMilliseconds;
-    private readonly int _maxCooldownMilliseconds;
+    private readonly int _maxSleepMilliSecondsWhenCold;
+    private readonly int _writeBufferStopSleepingWhenWriteBufferItemsMoreThan;
 
     public PartitionedObjectBucket(string databaseName,
         string databaseDirectory,
@@ -26,9 +25,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
         int cachePageSize = Consts.Consts.ReadCachePageSize,
         int maxCachedPagesCount = Consts.Consts.MaxReadCachedPagesCount,
         int hotCacheItems = Consts.Consts.ReadCacheHotCacheItems,
-        int maxBufferedItemsCount = Consts.Consts.MaxWriteBufferCachedItemsCount,
-        int initialCooldownMilliseconds = Consts.Consts.WriteBufferInitialCooldownMilliseconds,
-        int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)
+        int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
+        int writeBufferStopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
     {
         _databaseName = databaseName;
         _databaseDirectory = databaseDirectory;
@@ -36,9 +34,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
         _cachePageSize = cachePageSize;
         _maxCachedPagesCount = maxCachedPagesCount;
         _hotCacheItems = hotCacheItems;
-        _maxBufferedItemsCount = maxBufferedItemsCount;
-        _initialCooldownMilliseconds = initialCooldownMilliseconds;
-        _maxCooldownMilliseconds = maxCooldownMilliseconds;
+        _maxSleepMilliSecondsWhenCold = maxSleepMilliSecondsWhenCold;
+        _writeBufferStopSleepingWhenWriteBufferItemsMoreThan = writeBufferStopSleepingWhenWriteBufferItemsMoreThan;
         
         // Init partitions based on existing files
         var files = Directory.GetFiles(databaseDirectory);
@@ -57,9 +54,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
                         cachePageSize,
                         maxCachedPagesCount,
                         hotCacheItems),
-                    maxBufferedItemsCount,
-                    initialCooldownMilliseconds,
-                    maxCooldownMilliseconds);
+                    maxSleepMilliSecondsWhenCold,
+                    writeBufferStopSleepingWhenWriteBufferItemsMoreThan);
             }
         }
     }
@@ -103,9 +99,8 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
                     _cachePageSize,
                     _maxCachedPagesCount,
                     _hotCacheItems),
-                maxBufferedItemsCount: _maxBufferedItemsCount,
-                initialCooldownMilliseconds: _initialCooldownMilliseconds,
-                maxCooldownMilliseconds: _maxCooldownMilliseconds);
+                _maxSleepMilliSecondsWhenCold,
+                _writeBufferStopSleepingWhenWriteBufferItemsMoreThan);
 
             return Partitions[partitionId];
         }

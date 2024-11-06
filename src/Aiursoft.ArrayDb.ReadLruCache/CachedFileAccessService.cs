@@ -20,8 +20,8 @@ public class CachedFileAccessService(
     private readonly object _cacheLock = new();
     public int CacheHitCount;
     public int CacheMissCount;
-    public int CacheWipeCount;
     public int LruUpdateCount;
+    public int CacheWriteCount;
     public int RemoveFromCacheCount;
     
     [ExcludeFromCodeCoverage]
@@ -29,8 +29,8 @@ public class CachedFileAccessService(
     {
         CacheHitCount = 0;
         CacheMissCount = 0;
-        CacheWipeCount = 0;
         LruUpdateCount = 0;
+        CacheWriteCount = 0;
         RemoveFromCacheCount = 0;
     }
 
@@ -41,8 +41,8 @@ Cache usage report:
 
 * Cache hit count: {CacheHitCount}
 * Cache miss count: {CacheMissCount}
-* Cache wipe count: {CacheWipeCount}
 * Page move last events count: {LruUpdateCount}
+* Write to cache events count: {CacheWriteCount}
 * Remove from cache events count: {RemoveFromCacheCount}
 
 Underlying file access service statistics:
@@ -52,21 +52,45 @@ Underlying file access service statistics:
 
     public void WriteInFile(long offset, byte[] data)
     {
-        // Clear cache for the pages that will be overwritten
+        // Update cache
         lock (_cacheLock)
         {
+            // Calculate page offsets
             var startPage = offset / cachePageSize;
             var endPage = (offset + data.Length) / cachePageSize;
+            var dataOffset = 0;
+        
             for (var page = startPage; page <= endPage; page++)
             {
-                if (_cache.ContainsKey(page))
+                if (_cache.TryGetValue(page, out var cachedPage))
                 {
-                    _cache.Remove(page);
-                    _lruList.Remove(page);
-                    Interlocked.Increment(ref CacheWipeCount);
+                    // Calculate the range of bytes to update within the cached page
+                    var pageStart = page == startPage ? (int)(offset % cachePageSize) : 0;
+                    var bytesToWrite = Math.Min(data.Length - dataOffset, cachePageSize - pageStart);
+        
+                    Interlocked.Increment(ref CacheWriteCount);
+                    
+                    // Update cached page data
+                    Array.Copy(data, dataOffset, cachedPage, pageStart, bytesToWrite);
+                    dataOffset += bytesToWrite;
                 }
             }
         }
+        
+        // Drop cache
+        // lock (_cacheLock)
+        // {
+        //     var startPage = offset / cachePageSize;
+        //     var endPage = (offset + data.Length) / cachePageSize;
+        //     for (var page = startPage; page <= endPage; page++)
+        //     {
+        //         if (_cache.ContainsKey(page))
+        //         {
+        //             _cache.Remove(page);
+        //             _lruList.Remove(page);
+        //         }
+        //     }
+        // }
 
         _underlyingAccessService.WriteInFile(offset, data);
     }

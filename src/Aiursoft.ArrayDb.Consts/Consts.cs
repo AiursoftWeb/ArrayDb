@@ -63,19 +63,6 @@ public static class Consts
     #region Write Buffer
 
     /// <summary>
-    /// The maximum number of items that can be cached in the write buffer before initiating a write operation.
-    /// Default is 4 million items.
-    /// 
-    /// Setting this value too high may cause increased memory usage and delayed data persistence,
-    /// while setting it too low may trigger frequent write operations and lead to data fragmentation.
-    /// 
-    /// Suggested value: Consider the number of writes per second and memory availability.
-    /// For example, if a typical write rate is around 1000 items per millisecond,
-    /// this default allows caching up to 4 seconds' worth of data before a write is triggered.
-    /// </summary>
-    public const int MaxWriteBufferCachedItemsCount = 0x400000;
-
-    /// <summary>
     /// The initial cooldown time in milliseconds before a write operation is triggered. Default is 1000 ms (1 second).
     /// 
     /// A shorter cooldown time reduces latency but may increase fragmentation and disk operations.
@@ -83,20 +70,9 @@ public static class Consts
     /// 
     /// Suggested value: 1000 ms, to allow a balance between latency and fragmentation.
     /// </summary>
-    public const int WriteBufferInitialCooldownMilliseconds = 1000;
-
-    /// <summary>
-    /// The maximum cooldown time in milliseconds that can be set dynamically based on the pending write queue.
-    /// Default is 4000 ms (4 seconds).
-    /// 
-    /// This value provides a limit to cooldown adjustments when handling high-frequency writes,
-    /// ensuring that the cooldown does not exceed 4 times the initial cooldown time.
-    /// 
-    /// Suggested value: For environments with high write load, set this as a multiple of `WriteBufferInitialCooldownMilliseconds`,
-    /// with a recommended upper bound of 16 times the initial cooldown to avoid excessive delays in persistence.
-    /// </summary>
-    public const int WriteBufferMaxCooldownMilliseconds = 1000 * 4;
-
+    public const int MaxSleepMilliSecondsWhenCold = 2000;
+    
+    public const int WriteBufferStopSleepingWhenWriteBufferItemsMoreThan = 10000;
     #endregion
 
     /// <summary>
@@ -113,4 +89,5 @@ public static class Consts
     /// Setting this too small may cause repeated disk reading and result in low performance.
     /// </summary>
     public const int AsEnumerablePageSize = 0x80;
+
 }
