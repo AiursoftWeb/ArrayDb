@@ -134,8 +134,7 @@ Underlying object bucket statistics:
         }
     }
 
-    private void
-        WriteBuffered() // We can ensure this method is only called by the engine and never be executed by multiple threads at the same time.
+    private void WriteBuffered() // We can ensure this method is only called by the engine and never be executed by multiple threads at the same time.
     {
         lock (_persistingActiveBufferToDiskLock)
         {
