@@ -131,6 +131,9 @@ Underlying object bucket statistics:
         
         var dataToWrite = bufferToPersist.ToArray();
         
+        // Release the buffer to avoid memory leak.
+        bufferToPersist.Clear();
+        
         // Update statistics
         Interlocked.Add(ref ActualWriteItemsCount, dataToWrite.Length);
         Interlocked.Increment(ref ActualWriteTimesCount);
