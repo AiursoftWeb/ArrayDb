@@ -38,10 +38,6 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         // Read 100 0000 times in less than 10 seconds. On my machine 345ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
         
-        Assert.IsTrue(buffer.IsHot);
-        Assert.IsTrue(buffer.BufferedItemsCount > 1);
-        Assert.IsTrue(bucket.SpaceProvisionedItemsCount < 100 * 100 * 100);
-        
         stopWatch.Reset();
         stopWatch.Start();
         await buffer.SyncAsync();

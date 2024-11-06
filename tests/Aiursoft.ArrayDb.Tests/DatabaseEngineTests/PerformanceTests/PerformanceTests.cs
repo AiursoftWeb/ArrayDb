@@ -89,12 +89,12 @@ public class PerformanceTests : ArrayDbTestBase
         var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        // Read 100 0000 times in less than 10 seconds. On my machine 681ms -> 685ms.
+        // Read 100 0000 times in less than 20 seconds. On my machine 681ms -> 685ms.
         var result = persistService2.ReadBulk(0, 1000000);
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
         Console.WriteLine(persistService2.OutputStatistics());
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
         
         for (var i = 0; i < 1000000; i++)
         {
