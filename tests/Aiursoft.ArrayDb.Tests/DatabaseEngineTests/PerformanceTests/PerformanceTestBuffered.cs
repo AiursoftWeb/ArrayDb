@@ -49,6 +49,9 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         Assert.AreEqual(0, buffer.BufferedItemsCount);
         Assert.AreEqual(100 * 100 * 100, bucket.SpaceProvisionedItemsCount);
         Console.WriteLine(buffer.OutputStatistics());
+
+        // It should do nothing.
+        await buffer.SyncAsync();
     }
     
     [TestMethod]

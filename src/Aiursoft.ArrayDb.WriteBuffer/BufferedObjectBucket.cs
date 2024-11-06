@@ -17,6 +17,8 @@ public class BufferedObjectBuckets<T>(
     where T : BucketEntity, new()
 {
     private Task _engine = Task.CompletedTask;
+    private Task _coolDownEngine = Task.CompletedTask;
+    
     /// <summary>
     /// This lock protects from swapping the active and secondary buffers at the same time.
     /// </summary>
@@ -39,7 +41,7 @@ public class BufferedObjectBuckets<T>(
     private ConcurrentQueue<T> _secondaryBuffer = new();
 
     public ObjectBucket<T> InnerBucket => innerBucket;
-    public bool IsCold => _engine.IsCompleted;
+    public bool IsCold => _engine.IsCompleted && _coolDownEngine.IsCompleted;
     public bool IsHot => !IsCold;
 
     // Statistics
@@ -79,6 +81,8 @@ public class BufferedObjectBuckets<T>(
 Buffered object repository with item type {typeof(T).Name} statistics:
 
 * Current instance status: {(IsHot ? "Hot" : "Cold")}
+* Is cooling down: {!_coolDownEngine.IsCompleted}
+* Is writing: {!_engine.IsCompleted}
 * Buffered items count: {BufferedItemsCount}
 * Write times count: {WriteTimesCount}
 * Write items count: {WriteItemsCount}
@@ -110,7 +114,7 @@ Underlying object bucket statistics:
         }
 
         // Get the engine status in advanced to avoid lock contention.
-        if (!_engine.IsCompleted)
+        if (!IsCold)
         {
             // Most of the cases in a high-frequency environment, the engine is still running.
             return;
@@ -120,7 +124,7 @@ Underlying object bucket statistics:
         lock (_engineStatusSwitchLock)
         {
             // Avoid multiple threads to wake up the engine at the same time.
-            if (!_engine.IsCompleted)
+            if (!IsCold)
             {
                 return;
             }
@@ -160,7 +164,7 @@ Underlying object bucket statistics:
         if (_activeBuffer.Count > 0)
         {
             // Restart the engine to write the new added data.
-            _engine = Task.Run(async () =>
+            _coolDownEngine = Task.Run(async () =>
             {
                 // Slow down a little bit to wait for more data to come.
                 // If we persist too fast, and the buffer is almost empty, frequent write will cause data fragmentation.
@@ -172,7 +176,8 @@ Underlying object bucket statistics:
                     _activeBuffer.Count);
                 await Task.Delay(sleepTime);
                 
-                WriteBuffered();
+                // Wake up the engine to write the new added data.
+                _engine = Task.Run(WriteBuffered);
             });
         }
         else
@@ -183,25 +188,24 @@ Underlying object bucket statistics:
 
     public async Task SyncAsync()
     {
-        // Why await engine twice?
-        // Engine may be in 3 states:
-        // Idle
-        // Writing
-        // Sleeping
-        
-        // Engine may switch:
-        // Idle -> Writing
-        // Writing -> Sleeping
-        // Sleeping -> Writing
-        // Writing -> Idle
-        
-        // If we await engine once, we may just wait the engine just to from sleep to writing.
-        // If we await twice, we can ensure:
-        //    If the engine is sleeping, we waited it to wake up and start writing.
-        //    If the engine is writing, we waited it to finish writing.
-        //    If the engine is idle, the data is already persisted.
-        await _engine;
-        await _engine;
+        if (!_engine.IsCompleted)
+        {
+            // Engine is working. However, the buffer may still have data that after this phase, the data is still not written.
+            // Wait two rounds of engine to finish to ensure all data is written.
+            await _engine;
+            // Cool down engine will ensure restart the engine to write the remaining data.
+            await _coolDownEngine;
+            // Wait for the engine to finish.
+            await _engine;
+        }
+        else
+        {
+            // The engine is not working. In this case, it might be in the cool down phase.
+            // Cool down engine will ensure restart the engine to write the remaining data.
+            // Then wait for the engine to finish.
+            await _coolDownEngine;
+            await _engine;
+        }
     }
 
     private static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold,
