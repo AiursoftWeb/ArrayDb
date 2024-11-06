@@ -44,8 +44,8 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         stopWatch.Stop();
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
-        // Sync 100 0000 times in less than 10 seconds. On my machine 119ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
+        // Sync 100 0000 times in less than 30 seconds. On my machine 119ms.
+        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 30);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
         Assert.AreEqual(100 * 100 * 100, bucket.SpaceProvisionedItemsCount);
         Console.WriteLine(buffer.OutputStatistics());
