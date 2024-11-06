@@ -10,38 +10,54 @@ namespace Aiursoft.ArrayDb.WriteBuffer;
 /// </summary>
 /// <typeparam name="T">The type of objects to be stored in the buckets.</typeparam>
 /// <param name="innerBucket">The underlying object bucket to store the objects.</param>
-/// <param name="maxBufferedItemsCount">The maximum number of items that can be buffered before writing to the disk. Suggested value is maxCooldownMilliseconds * 1000. Because usual computer can insert around 1000 items per millisecond.</param>
-/// <param name="initialCooldownMilliseconds">The initial cooldown time in milliseconds. Suggested value is 1000. Small value will cause data fragmentation. Large value will cause latency.</param>
-/// <param name="maxCooldownMilliseconds">The maximum cooldown time in milliseconds. Suggested value is 1000 * 16. Because the queue may not be able to handle the high frequency of writes. According to the remaining tasks in the queue, increase the next cooldown time. But not more than 16 times the initial cooldown time.</param>
 public class BufferedObjectBuckets<T>(
     ObjectBucket<T> innerBucket,
-    int maxBufferedItemsCount = Consts.Consts.MaxWriteBufferCachedItemsCount,
-    int initialCooldownMilliseconds = Consts.Consts.WriteBufferInitialCooldownMilliseconds,
-    int maxCooldownMilliseconds = Consts.Consts.WriteBufferMaxCooldownMilliseconds)
+    int cooldownMilliseconds = Consts.Consts.WriteBufferCooldownMilliseconds)
     where T : BucketEntity, new()
 {
+    private Task _engine  = Task.CompletedTask;
+    /// <summary>
+    /// This lock protects from swapping the active and secondary buffers at the same time.
+    /// </summary>
+    private readonly object _bufferWriteSwapLock = new();
+    /// <summary>
+    /// This lock protects from switching the engine status at the same time.
+    /// </summary>
+    private readonly object _engineStatusSwitchLock = new();
+    private ConcurrentQueue<T> _activeBuffer = new();
+    private ConcurrentQueue<T> _secondaryBuffer = new();
+    
     public ObjectBucket<T> InnerBucket => innerBucket;
-    private readonly TasksQueue _tasksQueue = new();
-    private readonly ConcurrentQueue<T> _buffer = [];
-    private readonly object _bufferWriteLock = new();
-    private readonly int _initialCooldownMilliseconds = initialCooldownMilliseconds;
-    private int _cooldownMilliseconds = initialCooldownMilliseconds;
+    public bool IsCold => _engine.IsCompleted;
+    public bool IsHot => !IsCold;
     
     // Statistics
-    public int RequestHotWriteCount;
-    public int RequestColdWriteCount;
-    public int QueuedWriteCount;
-    public int ActualWriteCount;
+    public int WriteTimesCount;
+    public int WriteItemsCount;
+    public int ActualWriteTimesCount;
+    public int ActualWriteItemsCount;
     public int CoolDownEventsCount;
+
+    public int BufferedItemsCount
+    {
+      get
+      {
+          lock (_bufferWriteSwapLock)
+          {
+              return _activeBuffer.Count;
+          }
+      }  
+    }
+    
     public readonly List<int> InsertItemsCountRecord = [];
     
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
-        RequestHotWriteCount = 0;
-        RequestColdWriteCount = 0;
-        QueuedWriteCount = 0;
-        ActualWriteCount = 0;
+        WriteTimesCount = 0;
+        WriteItemsCount = 0;
+        ActualWriteTimesCount = 0;
+        ActualWriteItemsCount = 0;
         CoolDownEventsCount = 0;
         InsertItemsCountRecord.Clear();
     }
@@ -52,158 +68,93 @@ public class BufferedObjectBuckets<T>(
 Buffered object repository with item type {typeof(T).Name} statistics:
 
 * Current instance status: {(IsHot ? "Hot" : "Cold")}
-* Request write events count: {RequestHotWriteCount + RequestColdWriteCount}
-* Requested hot write events count: {RequestHotWriteCount}
-* Requested cold write events count: {RequestColdWriteCount}
-* Queued write events count: {QueuedWriteCount}
-* Actual write events count: {ActualWriteCount}
+* Buffered items count: {BufferedItemsCount}
+* Write times count: {WriteTimesCount}
+* Write items count: {WriteItemsCount}
+* Actual write events count: {ActualWriteTimesCount}
+* Actual write items count: {ActualWriteItemsCount}
 * Cool down events count: {CoolDownEventsCount}
 * Inserted items count record (Top 20): {string.Join(", ", InsertItemsCountRecord.Take(20))}
-* Current cooldown milliseconds: {_cooldownMilliseconds}
-* Remaining write tasks count: {_tasksQueue.PendingTasksCount}
 
 Underlying object bucket statistics:
 {innerBucket.OutputStatistics().AppendTabsEachLineHead()}
 ";
     }
-
-    public bool IsCold => CoolDownTimingTask?.IsCompleted ?? true;
-    public bool IsHot => !IsCold;
-
-    public int BufferedItemsCount
-    {
-        get
-        {
-            lock (_bufferWriteLock)
-            {
-                return _buffer.Count;
-            }
-        }
-    }
     
-    public Task? CoolDownTimingTask;
-
     public void AddBuffered(params T[] objs)
     {
-        // Only single thread. Or multiple threads may believe this is Code at the same time.
-        lock (_bufferWriteLock)
+        // This method provides a way to add object without blocking the thread.
+        // Just add to buffer, and wake the engine to write them. Engine works in another thread.
+        
+        // Update statistics
+        Interlocked.Increment(ref WriteTimesCount);
+        Interlocked.Add(ref WriteItemsCount, objs.Length);
+        
+        lock (_bufferWriteSwapLock)
         {
-            // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
-            if (IsHot)
+            foreach (var obj in objs)
             {
-                Interlocked.Increment(ref RequestHotWriteCount);
-                if (_buffer.Count + objs.Length >= maxBufferedItemsCount)
-                {
-                    // If buffer is full, wait until the buffer is cleared.
-                    WaitCurrentCoolDownTaskAsync().Wait();
-                }
-
-                // In hot status, we couldn't add the data directly. Add to the buffer. Wait for cooldown to flush the buffer.
-                foreach (var obj in objs)
-                {
-                    _buffer.Enqueue(obj);
-                }
-            }
-            // Is cold status, directly queue add then start cooldown
-            else
-            {
-                Interlocked.Increment(ref RequestColdWriteCount);
-                // Add and start cooldown
-                QueueAddBulk(objs);
-                StartCooldown();
+                _activeBuffer.Enqueue(obj);
             }
         }
-    }
-    
-    // This method should never execute in parallel!!!
-    private void StartCooldown()
-    {
-        Interlocked.Increment(ref CoolDownEventsCount);
-        // Now this instance is hot. Wait for cooldown to flush the buffer.
-        CoolDownTimingTask = Task.Run(async () =>
+        
+        // Get the engine status in advanced to avoid lock contention.
+        if (!_engine.IsCompleted)
         {
-            await Task.Delay(_cooldownMilliseconds);
-
-            // Consider the high frequency of writes, the queue may not be able to handle it.
-            // According to the remaining tasks in the queue, increase the next cooldown time.
-            // But not more than 16 times the initial cooldown time.
-            var updatedCooldownMilliseconds = (_tasksQueue.PendingTasksCount + 1) * _initialCooldownMilliseconds;
-            _cooldownMilliseconds = Math.Min(updatedCooldownMilliseconds, maxCooldownMilliseconds);
-
-            lock (_bufferWriteLock)
-            {
-                if (!_buffer.IsEmpty)
-                {
-                    // Add and restart cooldown
-                    QueueAddBulk(_buffer.ToArray());
-                    // Clear the buffer
-                    _buffer.Clear();
-                    StartCooldown();
-                }
-                else
-                {
-                    _cooldownMilliseconds = _initialCooldownMilliseconds;
-                }
-            }
-        });
-    }
-
-    private void QueueAddBulk(T[] objs)
-    {
-        Interlocked.Increment(ref QueuedWriteCount);
-        _tasksQueue.QueueNew(() =>
-        {
-            // Statistics
-            Interlocked.Increment(ref ActualWriteCount);
-            InsertItemsCountRecord.Add(objs.Length);
-            
-            // Add to the underlying bucket
-            try
-            {
-                innerBucket.AddBulk(objs);
-            }
-            catch (Exception e)
-            {
-                // We couldn't throw the exception here. Because the task queue will be stopped.
-                Console.WriteLine(e);
-            }
-        });
-    }
-
-    /// <summary>
-    /// If you inserted some data, then you call the `Sync` method, it will return a task, that when all the data is written to the disk, it will be completed.
-    ///
-    /// This method is used to ensure the data we inserted before called this method is written to the disk.
-    /// </summary>
-    public async Task SyncAsync()
-    {
-        await WaitCurrentCoolDownTaskAsync();
-        await WaitWriteCompleteAsync();
-    }
-    
-    /// <summary>
-    /// If you inserted some data, then you call the `WaitUntilCoolAsync` method, it will return a task, that when all the data is cleared from buffer and started writing to the disk, it will be completed.
-    ///
-    /// This method is used to ensure the data is started writing to the disk.
-    /// </summary>
-    /// <returns></returns>
-    public Task WaitCurrentCoolDownTaskAsync()
-    {
-        if (IsHot)
-        {
-            return (CoolDownTimingTask ?? Task.CompletedTask);
+            // Most of the cases in a high-frequency environment, the engine is still running.
+            return;
         }
-        return Task.CompletedTask;
+
+        // Engine might be sleeping. Wake it up.
+        lock (_engineStatusSwitchLock)
+        {
+            // Avoid multiple threads to wake up the engine at the same time.
+            if (!_engine.IsCompleted)
+            {
+                return;
+            }
+
+            _engine = Task.Run(WriteBuffered);
+        }
     }
-    
-    /// <summary>
-    /// When the data started writing to the disk, you can call this method to wait until the writing is completed.
-    ///
-    /// This method is used to ensure the datta started writing was ultimately written to the disk. 
-    /// </summary>
-    /// <returns></returns>
-    public Task WaitWriteCompleteAsync()
+
+    private async Task WriteBuffered()
     {
-        return _tasksQueue.Engine;
+        ConcurrentQueue<T> bufferToPersist;
+        lock (_bufferWriteSwapLock)
+        {
+            // Swap active and secondary buffers
+            bufferToPersist = _activeBuffer;
+            _activeBuffer = _secondaryBuffer;
+            _secondaryBuffer = new ConcurrentQueue<T>();
+        }
+        
+        var dataToWrite = bufferToPersist.ToArray();
+        
+        // Update statistics
+        Interlocked.Add(ref ActualWriteItemsCount, dataToWrite.Length);
+        Interlocked.Increment(ref ActualWriteTimesCount);
+        InsertItemsCountRecord.Add(dataToWrite.Length);
+
+        // Process the buffer to persist
+        innerBucket.AddBulk(dataToWrite);
+        
+        await Task.Delay(cooldownMilliseconds);
+        
+        // While we are writing, new data may be added to the buffer. If so, we need to write it too.
+        if (_activeBuffer.Count > 0)
+        {
+            // Use recursion to keep working on cleaning the buffer. Until it's empty.
+            await WriteBuffered();
+        }
+        else
+        {
+            Interlocked.Increment(ref CoolDownEventsCount);
+        }
+    }
+
+    public async Task SyncAsync() // This method ensure all data called AddBuffered before will be persisted.
+    {
+        await _engine;
     }
 }
