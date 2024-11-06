@@ -97,7 +97,7 @@ Underlying object bucket statistics:
 ";
     }
 
-    public void AddBuffered(params T[] objs)
+    public void Add(params T[] objs)
     {
         // This method provides a way to add object without blocking the thread.
         // Just add to buffer, and wake the engine to write them. Engine works in another thread.
@@ -112,6 +112,11 @@ Underlying object bucket statistics:
             {
                 _activeBuffer.Enqueue(obj);
             }
+        }
+        
+        if (objs.Length == 0)
+        {
+            return;
         }
 
         // Get the engine status in advanced to avoid lock contention.
@@ -209,7 +214,7 @@ Underlying object bucket statistics:
         await _engine;
     }
 
-    private static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold,
+    public static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold,
         double stopSleepingWhenWriteBufferItemsMoreThan, int writeBufferItemsCount)
     {
         if (stopSleepingWhenWriteBufferItemsMoreThan <= 0)

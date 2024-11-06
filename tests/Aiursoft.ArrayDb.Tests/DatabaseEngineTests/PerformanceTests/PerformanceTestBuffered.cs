@@ -30,7 +30,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
                 MyBoolean1 = i % 2 == 0,
                 MyString2 = $"This is another longer string. {i}"
             };
-            buffer.AddBuffered(sample);
+            buffer.Add(sample);
         });
         stopWatch.Stop();
         Console.WriteLine(buffer.OutputStatistics());
@@ -75,7 +75,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
                 MyBoolean1 = i % 2 == 0,
                 MyString2 = $"This is another longer string. {i}"
             };
-            buffer.AddBuffered(sample);
+            buffer.Add(sample);
         }
         stopWatch.Stop();
         Console.WriteLine($"Write 100 * 100 * 100 times: {stopWatch.ElapsedMilliseconds}ms");

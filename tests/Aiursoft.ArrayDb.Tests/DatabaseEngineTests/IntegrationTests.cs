@@ -11,12 +11,11 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 public class IntegrationTests : ArrayDbTestBase
 {
     [TestMethod]
-    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
-    public void WriteAndReadTests()
+    [Obsolete("This test covers the scenario of writing items one by one, which is slow but necessary.")]
+    public void TestWriteAndRead()
     {
         var testStartTime = DateTime.UtcNow;
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         for (var i = 0; i < 1; i++)
         {
@@ -30,27 +29,31 @@ public class IntegrationTests : ArrayDbTestBase
             };
             persistService.Add(sample);
         }
+
         var testEndTime = DateTime.UtcNow;
 
         for (var i = 0; i < 1; i++)
         {
             var readSample = persistService.Read(i);
-            Assert.AreEqual(i, readSample.MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
-            Assert.AreEqual(i * 10, readSample.MyNumber2);
-            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
-            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
-            Assert.IsTrue(testStartTime < readSample.CreationTime);
-            Assert.IsTrue(testEndTime > readSample.CreationTime);
+            Assert.AreEqual(i, readSample.MyNumber1, "The value of MyNumber1 should match the expected value.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1,
+                "The value of MyString1 should match the expected value.");
+            Assert.AreEqual(i * 10, readSample.MyNumber2, "The value of MyNumber2 should match the expected value.");
+            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1,
+                "The value of MyBoolean1 should match the expected value.");
+            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2,
+                "The value of MyString2 should match the expected value.");
+            Assert.IsTrue(testStartTime < readSample.CreationTime,
+                "CreationTime should be greater than testStartTime.");
+            Assert.IsTrue(testEndTime > readSample.CreationTime, "CreationTime should be less than testEndTime.");
         }
     }
-    
+
     [TestMethod]
-    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
-    public void WriteAndReadEmptyString()
+    [Obsolete("This test covers the scenario of writing an empty string, which is slow but necessary.")]
+    public void TestWriteAndReadEmptyString()
     {
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         var sample = new SampleData
         {
@@ -62,19 +65,18 @@ public class IntegrationTests : ArrayDbTestBase
         };
         persistService.Add(sample);
         var readSample = persistService.Read(0);
-        Assert.AreEqual(1, readSample.MyNumber1);
-        Assert.AreEqual(string.Empty, readSample.MyString1);
-        Assert.AreEqual(2 * 10, readSample.MyNumber2);
-        Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1);
-        Assert.AreEqual(string.Empty, readSample.MyString2);
+        Assert.AreEqual(1, readSample.MyNumber1, "The value of MyNumber1 should be 1.");
+        Assert.AreEqual(string.Empty, readSample.MyString1, "The value of MyString1 should be an empty string.");
+        Assert.AreEqual(2 * 10, readSample.MyNumber2, "The value of MyNumber2 should be 20.");
+        Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1, "The value of MyBoolean1 should be true.");
+        Assert.AreEqual(string.Empty, readSample.MyString2, "The value of MyString2 should be an empty string.");
     }
 
     [TestMethod]
-    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
-    public void RebootTest()
+    [Obsolete("This test covers the scenario of rebooting the service, which is slow but necessary.")]
+    public void TestRebootService()
     {
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
         var sample = new SampleData
         {
@@ -94,36 +96,36 @@ public class IntegrationTests : ArrayDbTestBase
         };
         persistService.Add(sample);
         persistService.Add(sample2);
-        
-        var persistService2 =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
-        
-        Assert.AreEqual(2, persistService2.SpaceProvisionedItemsCount);
-        Assert.AreEqual(2, persistService2.ArchivedItemsCount);
-        var offSet = persistService2.StringRepository.FileEndOffset;
-        Assert.AreEqual(49, offSet);
-        
+
+        var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+
+        Assert.AreEqual(2, persistService2.SpaceProvisionedItemsCount,
+            "The number of space-provisioned items should be 2.");
+        Assert.AreEqual(2, persistService2.ArchivedItemsCount, "The number of archived items should be 2.");
+        var offset = persistService2.StringRepository.FileEndOffset;
+        Assert.AreEqual(49, offset, "The file end offset should be 49.");
+
         var readSample = persistService2.Read(0);
-        Assert.AreEqual(1, readSample.MyNumber1);
-        Assert.AreEqual("我和我的祖国 Oh", readSample.MyString1);
-        Assert.AreEqual(2 * 10, readSample.MyNumber2);
-        Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1);
-        Assert.AreEqual(string.Empty, readSample.MyString2);
-        
+        Assert.AreEqual(1, readSample.MyNumber1, "The value of MyNumber1 should be 1.");
+        Assert.AreEqual("我和我的祖国 Oh", readSample.MyString1, "The value of MyString1 should be '我和我的祖国 Oh'.");
+        Assert.AreEqual(2 * 10, readSample.MyNumber2, "The value of MyNumber2 should be 20.");
+        Assert.AreEqual(3 % 2 == 0, readSample.MyBoolean1, "The value of MyBoolean1 should be true.");
+        Assert.AreEqual(string.Empty, readSample.MyString2, "The value of MyString2 should be an empty string.");
+
         var readSample2 = persistService2.Read(1);
-        Assert.AreEqual(1, readSample2.MyNumber1);
-        Assert.AreEqual("My country and I 啊", readSample2.MyString1);
-        Assert.AreEqual(2 * 10, readSample2.MyNumber2);
-        Assert.AreEqual(3 % 2 == 0, readSample2.MyBoolean1);
-        Assert.AreEqual(string.Empty, readSample2.MyString2);
+        Assert.AreEqual(1, readSample2.MyNumber1, "The value of MyNumber1 should be 1.");
+        Assert.AreEqual("My country and I 啊", readSample2.MyString1,
+            "The value of MyString1 should be 'My country and I 啊'.");
+        Assert.AreEqual(2 * 10, readSample2.MyNumber2, "The value of MyNumber2 should be 20.");
+        Assert.AreEqual(3 % 2 == 0, readSample2.MyBoolean1, "The value of MyBoolean1 should be true.");
+        Assert.AreEqual(string.Empty, readSample2.MyString2, "The value of MyString2 should be an empty string.");
     }
-    
+
     [TestMethod]
-    public void ComplicatedSampleDataTest()
+    public void TestComplicatedSampleData()
     {
-        var persistService =
-            new ObjectBucket<ComplicatedSampleData>(TestFilePath, TestFilePathStrings);
-        
+        var persistService = new ObjectBucket<ComplicatedSampleData>(TestFilePath, TestFilePathStrings);
+
         var sample = new ComplicatedSampleData
         {
             MyString1 = "Hello, World! 你好世界！",
@@ -134,23 +136,26 @@ public class IntegrationTests : ArrayDbTestBase
             MyTimeSpan1 = TimeSpan.FromDays(1),
             MyGuid1 = Guid.NewGuid()
         };
-        persistService.AddBulk([sample]);
-        var result = persistService.ReadBulk(indexFrom:0, count:1);
-        Assert.AreEqual(sample.MyString1, result[0].MyString1);
-        Assert.AreEqual(sample.MyDateTime1, result[0].MyDateTime1);
-        Assert.AreEqual(sample.MyLong1, result[0].MyLong1);
-        Assert.AreEqual(sample.MyFloat1, result[0].MyFloat1);
-        Assert.AreEqual(sample.MyDouble1, result[0].MyDouble1);
-        Assert.AreEqual(sample.MyTimeSpan1, result[0].MyTimeSpan1);
-        Assert.AreEqual(sample.MyGuid1, result[0].MyGuid1);
+        persistService.AddBulk(new[] { sample });
+
+        var result = persistService.ReadBulk(0, 1);
+
+        Assert.AreEqual(sample.MyString1, result[0].MyString1, "The string value should match the original value.");
+        Assert.AreEqual(sample.MyDateTime1, result[0].MyDateTime1,
+            "The DateTime value should match the original value.");
+        Assert.AreEqual(sample.MyLong1, result[0].MyLong1, "The long value should match the original value.");
+        Assert.AreEqual(sample.MyFloat1, result[0].MyFloat1, "The float value should match the original value.");
+        Assert.AreEqual(sample.MyDouble1, result[0].MyDouble1, "The double value should match the original value.");
+        Assert.AreEqual(sample.MyTimeSpan1, result[0].MyTimeSpan1,
+            "The TimeSpan value should match the original value.");
+        Assert.AreEqual(sample.MyGuid1, result[0].MyGuid1, "The Guid value should match the original value.");
     }
 
     [TestMethod]
-    public void AddBulkAndReadBulk()
+    public void TestAddBulkAndReadBulk()
     {
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
-        
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
         {
@@ -164,32 +169,33 @@ public class IntegrationTests : ArrayDbTestBase
             };
             samples.Add(sample);
         }
+
         var samplesArray = samples.ToArray();
         persistService.AddBulk(samplesArray);
-        
-        var persistService2 =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
+        var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var readSamples = persistService2.ReadBulk(0, 2);
+
         for (var i = 0; i < 2; i++)
         {
             var readSample = readSamples[i];
-            Assert.AreEqual(i, readSample.MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
-            Assert.AreEqual(i * 10, readSample.MyNumber2);
-            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
-            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
+            Assert.AreEqual(i, readSample.MyNumber1, $"The value of MyNumber1 for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1,
+                $"The value of MyString1 for index {i} should match.");
+            Assert.AreEqual(i * 10, readSample.MyNumber2, $"The value of MyNumber2 for index {i} should match.");
+            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1, $"The value of MyBoolean1 for index {i} should match.");
+            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2,
+                $"The value of MyString2 for index {i} should match.");
         }
     }
 
     [TestMethod]
-    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
-    public void MixedBulkWriteAndWrite()
+    [Obsolete("This test covers a mixed scenario of bulk and individual writes, which is slow but necessary.")]
+    public void TestMixedBulkAndIndividualWrites()
     {
-        // Bulk write 2 samples
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
-        
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+
+        // Bulk write
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
         {
@@ -203,10 +209,10 @@ public class IntegrationTests : ArrayDbTestBase
             };
             samples.Add(sample);
         }
-        var samplesArray = samples.ToArray();
-        persistService.AddBulk(samplesArray);
-        
-        // Write 3 samples
+
+        persistService.AddBulk(samples.ToArray());
+
+        // Individual writes
         for (var i = 2; i < 5; i++)
         {
             var sample = new SampleData
@@ -219,33 +225,33 @@ public class IntegrationTests : ArrayDbTestBase
             };
             persistService.Add(sample);
         }
-        
-        // Read all 5 samples
-        var persistService2 =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
-        
+
+        // Read and verify
+        var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var readSamples = persistService2.ReadBulk(0, 5);
         for (var i = 0; i < 5; i++)
         {
             var readSample = readSamples[i];
-            Assert.AreEqual(i, readSample.MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
-            Assert.AreEqual(i * 10, readSample.MyNumber2);
-            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1);
-            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2);
+            Assert.AreEqual(i, readSample.MyNumber1, $"The value of MyNumber1 for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1,
+                $"The value of MyString1 for index {i} should match.");
+            Assert.AreEqual(i * 10, readSample.MyNumber2, $"The value of MyNumber2 for index {i} should match.");
+            Assert.AreEqual(i % 2 == 0, readSample.MyBoolean1, $"The value of MyBoolean1 for index {i} should match.");
+            Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2,
+                $"The value of MyString2 for index {i} should match.");
         }
-        Assert.AreEqual(5, persistService2.SpaceProvisionedItemsCount);
-        Assert.AreEqual(5, persistService2.ArchivedItemsCount);
+
+        Assert.AreEqual(5, persistService2.SpaceProvisionedItemsCount,
+            "The number of space-provisioned items should be 5.");
+        Assert.AreEqual(5, persistService2.ArchivedItemsCount, "The number of archived items should be 5.");
     }
 
     [TestMethod]
-    [Obsolete(message: "I understand that writing item one by one is slow, but this test need to cover the scenario.")]
-    public void ReadOutOfRangeTest()
+    public void TestReadOutOfRange()
     {
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
 
-        // Write 2 samples
+        // Write samples
         var samples = new List<SampleData>();
         for (var i = 0; i < 2; i++)
         {
@@ -259,43 +265,43 @@ public class IntegrationTests : ArrayDbTestBase
             };
             samples.Add(sample);
         }
-        var samplesArray = samples.ToArray();
-        persistService.AddBulk(samplesArray);
-        
-        // Read item 2
+
+        persistService.AddBulk(samples.ToArray());
+
+        // Read out-of-range item
         try
         {
             _ = persistService.Read(2);
-            Assert.Fail("Should throw exception.");
+            Assert.Fail("An exception should be thrown when attempting to read out-of-range data.");
         }
         catch (ArgumentOutOfRangeException e)
         {
-           Assert.AreEqual("Specified argument was out of the range of valid values. (Parameter 'index')", e.Message); 
+            Assert.AreEqual("Specified argument was out of the range of valid values. (Parameter 'index')", e.Message,
+                "The exception message should match.");
         }
-        
-        // Bulk read, starts from 1, read 2 items
+
+        // Bulk read with out-of-range values
         try
         {
             _ = persistService.ReadBulk(1, 2);
-            Assert.Fail("Should throw exception.");
+            Assert.Fail("An exception should be thrown when attempting to read bulk data out of range.");
         }
         catch (ArgumentOutOfRangeException e)
         {
-            Assert.AreEqual("Specified argument was out of the range of valid values. (Parameter 'indexFrom')", e.Message);
+            Assert.AreEqual("Specified argument was out of the range of valid values. (Parameter 'indexFrom')",
+                e.Message, "The exception message should match.");
         }
-        
-        // However, normal read should not throw exception.
+
+        // Read valid item
         var readSample = persistService.Read(1);
-        Assert.AreEqual(1, readSample.MyNumber1);
+        Assert.AreEqual(1, readSample.MyNumber1, "The value of MyNumber1 for index 1 should match.");
     }
 
     [TestMethod]
-    public void MultipleThreadsCallAddBulkShouldBeFine()
+    public void TestMultipleThreadsAddBulk()
     {
-        // 1000 threads, each threads add 1000 samples. All the 1 000 000 samples should be added. All items should be read correctly.
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
-        
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+
         var threads = new List<Thread>();
         for (var i = 0; i < 1000; i++)
         {
@@ -315,31 +321,29 @@ public class IntegrationTests : ArrayDbTestBase
                     };
                     samples.Add(sample);
                 }
-                var samplesArray = samples.ToArray();
-                persistService.AddBulk(samplesArray);
+
+                persistService.AddBulk(samples.ToArray());
             });
             threads.Add(thread);
         }
-        
+
         threads.ForEach(t => t.Start());
         threads.ForEach(t => t.Join());
-        
-        var readSamples = persistService.ReadBulk(0, 1000000)
-            .OrderBy(t => t.MyNumber1)
-            .ToArray();
+
+        var readSamples = persistService.ReadBulk(0, 1000000).OrderBy(t => t.MyNumber1).ToArray();
         for (var i = 0; i < 1000000; i++)
         {
             var readSample = readSamples[i];
-            Assert.AreEqual(i, readSample.MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1);
+            Assert.AreEqual(i, readSample.MyNumber1, $"The value of MyNumber1 for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1,
+                $"The value of MyString1 for index {i} should match.");
         }
     }
 
     [TestMethod]
-    public async Task AsyncSaveItems()
+    public async Task TestAsyncSaveItems()
     {
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var sampleDataItems = new List<SampleData>();
         for (var i = 0; i < 100000; i++)
         {
@@ -353,33 +357,31 @@ public class IntegrationTests : ArrayDbTestBase
             };
             sampleDataItems.Add(sample);
         }
-        var addTask = Task.Run(() =>
-        {
-            persistService.AddBulk(sampleDataItems.ToArray());
-        });
+
+        var addTask = Task.Run(() => persistService.AddBulk(sampleDataItems.ToArray()));
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        Assert.AreEqual(0, persistService.SpaceProvisionedItemsCount);
-        Assert.AreEqual(0, persistService.ArchivedItemsCount);
+
         while (persistService.SpaceProvisionedItemsCount == persistService.ArchivedItemsCount)
         {
             await Task.Delay(1);
         }
-        Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount);
-        Assert.AreEqual(0, persistService.ArchivedItemsCount);
-        Console.WriteLine($"Time to provision 10000 items: {stopWatch.ElapsedMilliseconds}ms");
+
+        Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount, "All items should be provisioned.");
+        Assert.AreEqual(0, persistService.ArchivedItemsCount, "No items should be archived at this point.");
+
         await addTask;
-        Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount);
-        Assert.AreEqual(100000, persistService.ArchivedItemsCount);
-        Console.WriteLine($"Time to archive 10000 items: {stopWatch.ElapsedMilliseconds}ms");
+        Assert.AreEqual(100000, persistService.SpaceProvisionedItemsCount, "All items should be provisioned.");
+        Assert.AreEqual(100000, persistService.ArchivedItemsCount, "All items should be archived.");
     }
 
     [TestMethod]
     public void TestReadAsEnumerable()
     {
-        var persistService =
-            new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
+        var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var sampleDataItems = new List<SampleData>();
+
+        // Create 200 sample items
         for (var i = 0; i < 200; i++)
         {
             var sample = new SampleData
@@ -393,17 +395,25 @@ public class IntegrationTests : ArrayDbTestBase
             sampleDataItems.Add(sample);
         }
 
+        // Add bulk data to the persistent service
         persistService.AddBulk(sampleDataItems.ToArray());
+
+        // Read data as an enumerable with buffered read
         var results = persistService.AsEnumerable(bufferedReadPageSize: 128);
         var resultsArray = results.ToArray();
-        Assert.AreEqual(200, resultsArray.Length);
+
+        // Verify the number of results
+        Assert.AreEqual(200, resultsArray.Length, "The number of results should match the number of inserted samples.");
+
+        // Verify each item matches the expected data
         for (var i = 0; i < 200; i++)
         {
-            Assert.AreEqual(i, resultsArray[i].MyNumber1);
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", resultsArray[i].MyString1);
-            Assert.AreEqual(i * 10, resultsArray[i].MyNumber2);
-            Assert.AreEqual(i % 2 == 0, resultsArray[i].MyBoolean1);
-            Assert.AreEqual($"This is another longer string. {i}", resultsArray[i].MyString2);
+            Assert.AreEqual(i, resultsArray[i].MyNumber1, $"The value of MyNumber1 for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", resultsArray[i].MyString1, $"The value of MyString1 for index {i} should match.");
+            Assert.AreEqual(i * 10, resultsArray[i].MyNumber2, $"The value of MyNumber2 for index {i} should match.");
+            Assert.AreEqual(i % 2 == 0, resultsArray[i].MyBoolean1, $"The value of MyBoolean1 for index {i} should match.");
+            Assert.AreEqual($"This is another longer string. {i}", resultsArray[i].MyString2, $"The value of MyString2 for index {i} should match.");
         }
     }
+
 }

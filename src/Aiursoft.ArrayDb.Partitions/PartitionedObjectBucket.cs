@@ -106,20 +106,13 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         }
     }
 
-    public void Add(T obj)
-    {
-        var partition = GetPartitionById(obj.PartitionId);
-        partition.AddBuffered(obj);
-    }
-
-    public void AddBulk(T[] objs)
+    public void Add(params T[] objs)
     {
         var objsByPartition = objs.GroupBy(x => x.PartitionId);
         Parallel.ForEach(objsByPartition,
-            partition => { GetPartitionById(partition.Key).AddBuffered(partition.ToArray()); });
+            partition => { GetPartitionById(partition.Key).Add(partition.ToArray()); });
     }
 
-    [Obsolete(error: false, message: "Read objects one by one is slow. Use ReadBulk instead.")]
     public T Read(TK partitionKey, int index)
     {
         var item = GetPartitionById(partitionKey).InnerBucket.Read(index);
