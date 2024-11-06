@@ -18,11 +18,12 @@ public class BufferedObjectBuckets<T>(
 {
     private Task _engine = Task.CompletedTask;
     private Task _coolDownEngine = Task.CompletedTask;
-    
+
     /// <summary>
     /// This lock protects from swapping the active and secondary buffers at the same time.
     /// </summary>
     private readonly object _bufferWriteSwapLock = new();
+
     /// <summary>
     /// This lock protects from switching the engine status at the same time.
     /// </summary>
@@ -133,7 +134,8 @@ Underlying object bucket statistics:
         }
     }
 
-    private void WriteBuffered() // We can ensure this method is only called by the engine and never be executed by multiple threads at the same time.
+    private void
+        WriteBuffered() // We can ensure this method is only called by the engine and never be executed by multiple threads at the same time.
     {
         lock (_persistingActiveBufferToDiskLock)
         {
@@ -164,6 +166,10 @@ Underlying object bucket statistics:
         if (_activeBuffer.Count > 0)
         {
             // Restart the engine to write the new added data.
+            // Before engine quits, it wakes up cool down engine to ensure the engine will be restarted.
+            // Before cool down quits, it wakes up the engine to ensure the engine will be restarted.
+            // So if one of the two tasks is running, the engine will be restarted. And this buffer is in a hot state.
+            // In a hot state, you don't have to start the engine again.
             _coolDownEngine = Task.Run(async () =>
             {
                 // Slow down a little bit to wait for more data to come.
@@ -175,7 +181,7 @@ Underlying object bucket statistics:
                     stopSleepingWhenWriteBufferItemsMoreThan,
                     _activeBuffer.Count);
                 await Task.Delay(sleepTime);
-                
+
                 // Wake up the engine to write the new added data.
                 _engine = Task.Run(WriteBuffered);
             });
@@ -188,24 +194,20 @@ Underlying object bucket statistics:
 
     public async Task SyncAsync()
     {
-        if (!_engine.IsCompleted)
-        {
-            // Engine is working. However, the buffer may still have data that after this phase, the data is still not written.
-            // Wait two rounds of engine to finish to ensure all data is written.
-            await _engine;
-            // Cool down engine will ensure restart the engine to write the remaining data.
-            await _coolDownEngine;
-            // Wait for the engine to finish.
-            await _engine;
-        }
-        else
-        {
-            // The engine is not working. In this case, it might be in the cool down phase.
-            // Cool down engine will ensure restart the engine to write the remaining data.
-            // Then wait for the engine to finish.
-            await _coolDownEngine;
-            await _engine;
-        }
+        // Case 1:
+        // Engine is working. However, the buffer may still have data that after this phase, the data is still not written.
+        // Wait two rounds of engine to finish to ensure all data is written.
+        // Cool down engine will ensure restart the engine to write the remaining data.
+        // Wait for the engine to finish.
+        
+        // Case 2:
+        // The engine is not working. In this case, it might be in the cool down phase.
+        // The first wait is just await a completed task.
+        // Cool down engine will ensure restart the engine to write the remaining data.
+        // Then wait for the engine to finish.
+        await _engine;
+        await _coolDownEngine;
+        await _engine;
     }
 
     private static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold,
