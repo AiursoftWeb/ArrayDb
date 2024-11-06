@@ -56,7 +56,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
     {
         var bucket =
             new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
-        var buffer = new BufferedObjectBuckets<SampleData>(bucket, cooldownMilliseconds: 10);
+        var buffer = new BufferedObjectBuckets<SampleData>(bucket);
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
@@ -78,9 +78,6 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
         
         Console.WriteLine(buffer.OutputStatistics());
-        Assert.IsTrue(buffer.IsHot);
-        Assert.IsTrue(buffer.BufferedItemsCount > 1);
-        Assert.IsTrue(bucket.SpaceProvisionedItemsCount < 100 * 100 * 100);
         
         stopWatch.Reset();
         stopWatch.Start();

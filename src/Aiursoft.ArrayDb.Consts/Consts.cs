@@ -70,7 +70,9 @@ public static class Consts
     /// 
     /// Suggested value: 1000 ms, to allow a balance between latency and fragmentation.
     /// </summary>
-    public const int WriteBufferCooldownMilliseconds = 1000;
+    public const int MaxSleepMilliSecondsWhenCold = 2000;
+    
+    public const int WriteBufferStopSleepingWhenWriteBufferItemsMoreThan = 10000;
     #endregion
 
     /// <summary>
@@ -87,4 +89,5 @@ public static class Consts
     /// Setting this too small may cause repeated disk reading and result in low performance.
     /// </summary>
     public const int AsEnumerablePageSize = 0x80;
+
 }

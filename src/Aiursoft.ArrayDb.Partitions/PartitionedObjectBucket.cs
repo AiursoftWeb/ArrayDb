@@ -16,7 +16,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
     private readonly int _cachePageSize;
     private readonly int _maxCachedPagesCount;
     private readonly int _hotCacheItems;
-    private readonly int _coolDownMilliseconds;
+    private readonly int _maxSleepMilliSecondsWhenCold;
+    private readonly int _writeBufferStopSleepingWhenWriteBufferItemsMoreThan;
 
     public PartitionedObjectBucket(string databaseName,
         string databaseDirectory,
@@ -24,7 +25,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
         int cachePageSize = Consts.Consts.ReadCachePageSize,
         int maxCachedPagesCount = Consts.Consts.MaxReadCachedPagesCount,
         int hotCacheItems = Consts.Consts.ReadCacheHotCacheItems,
-        int coolDownMilliseconds = Consts.Consts.WriteBufferCooldownMilliseconds)
+        int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
+        int writeBufferStopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
     {
         _databaseName = databaseName;
         _databaseDirectory = databaseDirectory;
@@ -32,7 +34,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
         _cachePageSize = cachePageSize;
         _maxCachedPagesCount = maxCachedPagesCount;
         _hotCacheItems = hotCacheItems;
-        _coolDownMilliseconds = coolDownMilliseconds;
+        _maxSleepMilliSecondsWhenCold = maxSleepMilliSecondsWhenCold;
+        _writeBufferStopSleepingWhenWriteBufferItemsMoreThan = writeBufferStopSleepingWhenWriteBufferItemsMoreThan;
         
         // Init partitions based on existing files
         var files = Directory.GetFiles(databaseDirectory);
@@ -51,7 +54,8 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
                         cachePageSize,
                         maxCachedPagesCount,
                         hotCacheItems),
-                    coolDownMilliseconds);
+                    maxSleepMilliSecondsWhenCold,
+                    writeBufferStopSleepingWhenWriteBufferItemsMoreThan);
             }
         }
     }
@@ -95,7 +99,8 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
                     _cachePageSize,
                     _maxCachedPagesCount,
                     _hotCacheItems),
-                cooldownMilliseconds: _coolDownMilliseconds);
+                _maxSleepMilliSecondsWhenCold,
+                _writeBufferStopSleepingWhenWriteBufferItemsMoreThan);
 
             return Partitions[partitionId];
         }

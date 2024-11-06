@@ -12,7 +12,8 @@ namespace Aiursoft.ArrayDb.WriteBuffer;
 /// <param name="innerBucket">The underlying object bucket to store the objects.</param>
 public class BufferedObjectBuckets<T>(
     ObjectBucket<T> innerBucket,
-    int cooldownMilliseconds = Consts.Consts.WriteBufferCooldownMilliseconds)
+    int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
+    int stopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
     where T : BucketEntity, new()
 {
     private Task _engine  = Task.CompletedTask;
@@ -141,9 +142,17 @@ Underlying object bucket statistics:
 
         // Process the buffer to persist
         innerBucket.AddBulk(dataToWrite);
-        
-        await Task.Delay(cooldownMilliseconds);
-        
+
+        // Slow down a little bit to wait for more data to come.
+        // If we persist too fast, and the buffer is almost empty, frequent write will cause data fragmentation.
+        // If we persist too slow, and a lot of new data has been added to the buffer, and the engine wasted time in sleeping.
+        // So the time to sleep is calculated by the number of items in the buffer.
+        var sleepTime = CalculateSleepTime(
+            maxSleepMilliSecondsWhenCold,
+            stopSleepingWhenWriteBufferItemsMoreThan,
+            _activeBuffer.Count);
+        await Task.Delay(sleepTime);
+      
         // While we are writing, new data may be added to the buffer. If so, we need to write it too.
         if (_activeBuffer.Count > 0)
         {
@@ -159,5 +168,21 @@ Underlying object bucket statistics:
     public async Task SyncAsync() // This method ensure all data called AddBuffered before will be persisted.
     {
         await _engine;
+    }
+    
+    private static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold, double stopSleepingWhenWriteBufferItemsMoreThan, int writeBufferItemsCount)
+    {
+        if (stopSleepingWhenWriteBufferItemsMoreThan <= 0)
+        {
+            throw new ArgumentException("B must be a positive number.");
+        }
+
+        if (writeBufferItemsCount > stopSleepingWhenWriteBufferItemsMoreThan)
+        {
+            return 0;
+        }
+
+        var y = maxSleepMilliSecondsWhenCold * (1 - Math.Log(1 + writeBufferItemsCount) / Math.Log(1 + stopSleepingWhenWriteBufferItemsMoreThan));
+        return (int)y;
     }
 }
