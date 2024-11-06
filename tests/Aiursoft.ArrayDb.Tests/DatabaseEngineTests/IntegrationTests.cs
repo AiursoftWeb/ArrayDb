@@ -532,6 +532,31 @@ public class IntegrationTests : ArrayDbTestBase
                 Assert.AreEqual(5, results[j].Id % 10);
             }
         }
-        
+    }
+
+    [TestMethod]
+    public async Task DeletePartitionAndRebootTest()
+    {
+        var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(testPath);
+        var partitionedService =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        for (var i = 0; i < 100; i++)
+        {
+            var sample = new DataCanBePartitionedByString
+            {
+                Id = i,
+                ThreadId = (i % 10).ToString(),
+                Message = $"Hello, World! 你好世界 {i}"
+            };
+            partitionedService.Add(sample);
+        }
+        await partitionedService.SyncAsync();
+        await partitionedService.DeletePartitionAsync("5");
+        var partitionedService2 =
+            new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", testPath);
+        var results = partitionedService2.ReadAll();
+        Assert.AreEqual(9, partitionedService2.PartitionsCount);
+        Assert.AreEqual(90, results.Length);
     }
 }

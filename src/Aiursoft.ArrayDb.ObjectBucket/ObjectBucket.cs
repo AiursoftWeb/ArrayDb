@@ -532,4 +532,10 @@ Underlying string repository statistics:
             }
         }
     }
+
+    public async Task DeleteAsync()
+    {
+        await StructureFileAccess.DeleteAsync();
+        await StringRepository.DeleteAsync();
+    }
 }

@@ -141,4 +141,9 @@ Underlying cached file access service statistics:
             }
         }
     }
+
+    public async Task DeleteAsync()
+    {
+        await _fileAccess.DeleteAsync();
+    }
 }

@@ -173,6 +173,19 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         return GetPartitionById(partitionKey).InnerBucket.ArchivedItemsCount;
     }
     
+    public async Task DeletePartitionAsync(TK partitionKey)
+    {
+        if (Partitions.TryGetValue(partitionKey, out var partition))
+        {
+            await partition.InnerBucket.DeleteAsync();
+            Partitions.Remove(partitionKey);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Partition {partitionKey} not found!");
+        }
+    }
+    
     public IEnumerable<T> AsEnumerable(TK partitionKey, int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
     {
         return GetPartitionById(partitionKey).InnerBucket.AsEnumerable(bufferedReadPageSize)

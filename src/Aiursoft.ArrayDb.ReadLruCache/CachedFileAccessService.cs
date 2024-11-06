@@ -154,4 +154,15 @@ Underlying file access service statistics:
             _lruList.AddLast(pageOffset);
         }
     }
+
+    public async Task DeleteAsync()
+    {
+        lock (_cacheLock)
+        {
+            _cache.Clear();
+            _lruList.Clear();
+        }
+
+        await _underlyingAccessService.DeleteAsync();
+    }
 }

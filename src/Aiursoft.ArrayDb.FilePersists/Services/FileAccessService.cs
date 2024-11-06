@@ -106,4 +106,15 @@ File access service statistics:
             return buffer;
         }
     }
+
+    public async Task DeleteAsync()
+    {
+        await Task.Run(() =>
+        {
+            lock (_expandSizeLock)
+            {
+                File.Delete(Path);
+            }
+        });
+    }
 }

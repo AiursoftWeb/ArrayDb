@@ -215,6 +215,8 @@ var results = db.AsEnumerable(partitionKey: "NextCloud");
     .ToArray();
 ```
 
+However, using ArrayDb as an enumerable collection doesn't fully utilize its optimized performance characteristics. Thanks to its fixed-length structure, ArrayDb can quickly locate an element by index without additional overhead. If you need to enumerate through every element in the database, you might want to consider accessing data by index or in bulk where possible to leverage ArrayDb's constant-time (O(1)) access.
+
 If you want to get all data from all partitions, you can use `ReadAll` to get all data.
 
 ```csharp
@@ -259,7 +261,7 @@ var log = new MyLogItem
 
 ### Rebooting
 
-If your application crashes, you can simply create a new `PartitionedObjectBucket` instance with the same database name and file path to recover the data.
+If your application reboots or crashed, you can simply create a new `PartitionedObjectBucket` instance with the same database name and file path to recover the data.
 
 ```csharp
 var db = new PartitionedObjectBucket<Log, string>("my-db", dbPath);
@@ -286,6 +288,20 @@ foreach (var log in db.AsEnumerable(0))
 However, it is still strongly recommended to keep the `PartitionedObjectBucket` as a singleton in your application. It has inner cache and will improve the performance.
 
 Rebooting the instance will not lose any data before `SyncAsync` is called. But all cache will be lost.
+
+### Using ArrayDb with Dependency Injection
+
+Of course, you can use ArrayDb with Dependency Injection. You can create a singleton service to manage the `PartitionedObjectBucket` instance.
+
+```csharp
+services.AddSingleton<PartitionedObjectBucket<MyLogItem, string>>(provider =>
+{
+    var dbPath = Path.Combine(Directory.GetCurrentDirectory(), "my-db");
+    return new PartitionedObjectBucket<MyLogItem, string>("my-db", dbPath);
+});
+```
+
+Then you can inject the `PartitionedObjectBucket` from the DI container.
 
 ## How to contribute
 
