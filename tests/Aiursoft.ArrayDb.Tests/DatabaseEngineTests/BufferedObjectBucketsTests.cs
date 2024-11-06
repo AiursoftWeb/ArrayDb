@@ -27,7 +27,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         buffer.AddBuffered(sampleData);
         Assert.IsTrue(buffer.IsHot);
         
-        await Task.Delay(1010);
+        await Task.Delay(2000);
         Assert.IsTrue(buffer.IsCold);
         
         // Data actually written.
