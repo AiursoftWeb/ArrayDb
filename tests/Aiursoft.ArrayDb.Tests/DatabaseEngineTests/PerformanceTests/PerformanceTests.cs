@@ -15,7 +15,7 @@ public class PerformanceTests : ArrayDbTestBase
     public void PerformanceTestWrite()
     {
         var stopWatch = new Stopwatch();
-        // Write 10 0000 times in less than 20 seconds. On my machine: 4214ms -> 3707ms
+        // Write 10 0000 times in less than 20 seconds. On my machine: 4214ms -> 3707ms -> 2835ms
         stopWatch.Start();
         var persistService =
             new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
@@ -33,6 +33,7 @@ public class PerformanceTests : ArrayDbTestBase
         }
         stopWatch.Stop();
         Console.WriteLine($"Write 100000 time: {stopWatch.ElapsedMilliseconds}ms");
+        Console.WriteLine(persistService.OutputStatistics());
         Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
     }
 
@@ -111,7 +112,7 @@ public class PerformanceTests : ArrayDbTestBase
     [Obsolete(message: "I understand that reading item one by one is slow, but this test need to cover the scenario.")]
     public void PerformanceTestRead()
     {
-        // Read 100 0000 times in less than 10 seconds. On my machine: 760ms -> 912ms
+        // Read 100 0000 times in less than 10 seconds. On my machine: 2881ms
         var persistService =
             new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var list = new List<SampleData>();
@@ -144,6 +145,7 @@ public class PerformanceTests : ArrayDbTestBase
         stopWatch.Stop();
 
         Console.WriteLine($"Read 100000 times: {stopWatch.ElapsedMilliseconds}ms");
+        Console.WriteLine(persistService.OutputStatistics());
         Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
     }
     
