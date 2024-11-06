@@ -16,7 +16,7 @@ public class BufferedObjectBuckets<T>(
     int stopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
     where T : BucketEntity, new()
 {
-    private Task _engine  = Task.CompletedTask;
+    private Task _engine = Task.CompletedTask;
     /// <summary>
     /// This lock protects from swapping the active and secondary buffers at the same time.
     /// </summary>
@@ -25,13 +25,23 @@ public class BufferedObjectBuckets<T>(
     /// This lock protects from switching the engine status at the same time.
     /// </summary>
     private readonly object _engineStatusSwitchLock = new();
+
+    /// <summary>
+    /// This lock protects from persisting the active buffer to disk at the same time.
+    ///
+    /// When you found this is locked, then currently the engine is writing the active buffer to disk.
+    ///
+    /// When you have this lock accessed, then it means the active buffer can treated as a layer of cache.
+    /// </summary>
+    private readonly object _persistingActiveBufferToDiskLock = new();
+
     private ConcurrentQueue<T> _activeBuffer = new();
     private ConcurrentQueue<T> _secondaryBuffer = new();
-    
+
     public ObjectBucket<T> InnerBucket => innerBucket;
     public bool IsCold => _engine.IsCompleted;
     public bool IsHot => !IsCold;
-    
+
     // Statistics
     public int WriteTimesCount;
     public int WriteItemsCount;
@@ -41,17 +51,17 @@ public class BufferedObjectBuckets<T>(
 
     public int BufferedItemsCount
     {
-      get
-      {
-          lock (_bufferWriteSwapLock)
-          {
-              return _activeBuffer.Count;
-          }
-      }  
+        get
+        {
+            lock (_bufferWriteSwapLock)
+            {
+                return _activeBuffer.Count;
+            }
+        }
     }
-    
+
     public readonly List<int> InsertItemsCountRecord = [];
-    
+
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
@@ -62,7 +72,7 @@ public class BufferedObjectBuckets<T>(
         CoolDownEventsCount = 0;
         InsertItemsCountRecord.Clear();
     }
-    
+
     public string OutputStatistics()
     {
         return $@"
@@ -81,16 +91,16 @@ Underlying object bucket statistics:
 {innerBucket.OutputStatistics().AppendTabsEachLineHead()}
 ";
     }
-    
+
     public void AddBuffered(params T[] objs)
     {
         // This method provides a way to add object without blocking the thread.
         // Just add to buffer, and wake the engine to write them. Engine works in another thread.
-        
+
         // Update statistics
         Interlocked.Increment(ref WriteTimesCount);
         Interlocked.Add(ref WriteItemsCount, objs.Length);
-        
+
         lock (_bufferWriteSwapLock)
         {
             foreach (var obj in objs)
@@ -98,7 +108,7 @@ Underlying object bucket statistics:
                 _activeBuffer.Enqueue(obj);
             }
         }
-        
+
         // Get the engine status in advanced to avoid lock contention.
         if (!_engine.IsCompleted)
         {
@@ -119,45 +129,51 @@ Underlying object bucket statistics:
         }
     }
 
-    private async Task WriteBuffered()
+    private void WriteBuffered() // We can ensure this method is only called by the engine and never be executed by multiple threads at the same time.
     {
-        ConcurrentQueue<T> bufferToPersist;
-        lock (_bufferWriteSwapLock)
+        lock (_persistingActiveBufferToDiskLock)
         {
-            // Swap active and secondary buffers
-            bufferToPersist = _activeBuffer;
-            _activeBuffer = _secondaryBuffer;
-            _secondaryBuffer = new ConcurrentQueue<T>();
+            ConcurrentQueue<T> bufferToPersist;
+            lock (_bufferWriteSwapLock)
+            {
+                // Swap active and secondary buffers
+                bufferToPersist = _activeBuffer;
+                _activeBuffer = _secondaryBuffer;
+                _secondaryBuffer = new ConcurrentQueue<T>();
+            }
+
+            var dataToWrite = bufferToPersist.ToArray();
+
+            // Release the buffer to avoid memory leak.
+            bufferToPersist.Clear();
+
+            // Update statistics
+            Interlocked.Add(ref ActualWriteItemsCount, dataToWrite.Length);
+            Interlocked.Increment(ref ActualWriteTimesCount);
+            InsertItemsCountRecord.Add(dataToWrite.Length);
+
+            // Process the buffer to persist
+            innerBucket.AddBulk(dataToWrite);
         }
-        
-        var dataToWrite = bufferToPersist.ToArray();
-        
-        // Release the buffer to avoid memory leak.
-        bufferToPersist.Clear();
-        
-        // Update statistics
-        Interlocked.Add(ref ActualWriteItemsCount, dataToWrite.Length);
-        Interlocked.Increment(ref ActualWriteTimesCount);
-        InsertItemsCountRecord.Add(dataToWrite.Length);
 
-        // Process the buffer to persist
-        innerBucket.AddBulk(dataToWrite);
-
-        // Slow down a little bit to wait for more data to come.
-        // If we persist too fast, and the buffer is almost empty, frequent write will cause data fragmentation.
-        // If we persist too slow, and a lot of new data has been added to the buffer, and the engine wasted time in sleeping.
-        // So the time to sleep is calculated by the number of items in the buffer.
-        var sleepTime = CalculateSleepTime(
-            maxSleepMilliSecondsWhenCold,
-            stopSleepingWhenWriteBufferItemsMoreThan,
-            _activeBuffer.Count);
-        await Task.Delay(sleepTime);
-      
         // While we are writing, new data may be added to the buffer. If so, we need to write it too.
         if (_activeBuffer.Count > 0)
         {
-            // Use recursion to keep working on cleaning the buffer. Until it's empty.
-            await WriteBuffered();
+            // Restart the engine to write the new added data.
+            _engine = Task.Run(async () =>
+            {
+                // Slow down a little bit to wait for more data to come.
+                // If we persist too fast, and the buffer is almost empty, frequent write will cause data fragmentation.
+                // If we persist too slow, and a lot of new data has been added to the buffer, and the engine wasted time in sleeping.
+                // So the time to sleep is calculated by the number of items in the buffer.
+                var sleepTime = CalculateSleepTime(
+                    maxSleepMilliSecondsWhenCold,
+                    stopSleepingWhenWriteBufferItemsMoreThan,
+                    _activeBuffer.Count);
+                await Task.Delay(sleepTime);
+                
+                WriteBuffered();
+            });
         }
         else
         {
@@ -165,12 +181,31 @@ Underlying object bucket statistics:
         }
     }
 
-    public async Task SyncAsync() // This method ensure all data called AddBuffered before will be persisted.
+    public async Task SyncAsync()
     {
+        // Why await engine twice?
+        // Engine may be in 3 states:
+        // Idle
+        // Writing
+        // Sleeping
+        
+        // Engine may switch:
+        // Idle -> Writing
+        // Writing -> Sleeping
+        // Sleeping -> Writing
+        // Writing -> Idle
+        
+        // If we await engine once, we may just wait the engine just to from sleep to writing.
+        // If we await twice, we can ensure:
+        //    If the engine is sleeping, we waited it to wake up and start writing.
+        //    If the engine is writing, we waited it to finish writing.
+        //    If the engine is idle, the data is already persisted.
+        await _engine;
         await _engine;
     }
-    
-    private static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold, double stopSleepingWhenWriteBufferItemsMoreThan, int writeBufferItemsCount)
+
+    private static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold,
+        double stopSleepingWhenWriteBufferItemsMoreThan, int writeBufferItemsCount)
     {
         if (stopSleepingWhenWriteBufferItemsMoreThan <= 0)
         {
@@ -182,7 +217,8 @@ Underlying object bucket statistics:
             return 0;
         }
 
-        var y = maxSleepMilliSecondsWhenCold * (1 - Math.Log(1 + writeBufferItemsCount) / Math.Log(1 + stopSleepingWhenWriteBufferItemsMoreThan));
+        var y = maxSleepMilliSecondsWhenCold * (1 - Math.Log(1 + writeBufferItemsCount) /
+            Math.Log(1 + stopSleepingWhenWriteBufferItemsMoreThan));
         return (int)y;
     }
 }

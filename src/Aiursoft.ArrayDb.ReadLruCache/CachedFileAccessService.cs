@@ -59,7 +59,7 @@ Underlying file access service statistics:
             var startPage = offset / cachePageSize;
             var endPage = (offset + data.Length) / cachePageSize;
             var dataOffset = 0;
-
+        
             for (var page = startPage; page <= endPage; page++)
             {
                 if (_cache.TryGetValue(page, out var cachedPage))
@@ -67,7 +67,7 @@ Underlying file access service statistics:
                     // Calculate the range of bytes to update within the cached page
                     var pageStart = page == startPage ? (int)(offset % cachePageSize) : 0;
                     var bytesToWrite = Math.Min(data.Length - dataOffset, cachePageSize - pageStart);
-
+        
                     Interlocked.Increment(ref CacheWriteCount);
                     
                     // Update cached page data
@@ -76,6 +76,21 @@ Underlying file access service statistics:
                 }
             }
         }
+        
+        // Drop cache
+        // lock (_cacheLock)
+        // {
+        //     var startPage = offset / cachePageSize;
+        //     var endPage = (offset + data.Length) / cachePageSize;
+        //     for (var page = startPage; page <= endPage; page++)
+        //     {
+        //         if (_cache.ContainsKey(page))
+        //         {
+        //             _cache.Remove(page);
+        //             _lruList.Remove(page);
+        //         }
+        //     }
+        // }
 
         _underlyingAccessService.WriteInFile(offset, data);
     }

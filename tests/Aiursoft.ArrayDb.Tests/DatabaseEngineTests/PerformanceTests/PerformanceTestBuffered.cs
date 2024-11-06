@@ -37,14 +37,14 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         Console.WriteLine($"Write 100 * 100 * 100 times: {stopWatch.ElapsedMilliseconds}ms");
         // Read 100 0000 times in less than 10 seconds. On my machine 345ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
-        
+
         stopWatch.Reset();
         stopWatch.Start();
         await buffer.SyncAsync();
         stopWatch.Stop();
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
-        // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
+        // Sync 100 0000 times in less than 10 seconds. On my machine 119ms.
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
         Assert.AreEqual(100 * 100 * 100, bucket.SpaceProvisionedItemsCount);
