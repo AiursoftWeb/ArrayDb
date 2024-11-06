@@ -47,7 +47,7 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests
 
             Assert.IsTrue(buffer.IsCold, "Buffer should start in a cold state.");
 
-            var sampleDatas = new[]
+            var sampleData = new[]
             {
                 new SampleData
                 {
@@ -63,7 +63,7 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests
                 }
             };
 
-            buffer.Add(sampleDatas);
+            buffer.Add(sampleData);
 
             Assert.IsTrue(buffer.IsHot, "Buffer should be hot after adding multiple items.");
 
@@ -125,15 +125,16 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests
             var tasks = new List<Task>();
             for (int i = 0; i < 10; i++)
             {
+                var i1 = i;
                 tasks.Add(Task.Run(() =>
                 {
                     var sampleData = new SampleData
                     {
-                        MyNumber1 = i,
-                        MyString1 = $"Data {i}",
-                        MyNumber2 = i + 1,
-                        MyBoolean1 = i % 2 == 0,
-                        MyString2 = $"Sample {i}"
+                        MyNumber1 = i1,
+                        MyString1 = $"Data {i1}",
+                        MyNumber2 = i1 + 1,
+                        MyBoolean1 = i1 % 2 == 0,
+                        MyString2 = $"Sample {i1}"
                     };
                     buffer.Add(sampleData);
                 }));
@@ -226,7 +227,7 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests
         public void CalculateSleepTimeHandlesSmallBufferSizes()
         {
             int result = BufferedObjectBuckets<SampleData>.CalculateSleepTime(1000, 10, 2);
-            Assert.IsTrue(result > 0 && result <= 1000,
+            Assert.IsTrue(result is > 0 and <= 1000,
                 "Sleep time should be within valid range for small buffer sizes.");
         }
 

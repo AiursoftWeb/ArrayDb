@@ -125,21 +125,11 @@ Underlying cached file access service statistics:
     /// <param name="offset">The offset of the string in the file.</param>
     /// <param name="length">The length of the string in bytes.</param>
     /// <returns>The string content of the specified offset and length.</returns>
-    public string? LoadStringContent(long offset, int length)
+    public string LoadStringContent(long offset, int length)
     {
         Interlocked.Increment(ref LoadStringContentCount);
-        switch (offset)
-        {
-            case -1:
-                return string.Empty;
-            case -2:
-                return null;
-            default:
-            {
-                var stringBytes = _fileAccess.ReadInFile(offset, length);
-                return Encoding.UTF8.GetString(stringBytes);
-            }
-        }
+        var stringBytes = _fileAccess.ReadInFile(offset, length);
+        return Encoding.UTF8.GetString(stringBytes);
     }
 
     public async Task DeleteAsync()
