@@ -56,7 +56,6 @@ public class CachedFileAccessServiceTests : ArrayDbTestBase
         // Verify the written and read data match
         CollectionAssert.AreEqual(dataToWrite, readData);
 
-        Assert.AreEqual(0, _service.CacheWipeCount);
         Assert.AreEqual(1, _service.CacheMissCount);
         Assert.AreEqual(0, _service.CacheHitCount);
     }
@@ -76,7 +75,6 @@ public class CachedFileAccessServiceTests : ArrayDbTestBase
         // Verify the written and read data match
         CollectionAssert.AreEqual(dataToWrite, readData);
 
-        Assert.AreEqual(0, _service.CacheWipeCount);
         Assert.AreEqual(2, _service.CacheMissCount);
     }
 
@@ -126,7 +124,6 @@ public class CachedFileAccessServiceTests : ArrayDbTestBase
 
         Assert.AreEqual(0, _service.CacheHitCount);
         Assert.AreEqual(0, _service.CacheMissCount);
-        Assert.AreEqual(0, _service.CacheWipeCount);
         Assert.AreEqual(0, _service.LruUpdateCount);
         Assert.AreEqual(0, _service.RemoveFromCacheCount);
     }
@@ -160,7 +157,6 @@ public class CachedFileAccessServiceTests : ArrayDbTestBase
             _service.ReadInFile(i * PageSize, dataToWrite.Length); // Should hit the cache again
         }
 
-        Assert.AreEqual(0, _service.CacheWipeCount);
         Assert.AreEqual(10, _service.CacheMissCount);
         Assert.AreEqual(20, _service.CacheHitCount);
     }
