@@ -72,6 +72,9 @@ Supported property types are:
 * `Guid`
 
 ```csharp
+using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.Partitions;
+
 public class MyLogItem : PartitionedBucketEntity<string>
 {
     [PartitionKey] 
@@ -208,8 +211,8 @@ Console.WriteLine("NextCloud logs count: " + nextCloudLogsCount);
 You can also read the data as an `IEnumerable` by using `AsEnumerable` with a partition key.
 
 ```csharp
-var results = db.AsEnumerable(partitionKey: "NextCloud");
-    .Where(t => t.StatusCode == 200)
+var results = db.AsEnumerable(partitionKey: "NextCloud")
+    .Where(t => t.HttpResponseCode == 200)
     .OrderBy(t => t.HappenTime)
     .Take(10)
     .ToArray();
@@ -223,6 +226,17 @@ If you want to get all data from all partitions, you can use `ReadAll` to get al
 // (Not recommended for large data)
 var allLogs = db.ReadAll();
 Console.WriteLine("All logs count: " + allLogs.Length);
+```
+
+### Deleting data
+
+ArrayDb only support deleting data by partition key. You can use `DeletePartition` to delete all data in a specific partition.
+
+```csharp
+// Delete a specific partition.
+await db.DeletePartitionAsync("HomeAssistant");
+var allLogsAfterDelete = db.ReadAll();
+Console.WriteLine("All logs count after delete: " + allLogsAfterDelete.Length);
 ```
 
 ## Best practice
