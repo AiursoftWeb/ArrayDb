@@ -1,7 +1,7 @@
 using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.Partitions;
 
-namespace Aiursoft.ArrayDb.Benchmark;
+namespace Aiursoft.ArrayDb.Benchmark.Models;
 
 public class TestEntity : PartitionedBucketEntity<int>
 {

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using Aiursoft.ArrayDb.Benchmark.Abstractions;
+using Aiursoft.ArrayDb.Benchmark.Extensions;
+using Aiursoft.ArrayDb.Benchmark.Models;
+using Aiursoft.ArrayDb.Benchmark.TestCases;
 using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.WriteBuffer;
 
@@ -9,6 +12,7 @@ public abstract class Program
     private const string StructureFileName = "test.bin";
     private const string StructureStringsFileName = "test-strings.bin";
     public const int OneMillion = 100 * 100 * 100;
+    public const int OneKilo = 1000;
 
     public static async Task Main()
     {
@@ -16,123 +20,94 @@ public abstract class Program
         {
             File.Delete(StructureFileName);
         }
+
         if (File.Exists(StructureStringsFileName))
         {
             File.Delete(StructureStringsFileName);
         }
-        
-        var ob = new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName);
-        // ReSharper disable once InconsistentNaming
-        var b_ob =
-            new BufferedObjectBuckets<TestEntity>(
-                new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
-            );
-        // ReSharper disable once InconsistentNaming
-        var b_b_ob =
-            new BufferedObjectBuckets<TestEntity>(
-                new BufferedObjectBuckets<TestEntity>(
+
+
+        var testItems = new[]
+        {
+            new TestTarget
+            {
+                TestTargetName = "Bucket",
+                TestEntities = new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+            },
+            new TestTarget
+            {
+                TestTargetName = "Buf Bucket",
+                TestEntities = new BufferedObjectBuckets<TestEntity>(
                     new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
                 )
-            );
-
+            },
+            new TestTarget
+            {
+                TestTargetName = "BufBuf Bucket",
+                TestEntities = new BufferedObjectBuckets<TestEntity>(
+                    new BufferedObjectBuckets<TestEntity>(
+                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                    )
+                )
+            },
+            new TestTarget
+            {
+                TestTargetName = "BufBufBuf Bucket",
+                TestEntities = new BufferedObjectBuckets<TestEntity>(
+                    new BufferedObjectBuckets<TestEntity>(
+                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                    )
+                )
+            }
+        };
         var testCases = new ITestCase[]
         {
+            new Add1MItemsOneTimeTest(),
+            new Add1KItems1KTimesTest(),
             new Add1MTimesTest(),
-            new Add1MItemsOneTimeTest()
+            new Read1MItemsOneTimeTest(),
+            new Read1KItems1KTimesTest(),
+            new Read1Item1MTimesTest(),
+            new Write7Read3With1000TimesTest(),
+            new Write3Read7With1000TimesTest()
         };
 
         Console.WriteLine("Start testing...");
-        // TODO: Test each item.
+
+        // We need to build a table to show the results of the test cases.
+        // |             | OB | BOB | BBOB | POB |
+        // |-------------|----|-----|------|-----|
+        // | Test Case 1 |    |     |      |     |
+        // | Test Case 2 |    |     |      |     |
+        // | Test Case 3 |    |     |      |     |
+        // | Test Case 4 |    |     |      |     |
+
+        var finalResult = new List<TestCaseTestResults>();
         foreach (var testCase in testCases)
         {
-            Console.WriteLine($"Test case: {testCase.TestCaseName}");
-            var result = await testCase.RunAsync(ob);
-            Console.WriteLine("======================================");
-            Console.WriteLine($"Serial run time: {result.SerialRunTime}");
-            if (result.ParallelRunTime.HasValue)
+            var testResults = new List<TestResult>();
+            foreach (var testItem in testItems)
             {
-                Console.WriteLine($"Parallel run time: {result.ParallelRunTime}");
+                try
+                {
+                    var result = await testCase.RunAsync(testItem);
+                    testResults.Add(result);
+                    await Task.Delay(2000); // Wait for the system to cool down
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"The test case {testCase.TestCaseName} failed with {testItem.TestTargetName}. Error: {e.Message}");
+                    throw;
+                }
             }
-            Console.WriteLine("====================================== \n\n");
-            await Task.Delay(2000); // Wait for a while to cool down for the next test.
+
+            finalResult.Add(new TestCaseTestResults
+            {
+                TestCase = testCase,
+                TestResults = testResults
+            });
         }
-    }
-}
 
-public static class TimeExtensions
-{
-    public static async Task<TimeSpan> RunWithWatch(Func<Task> action)
-    {
-        var sw = new Stopwatch();
-        sw.Start();
-        await action();
-        sw.Stop();
-        return sw.Elapsed;
-    }
-}
-
-public interface ITestCase
-{
-    public string TestCaseName { get; }
-    public Task<TestResult> RunAsync(IObjectBucket<TestEntity> ob);
-}
-
-public class TestResult
-{
-    public required TimeSpan? ParallelRunTime { get; set; }
-
-    public required TimeSpan SerialRunTime { get; set; }
-}
-
-public class Add1MTimesTest : ITestCase
-{
-    public string TestCaseName => "Add One Million Times Test";
-    public async Task<TestResult> RunAsync(IObjectBucket<TestEntity> ob)
-    {
-        var dataToAdd = TestEntityFactory.CreateSome(Program.OneMillion);
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
-        {
-            foreach (var data in dataToAdd)
-            {
-                ob.Add(data);
-            }
-
-            return Task.CompletedTask;
-        });
-
-        var parallelRunTime = await TimeExtensions.RunWithWatch(() =>
-        {
-            Parallel.ForEach(dataToAdd, data => { ob.Add(data); });
-
-            return Task.CompletedTask;
-        });
-
-        return new TestResult
-        {
-            ParallelRunTime = parallelRunTime,
-            SerialRunTime = serialRunTime
-        };
-    }
-}
-
-
-public class Add1MItemsOneTimeTest : ITestCase
-{
-    public string TestCaseName => "Add One Million Items One Time Test";
-    public async Task<TestResult> RunAsync(IObjectBucket<TestEntity> ob)
-    {
-        var dataToAdd = TestEntityFactory.CreateSome(Program.OneMillion);
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
-        {
-            ob.Add(dataToAdd);
-
-            return Task.CompletedTask;
-        });
-
-        return new TestResult
-        {
-            ParallelRunTime = null,
-            SerialRunTime = serialRunTime
-        };
+        Console.WriteLine(MarkdownTableExtensions.ToMarkdownTable(finalResult));
     }
 }
