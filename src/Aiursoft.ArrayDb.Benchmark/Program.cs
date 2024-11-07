@@ -16,17 +16,6 @@ public abstract class Program
 
     public static async Task Main()
     {
-        if (File.Exists(StructureFileName))
-        {
-            File.Delete(StructureFileName);
-        }
-
-        if (File.Exists(StructureStringsFileName))
-        {
-            File.Delete(StructureStringsFileName);
-        }
-
-
         var testItems = new[]
         {
             new TestTarget
@@ -72,7 +61,7 @@ public abstract class Program
             new Write3Read7With1000TimesTest()
         };
 
-        Console.WriteLine("Start testing...");
+        Console.WriteLine("Starting benchmarking...\n\n");
 
         // We need to build a table to show the results of the test cases.
         // |             | OB | BOB | BBOB | POB |
@@ -90,6 +79,8 @@ public abstract class Program
             {
                 try
                 {
+                    Clean();
+                    Console.WriteLine($"Running test case {testCase.TestCaseName} with {testItem.TestTargetName}...");
                     var result = await testCase.RunAsync(testItem);
                     testResults.Add(result);
                     await Task.Delay(2000); // Wait for the system to cool down
@@ -109,5 +100,19 @@ public abstract class Program
         }
 
         Console.WriteLine(MarkdownTableExtensions.ToMarkdownTable(finalResult));
+        Clean();
+    }
+
+    private static void Clean()
+    {
+        if (File.Exists(StructureFileName))
+        {
+            File.Delete(StructureFileName);
+        }
+
+        if (File.Exists(StructureStringsFileName))
+        {
+            File.Delete(StructureStringsFileName);
+        }
     }
 }
