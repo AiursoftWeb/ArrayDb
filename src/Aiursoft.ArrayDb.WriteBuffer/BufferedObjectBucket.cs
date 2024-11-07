@@ -11,7 +11,7 @@ namespace Aiursoft.ArrayDb.WriteBuffer;
 /// <typeparam name="T">The type of objects to be stored in the buckets.</typeparam>
 /// <param name="innerBucket">The underlying object bucket to store the objects.</param>
 public class BufferedObjectBuckets<T>(
-    ObjectBucket<T> innerBucket,
+    IObjectBucket<T> innerBucket,
     int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
     int stopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
     where T : BucketEntity, new()
@@ -41,7 +41,7 @@ public class BufferedObjectBuckets<T>(
     private ConcurrentQueue<T> _activeBuffer = new();
     private ConcurrentQueue<T> _secondaryBuffer = new();
 
-    public ObjectBucket<T> InnerBucket => innerBucket;
+    public IObjectBucket<T> InnerBucket => innerBucket;
     public bool IsCold => _engine.IsCompleted && _coolDownEngine.IsCompleted;
     public bool IsHot => !IsCold;
 
