@@ -63,8 +63,6 @@ public class BufferedObjectBuckets<T>(
         }
     }
 
-    public readonly List<int> InsertItemsCountRecord = [];
-
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
@@ -73,7 +71,6 @@ public class BufferedObjectBuckets<T>(
         ActualWriteTimesCount = 0;
         ActualWriteItemsCount = 0;
         CoolDownEventsCount = 0;
-        InsertItemsCountRecord.Clear();
     }
 
     public string OutputStatistics()
@@ -90,7 +87,6 @@ Buffered object repository with item type {typeof(T).Name} statistics:
 * Actual write events count: {ActualWriteTimesCount}
 * Actual write items count: {ActualWriteItemsCount}
 * Cool down events count: {CoolDownEventsCount}
-* Inserted items count record (Top 20): {string.Join(", ", InsertItemsCountRecord.Take(20))}
 
 Underlying object bucket statistics:
 {innerBucket.OutputStatistics().AppendTabsEachLineHead()}
@@ -160,7 +156,6 @@ Underlying object bucket statistics:
             // Update statistics
             Interlocked.Add(ref ActualWriteItemsCount, dataToWrite.Length);
             Interlocked.Increment(ref ActualWriteTimesCount);
-            InsertItemsCountRecord.Add(dataToWrite.Length);
 
             // Process the buffer to persist
             innerBucket.AddBulk(dataToWrite);
