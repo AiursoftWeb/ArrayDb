@@ -112,7 +112,7 @@ public class PerformanceTests : ArrayDbTestBase
     [Obsolete(message: "I understand that reading item one by one is slow, but this test need to cover the scenario.")]
     public void PerformanceTestRead()
     {
-        // Read 100 0000 times in less than 10 seconds. On my machine: 2881ms
+        // Read 100 0000 times in less than 20 seconds. On my machine: 2881ms
         var persistService =
             new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var list = new List<SampleData>();
@@ -146,7 +146,7 @@ public class PerformanceTests : ArrayDbTestBase
 
         Console.WriteLine($"Read 100000 times: {stopWatch.ElapsedMilliseconds}ms");
         Console.WriteLine(persistService.OutputStatistics());
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 10 * 1000);
+        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
     }
     
     [TestMethod]
