@@ -368,8 +368,11 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         buffer.Add(items);
 
         // Wait briefly to allow some data to persist
-        await Task.Delay(500); // Adjust time based on your buffer persistence settings
-
+        for (var i = 0; i < 250; i++)
+        {
+            Assert.AreEqual(buffer.Count, 50000, "No matter how much data is persisted, buffer should contain all items.");
+            await Task.Delay(10); // Adjust time based on your buffer persistence settings
+        }
         Assert.IsTrue(buffer.BufferedItemsCount < 50000, "Some data should have been persisted.");
         Assert.IsTrue(persistService.Count > 0, "Some data should be in the underlying storage.");
     }
