@@ -12,7 +12,7 @@ public interface IObjectBucket<T> where T : BucketEntity, new()
     
     T Read(int index);
     
-    T[] ReadBulk(int indexFrom, int count);
+    T[] ReadBulk(int indexFrom, int take);
     
     Task DeleteAsync();
     

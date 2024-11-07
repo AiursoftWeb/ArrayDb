@@ -509,8 +509,42 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         buffer.Add(items);
 
         // Read more items than available
-        var bulkRead = buffer.ReadBulk(0, 10);
-        Assert.AreEqual(5, bulkRead.Length, "Should only return available items.");
+        try
+        {
+            buffer.ReadBulk(0, 10);
+            Assert.Fail("Reading bulk exceeding available data should throw an exception.");
+        }
+        catch (ArgumentException)
+        {
+        }
+        
+        // Read more items than available
+        try
+        {
+            buffer.ReadBulk(3, 3);
+            Assert.Fail("Reading bulk exceeding available data should throw an exception.");
+        }
+        catch (ArgumentException)
+        {
+        }
+        
+        try
+        {
+            buffer.ReadBulk(3, -1);
+            Assert.Fail("Reading bulk exceeding available data should throw an exception.");
+        }
+        catch (ArgumentException)
+        {
+        }
+        
+        try
+        {
+            buffer.ReadBulk(6, 1);
+            Assert.Fail("Reading bulk exceeding available data should throw an exception.");
+        }
+        catch (ArgumentException)
+        {
+        }
     }
 
     [TestMethod]

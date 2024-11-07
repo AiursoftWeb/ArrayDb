@@ -115,14 +115,14 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
 
     public T Read(TK partitionKey, int index)
     {
-        var item = GetPartitionById(partitionKey).InnerBucket.Read(index);
+        var item = GetPartitionById(partitionKey).Read(index);
         item.PartitionId = partitionKey;
         return item;
     }
 
     public T[] ReadBulk(TK partitionKey, int indexFrom, int count)
     {
-        var result = GetPartitionById(partitionKey).InnerBucket.ReadBulk(indexFrom, count);
+        var result = GetPartitionById(partitionKey).ReadBulk(indexFrom, count);
         foreach (var item in result)
         {
             item.PartitionId = partitionKey;
@@ -136,7 +136,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         Parallel.ForEach(Partitions, partition =>
         {
             var partitionResults =
-                partition.Value.InnerBucket.ReadBulk(0, partition.Value.InnerBucket.Count);
+                partition.Value.ReadBulk(0, partition.Value.InnerBucket.Count);
             foreach (var result in partitionResults)
             {
                 result.PartitionId = partition.Key;
@@ -151,21 +151,21 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         var totalItemsCount = 0;
         foreach (var partition in Partitions)
         {
-            totalItemsCount += partition.Value.InnerBucket.Count;
+            totalItemsCount += partition.Value.Count;
         }
         return totalItemsCount;
     }
     
     public int Count(TK partitionKey)
     {
-        return GetPartitionById(partitionKey).InnerBucket.Count;
+        return GetPartitionById(partitionKey).Count;
     }
     
     public async Task DeletePartitionAsync(TK partitionKey)
     {
         if (Partitions.TryGetValue(partitionKey, out var partition))
         {
-            await partition.InnerBucket.DeleteAsync();
+            await partition.DeleteAsync();
             Partitions.Remove(partitionKey);
         }
         else
@@ -176,7 +176,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
     
     public IEnumerable<T> AsEnumerable(TK partitionKey, int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
     {
-        return GetPartitionById(partitionKey).InnerBucket.AsEnumerable(bufferedReadPageSize)
+        return GetPartitionById(partitionKey).AsEnumerable(bufferedReadPageSize)
             .Select(item =>
             {
                 item.PartitionId = partitionKey;

@@ -239,47 +239,49 @@ Underlying object bucket statistics:
         }
     }
 
-    public T[] ReadBulk(int indexFrom, int take)
+    public T[] ReadBulk(int indexFrom, int readItemsCount)
     {
         lock (_persistingActiveBufferToDiskLock) // Avoid reading the buffer while the engine is writing the buffer to disk.
         {
-            if (take <= 0)
+            if (readItemsCount <= 0)
             {
-                return Array.Empty<T>();
+                throw new ArgumentOutOfRangeException(nameof(readItemsCount), "readItemsCount must be greater than 0.");
             }
 
-            var result = new List<T>();
-
-            if (indexFrom < innerBucket.Count)
-            {
-                // Calculate the number of items to take from innerBucket
-                var itemsToTakeFromInnerBucket = Math.Min(take, innerBucket.Count - indexFrom);
-                var fromInnerBucket = innerBucket.ReadBulk(indexFrom, itemsToTakeFromInnerBucket);
-                result.AddRange(fromInnerBucket);
-
-                // If we still need more items, get them from the buffer
-                var remainingItemsToTake = take - fromInnerBucket.Length;
-                if (remainingItemsToTake > 0)
-                {
-                    var fromActiveBuffer = _activeBuffer.Take(remainingItemsToTake).ToArray();
-                    result.AddRange(fromActiveBuffer);
-                }
-            }
-            else if (indexFrom < innerBucket.Count + _activeBuffer.Count)
-            {
-                // Read only from the active buffer
-                var bufferIndex = indexFrom - innerBucket.Count;
-                var fromActiveBuffer = _activeBuffer.Skip(bufferIndex).Take(take).ToArray();
-                result.AddRange(fromActiveBuffer);
-            }
-            else
+            // Total items available for reading
+            var totalItemsAvailable = innerBucket.Count + _activeBuffer.Count;
+        
+            if (indexFrom < 0 || indexFrom >= totalItemsAvailable)
             {
                 throw new ArgumentOutOfRangeException(nameof(indexFrom), "Index is out of range.");
             }
 
-            return result.ToArray();
+            // Check if the read range is valid
+            if (indexFrom + readItemsCount > totalItemsAvailable)
+            {
+                throw new ArgumentOutOfRangeException(nameof(readItemsCount), "Read range exceeds available items.");
+            }
+
+            // Case 1: Reading from innerBucket and potentially _activeBuffer
+            if (indexFrom < innerBucket.Count)
+            {
+                var itemsToTakeFromInnerBucket = Math.Min(readItemsCount, innerBucket.Count - indexFrom);
+                var fromInnerBucket = innerBucket.ReadBulk(indexFrom, itemsToTakeFromInnerBucket);
+                var remainingItemsToTake = readItemsCount - itemsToTakeFromInnerBucket;
+
+                if (remainingItemsToTake <= 0) return fromInnerBucket; // Only needed from innerBucket
+                // Read remaining items from the active buffer
+                var fromActiveBuffer = _activeBuffer.Take(remainingItemsToTake).ToArray();
+                return fromInnerBucket.Concat(fromActiveBuffer).ToArray(); // Combining results without List
+
+            }
+
+            // Case 2: Reading entirely from the active buffer
+            var bufferIndex = indexFrom - innerBucket.Count;
+            return _activeBuffer.Skip(bufferIndex).Take(readItemsCount).ToArray();
         }
     }
+
     
     public async Task DeleteAsync()
     {

@@ -466,21 +466,21 @@ Underlying string repository statistics:
     /// This method is thread-safe. You can call it from multiple threads.
     /// </summary>
     /// <param name="indexFrom">Start index of the objects to read.</param>
-    /// <param name="count">Number of objects to read.</param>
+    /// <param name="take">Number of objects to read.</param>
     /// <returns>An array of objects read from the file.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the indexFrom is less than 0 or indexFrom + count is greater than the total number of objects.</exception>
-    public T[] ReadBulk(int indexFrom, int count)
+    public T[] ReadBulk(int indexFrom, int take)
     {
-        if (indexFrom < 0 || indexFrom + count > ArchivedItemsCount)
+        if (indexFrom < 0 || indexFrom + take > ArchivedItemsCount)
         {
             throw new ArgumentOutOfRangeException(nameof(indexFrom));
         }
 
         var sizeOfObject = GetItemSize();
         // Sequential read. Load binary data from disk and deserialize them in parallel.
-        var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + CountMarkerSize, sizeOfObject * count);
-        var result = new T[count];
-        Parallel.For(0, count, i =>
+        var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + CountMarkerSize, sizeOfObject * take);
+        var result = new T[take];
+        Parallel.For(0, take, i =>
         {
             // TODO: Optimize: We need to preload the string file, because the string file is accessed randomly.
             // Random access to the string file to load the string data.
