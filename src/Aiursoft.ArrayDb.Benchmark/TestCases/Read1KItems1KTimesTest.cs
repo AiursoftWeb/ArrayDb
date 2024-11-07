@@ -20,7 +20,7 @@ public class Read1KItems1KTimesTest : ITestCase
         
         var parallelRunTime = await TimeExtensions.RunTest(target, t =>
         {
-            Parallel.For(0, Program.OneMillion, i =>
+            Parallel.For(0, Program.OneKilo, i =>
             {
                 t.ReadBulk(indexFrom: i * Program.OneKilo, take: Program.OneKilo);
             });
