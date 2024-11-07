@@ -9,7 +9,6 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
 {
     private Dictionary<TK, BufferedObjectBuckets<T>> Partitions { get; } = new();
     
-    
     private readonly object _partitionsLock = new();
     private readonly string _databaseName;
     private readonly string _databaseDirectory;
@@ -137,7 +136,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         Parallel.ForEach(Partitions, partition =>
         {
             var partitionResults =
-                partition.Value.InnerBucket.ReadBulk(0, partition.Value.InnerBucket.ArchivedItemsCount);
+                partition.Value.InnerBucket.ReadBulk(0, partition.Value.InnerBucket.Count);
             foreach (var result in partitionResults)
             {
                 result.PartitionId = partition.Key;
@@ -152,14 +151,14 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         var totalItemsCount = 0;
         foreach (var partition in Partitions)
         {
-            totalItemsCount += partition.Value.InnerBucket.ArchivedItemsCount;
+            totalItemsCount += partition.Value.InnerBucket.Count;
         }
         return totalItemsCount;
     }
     
     public int Count(TK partitionKey)
     {
-        return GetPartitionById(partitionKey).InnerBucket.ArchivedItemsCount;
+        return GetPartitionById(partitionKey).InnerBucket.Count;
     }
     
     public async Task DeletePartitionAsync(TK partitionKey)

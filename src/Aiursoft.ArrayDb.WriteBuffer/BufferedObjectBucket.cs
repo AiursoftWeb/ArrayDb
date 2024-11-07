@@ -14,7 +14,7 @@ public class BufferedObjectBuckets<T>(
     IObjectBucket<T> innerBucket,
     int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
     int stopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
-    where T : BucketEntity, new()
+    : IObjectBucket<T> where T : BucketEntity, new()
 {
     private Task _engine = Task.CompletedTask;
     private Task _coolDownEngine = Task.CompletedTask;
@@ -45,6 +45,17 @@ public class BufferedObjectBuckets<T>(
     public bool IsCold => _engine.IsCompleted && _coolDownEngine.IsCompleted;
     public bool IsHot => !IsCold;
 
+    public int Count
+    {
+        get
+        {
+            lock (_persistingActiveBufferToDiskLock)
+            {
+                return innerBucket.Count + _activeBuffer.Count;
+            }
+        }
+    }
+    
     // Statistics
     public int WriteTimesCount;
     public int WriteItemsCount;
@@ -175,7 +186,7 @@ Underlying object bucket statistics:
                 // If we persist too fast, and the buffer is almost empty, frequent write will cause data fragmentation.
                 // If we persist too slow, and a lot of new data has been added to the buffer, and the engine wasted time in sleeping.
                 // So the time to sleep is calculated by the number of items in the buffer.
-                var sleepTime = CalculateSleepTime(
+                var sleepTime = TimeExtensions.CalculateSleepTime(
                     maxSleepMilliSecondsWhenCold,
                     stopSleepingWhenWriteBufferItemsMoreThan,
                     _activeBuffer.Count);
@@ -209,21 +220,71 @@ Underlying object bucket statistics:
         await _engine;
     }
 
-    public static int CalculateSleepTime(double maxSleepMilliSecondsWhenCold,
-        double stopSleepingWhenWriteBufferItemsMoreThan, int writeBufferItemsCount)
+    public T Read(int index)
     {
-        if (stopSleepingWhenWriteBufferItemsMoreThan <= 0)
+        lock (_persistingActiveBufferToDiskLock) // Avoid reading the buffer while the engine is writing the buffer to disk.
         {
-            throw new ArgumentException("B must be a positive number.");
+            if (index < innerBucket.Count)
+            {
+                return innerBucket.Read(index);
+            }
+            else if (index < innerBucket.Count + _activeBuffer.Count)
+            {
+                return _activeBuffer.ElementAt(index - innerBucket.Count);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
+            }
         }
+    }
 
-        if (writeBufferItemsCount > stopSleepingWhenWriteBufferItemsMoreThan)
+    public T[] ReadBulk(int indexFrom, int take)
+    {
+        lock (_persistingActiveBufferToDiskLock) // Avoid reading the buffer while the engine is writing the buffer to disk.
         {
-            return 0;
-        }
+            if (take <= 0)
+            {
+                return Array.Empty<T>();
+            }
 
-        var y = maxSleepMilliSecondsWhenCold * (1 - Math.Log(1 + writeBufferItemsCount) /
-            Math.Log(1 + stopSleepingWhenWriteBufferItemsMoreThan));
-        return (int)y;
+            var result = new List<T>();
+
+            if (indexFrom < innerBucket.Count)
+            {
+                // Calculate the number of items to take from innerBucket
+                var itemsToTakeFromInnerBucket = Math.Min(take, innerBucket.Count - indexFrom);
+                var fromInnerBucket = innerBucket.ReadBulk(indexFrom, itemsToTakeFromInnerBucket);
+                result.AddRange(fromInnerBucket);
+
+                // If we still need more items, get them from the buffer
+                var remainingItemsToTake = take - fromInnerBucket.Length;
+                if (remainingItemsToTake > 0)
+                {
+                    var fromActiveBuffer = _activeBuffer.Take(remainingItemsToTake).ToArray();
+                    result.AddRange(fromActiveBuffer);
+                }
+            }
+            else if (indexFrom < innerBucket.Count + _activeBuffer.Count)
+            {
+                // Read only from the active buffer
+                var bufferIndex = indexFrom - innerBucket.Count;
+                var fromActiveBuffer = _activeBuffer.Skip(bufferIndex).Take(take).ToArray();
+                result.AddRange(fromActiveBuffer);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(indexFrom), "Index is out of range.");
+            }
+
+            return result.ToArray();
+        }
+    }
+    
+    public async Task DeleteAsync()
+    {
+        await innerBucket.DeleteAsync();
+        _activeBuffer.Clear();
+        _secondaryBuffer.Clear();
     }
 }

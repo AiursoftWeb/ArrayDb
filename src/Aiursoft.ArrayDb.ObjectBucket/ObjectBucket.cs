@@ -13,10 +13,25 @@ namespace Aiursoft.ArrayDb.ObjectBucket;
 /// <typeparam name="T"></typeparam>
 public class ObjectBucket<T> : IObjectBucket<T> where T : BucketEntity, new()
 {
-    // Save the offset
-    // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
+    public int Count => ArchivedItemsCount;
+    /// <summary>
+    /// SpaceProvisionedItemsCount is the total number of items that the bucket can store.
+    ///
+    /// When requesting to write new item, it will start to write at the offset of SpaceProvisionedItemsCount.
+    /// 
+    /// SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
+    /// </summary>
     public int SpaceProvisionedItemsCount { get; private set; }
+    
+    /// <summary>
+    /// ArchivedItemsCount is the total number of items that have been written to the bucket. Which are the items ready to be read.
+    ///
+    /// When finished writing new item, the ArchivedItemsCount will be increased by 1.
+    ///
+    /// ArchivedItemsCount is always less than or equal to SpaceProvisionedItemsCount.
+    /// </summary>
     public int ArchivedItemsCount { get; private set; }
+    
     private const int CountMarkerSize = sizeof(int) + sizeof(int);
     private readonly object _expandLengthLock = new();
 

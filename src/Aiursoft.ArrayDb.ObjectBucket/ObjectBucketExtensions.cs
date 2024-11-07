@@ -6,7 +6,7 @@ public static class ObjectBucketExtensions
         int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize) where T : BucketEntity, new()
     {
         // Copy the value to a local variable to avoid race condition. The ArchivedItemsCount may be changed by other threads.
-        var archivedItemsCount = bucket.ArchivedItemsCount;
+        var archivedItemsCount = bucket.Count;
         for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
         {
             var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
