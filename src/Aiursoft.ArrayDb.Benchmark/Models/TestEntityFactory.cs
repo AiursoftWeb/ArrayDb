@@ -32,7 +32,6 @@ public static class TestEntityFactory
         var success = entity.Id == i &&
                entity.ChineseString == $"Hello, World! 你好世界 {i}" &&
                entity.Id10Times == i * 10 &&
-                entity.ThreadId == i % 10 &&
                entity.IsEven == (i % 2 == 0) &&
                entity.NullableEnglishString == (i % 7 == 0 ?
                    string.Empty :

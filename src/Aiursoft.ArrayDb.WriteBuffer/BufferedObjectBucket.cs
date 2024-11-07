@@ -18,6 +18,7 @@ public class BufferedObjectBuckets<T>(
 {
     private Task _engine = Task.CompletedTask;
     private Task _coolDownEngine = Task.CompletedTask;
+    private readonly ReaderWriterLockSlim _bufferLock = new ReaderWriterLockSlim();
 
     /// <summary>
     /// This lock protects from swapping the active and secondary buffers at the same time.
@@ -29,15 +30,6 @@ public class BufferedObjectBuckets<T>(
     /// </summary>
     private readonly object _engineStatusSwitchLock = new();
 
-    /// <summary>
-    /// This lock protects from persisting the active buffer to disk at the same time.
-    ///
-    /// When you found this is locked, then currently the engine is writing the active buffer to disk.
-    ///
-    /// When you have this lock accessed, then it means the active buffer can treated as a layer of cache.
-    /// </summary>
-    private readonly object _persistingActiveBufferToDiskLock = new();
-
     private ConcurrentQueue<T> _activeBuffer = new();
     private ConcurrentQueue<T> _secondaryBuffer = new();
 
@@ -48,9 +40,14 @@ public class BufferedObjectBuckets<T>(
     {
         get
         {
-            lock (_persistingActiveBufferToDiskLock)
+            _bufferLock.EnterReadLock(); // Get the buffer in a thread-safe way.
+            try
             {
                 return innerBucket.Count + _activeBuffer.Count;
+            }
+            finally
+            {
+                _bufferLock.ExitReadLock();
             }
         }
     }
@@ -147,7 +144,8 @@ Underlying object bucket statistics:
 
     private void WriteBuffered() // We can ensure this method is only called by the engine and never be executed by multiple threads at the same time.
     {
-        lock (_persistingActiveBufferToDiskLock)
+        _bufferLock.EnterWriteLock(); // Get the buffer in a thread-safe way.
+        try
         {
             ConcurrentQueue<T> bufferToPersist;
             lock (_bufferWriteSwapLock)
@@ -169,6 +167,10 @@ Underlying object bucket statistics:
 
             // Process the buffer to persist
             innerBucket.Add(dataToWrite);
+        }
+        finally
+        {
+            _bufferLock.ExitWriteLock();
         }
 
         // While we are writing, new data may be added to the buffer. If so, we need to write it too.
@@ -221,7 +223,8 @@ Underlying object bucket statistics:
 
     public T Read(int index)
     {
-        lock (_persistingActiveBufferToDiskLock) // Avoid reading the buffer while the engine is writing the buffer to disk.
+        _bufferLock.EnterReadLock(); // Get the buffer in a thread-safe way.
+        try
         {
             if (index < innerBucket.Count)
             {
@@ -236,11 +239,16 @@ Underlying object bucket statistics:
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
             }
         }
+        finally
+        {
+            _bufferLock.ExitReadLock();
+        }
     }
 
     public T[] ReadBulk(int indexFrom, int readItemsCount)
     {
-        lock (_persistingActiveBufferToDiskLock) // Avoid reading the buffer while the engine is writing the buffer to disk.
+        _bufferLock.EnterReadLock(); // Get the buffer in a thread-safe way.
+        try
         {
             if (readItemsCount <= 0)
             {
@@ -278,6 +286,10 @@ Underlying object bucket statistics:
             // Case 2: Reading entirely from the active buffer
             var bufferIndex = indexFrom - innerBucket.Count;
             return _activeBuffer.Skip(bufferIndex).Take(readItemsCount).ToArray();
+        }
+        finally
+        {
+            _bufferLock.ExitReadLock();
         }
     }
 
