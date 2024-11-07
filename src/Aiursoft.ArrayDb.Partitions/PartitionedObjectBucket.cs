@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Aiursoft.ArrayDb.Consts;
+using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.WriteBuffer;
 
 namespace Aiursoft.ArrayDb.Partitions;
@@ -45,9 +46,9 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
             if (fileName.StartsWith(databaseName) && fileName.EndsWith("_structure.dat"))
             {
                 var partitionId = fileName.Substring(databaseName.Length + 1, fileName.Length - databaseName.Length - 1 - "_structure.dat".Length);
-                var parrtitionIdTk = (TK)Convert.ChangeType(partitionId, typeof(TK));
-                Partitions[parrtitionIdTk] = new BufferedObjectBuckets<T>(
-                    new ObjectBucket.ObjectBucket<T>(
+                var partitionIdTk = (TK)Convert.ChangeType(partitionId, typeof(TK));
+                Partitions[partitionIdTk] = new BufferedObjectBuckets<T>(
+                    new ObjectBucket<T>(
                         file,
                         Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_string.dat"),
                         initialSizeIfNotExists,
@@ -92,7 +93,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
             var structureFilePath = Path.Combine(_databaseDirectory, $"{_databaseName}_{partitionId}_structure.dat");
             var stringFilePath = Path.Combine(_databaseDirectory, $"{_databaseName}_{partitionId}_string.dat");
             Partitions[partitionId] = new BufferedObjectBuckets<T>(
-                new ObjectBucket.ObjectBucket<T>(
+                new ObjectBucket<T>(
                     structureFilePath,
                     stringFilePath,
                     _initialSizeIfNotExists,

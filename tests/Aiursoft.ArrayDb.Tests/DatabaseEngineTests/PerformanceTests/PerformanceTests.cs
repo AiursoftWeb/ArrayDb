@@ -60,7 +60,7 @@ public class PerformanceTests : ArrayDbTestBase
         var stopWatch = new Stopwatch();
         // Write 100 0000 times in less than 30 seconds. On my machine: 42148ms -> 37292ms -> 24595ms -> 15177ms -> 14934ms -> 14595ms -> 1060ms -> 680ms -> 643ms -> 530ms -> 352ms -> 308ms
         stopWatch.Start();
-        persistService.AddBulk(samplesArray);
+        persistService.Add(samplesArray);
         stopWatch.Stop();
         Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
         Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 30);
@@ -85,7 +85,7 @@ public class PerformanceTests : ArrayDbTestBase
             samples.Add(sample);
         }
         var samplesArray = samples.ToArray();
-        persistService.AddBulk(samplesArray);
+        persistService.Add(samplesArray);
         
         var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var stopWatch = new Stopwatch();
@@ -128,7 +128,7 @@ public class PerformanceTests : ArrayDbTestBase
             };
             list.Add(sample);
         }
-        persistService.AddBulk(list.ToArray());
+        persistService.Add(list.ToArray());
         
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -168,7 +168,7 @@ public class PerformanceTests : ArrayDbTestBase
             samples.Add(sample);
         }
         var samplesArray = samples.ToArray();
-        persistService.AddBulk(samplesArray);
+        persistService.Add(samplesArray);
         persistService.ReadBulk(0, 10);
         
         var statistics = persistService.OutputStatistics();

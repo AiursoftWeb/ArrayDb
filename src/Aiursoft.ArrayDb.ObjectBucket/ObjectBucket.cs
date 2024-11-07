@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
@@ -8,39 +7,16 @@ using Aiursoft.ArrayDb.StringRepository.Models;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 
-public static class TypeExtensions
-{
-    public static PropertyInfo[] GetPropertiesShouldPersistOnDisk(this Type type)
-    {
-        return type.GetProperties()
-            .Where(p => p is { CanRead: true, CanWrite: true })
-            .Where(p => Type.GetTypeCode(p.PropertyType) switch
-            {
-                TypeCode.Int32 => true,
-                TypeCode.Boolean => true,
-                TypeCode.String => true,
-                TypeCode.DateTime => true,
-                TypeCode.Int64 => true,
-                TypeCode.Single => true,
-                TypeCode.Double => true,
-                _ => p.PropertyType == typeof(TimeSpan) || p.PropertyType == typeof(Guid)
-            })
-            .Where(p => p.GetCustomAttributes(typeof(PartitionKeyAttribute), false).Length == 0)
-            .OrderBy(p => p.Name)
-            .ToArray();
-    }
-}
-
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectBucket<T> where T : BucketEntity, new()
+public class ObjectBucket<T> : IObjectBucket<T> where T : BucketEntity, new()
 {
     // Save the offset
     // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
-    public int SpaceProvisionedItemsCount;
-    public int ArchivedItemsCount;
+    public int SpaceProvisionedItemsCount { get; private set; }
+    public int ArchivedItemsCount { get; private set; }
     private const int CountMarkerSize = sizeof(int) + sizeof(int);
     private readonly object _expandLengthLock = new();
 
@@ -428,16 +404,6 @@ Underlying string repository statistics:
         return obj;
     }
 
-    private void WriteIndex(long index, T obj)
-    {
-        var sizeOfObject = GetItemSize();
-        var buffer = new byte[sizeOfObject];
-        // Save the strings.
-        var objWithStrings = SaveObjectStrings([obj])[0];
-        SerializeBytes(objWithStrings, buffer, 0);
-        StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
-    }
-
     private void WriteBulk(long index, T[] objs)
     {
         var sizeOfObject = GetItemSize();
@@ -452,22 +418,13 @@ Underlying string repository statistics:
         StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
     }
 
-    [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
-    public void Add(T obj)
-    {
-        var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(1);
-        Interlocked.Increment(ref SingleAppendCount);
-        WriteIndex(indexToWrite, obj);
-        SetArchivedAsProvisioned();
-    }
-
     /// <summary>
     /// Add objects in bulk.
     ///
     /// This method is thread-safe. You can call it from multiple threads.
     /// </summary>
     /// <param name="objs">Array of objects to add in bulk.</param>
-    public void AddBulk(T[] objs)
+    public void Add(params T[] objs)
     {
         var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(objs.Length);
         WriteBulk(indexToWrite, objs);
@@ -517,22 +474,7 @@ Underlying string repository statistics:
         Interlocked.Increment(ref ReadBulkCount);
         return result;
     }
-
-    public IEnumerable<T> AsEnumerable(int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
-    {
-        // Copy the value to a local variable to avoid race condition. The ArchivedItemsCount may be changed by other threads.
-        var archivedItemsCount = ArchivedItemsCount;
-        for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
-        {
-            var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
-            var result = ReadBulk(i, readCount);
-            foreach (var item in result)
-            {
-                yield return item;
-            }
-        }
-    }
-
+    
     public async Task DeleteAsync()
     {
         await StructureFileAccess.DeleteAsync();

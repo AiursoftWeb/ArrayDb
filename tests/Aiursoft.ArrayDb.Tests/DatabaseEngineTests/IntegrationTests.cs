@@ -136,7 +136,7 @@ public class IntegrationTests : ArrayDbTestBase
             MyTimeSpan1 = TimeSpan.FromDays(1),
             MyGuid1 = Guid.NewGuid()
         };
-        persistService.AddBulk(new[] { sample });
+        persistService.Add(new[] { sample });
 
         var result = persistService.ReadBulk(0, 1);
 
@@ -171,7 +171,7 @@ public class IntegrationTests : ArrayDbTestBase
         }
 
         var samplesArray = samples.ToArray();
-        persistService.AddBulk(samplesArray);
+        persistService.Add(samplesArray);
 
         var persistService2 = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var readSamples = persistService2.ReadBulk(0, 2);
@@ -210,7 +210,7 @@ public class IntegrationTests : ArrayDbTestBase
             samples.Add(sample);
         }
 
-        persistService.AddBulk(samples.ToArray());
+        persistService.Add(samples.ToArray());
 
         // Individual writes
         for (var i = 2; i < 5; i++)
@@ -266,7 +266,7 @@ public class IntegrationTests : ArrayDbTestBase
             samples.Add(sample);
         }
 
-        persistService.AddBulk(samples.ToArray());
+        persistService.Add(samples.ToArray());
 
         // Read out-of-range item
         try
@@ -322,7 +322,7 @@ public class IntegrationTests : ArrayDbTestBase
                     samples.Add(sample);
                 }
 
-                persistService.AddBulk(samples.ToArray());
+                persistService.Add(samples.ToArray());
             });
             threads.Add(thread);
         }
@@ -358,7 +358,7 @@ public class IntegrationTests : ArrayDbTestBase
             sampleDataItems.Add(sample);
         }
 
-        var addTask = Task.Run(() => persistService.AddBulk(sampleDataItems.ToArray()));
+        var addTask = Task.Run(() => persistService.Add(sampleDataItems.ToArray()));
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
@@ -396,7 +396,7 @@ public class IntegrationTests : ArrayDbTestBase
         }
 
         // Add bulk data to the persistent service
-        persistService.AddBulk(sampleDataItems.ToArray());
+        persistService.Add(sampleDataItems.ToArray());
 
         // Read data as an enumerable with buffered read
         var results = persistService.AsEnumerable(bufferedReadPageSize: 128);

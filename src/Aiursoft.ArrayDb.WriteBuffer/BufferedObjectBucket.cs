@@ -158,7 +158,7 @@ Underlying object bucket statistics:
             Interlocked.Increment(ref ActualWriteTimesCount);
 
             // Process the buffer to persist
-            innerBucket.AddBulk(dataToWrite);
+            innerBucket.Add(dataToWrite);
         }
 
         // While we are writing, new data may be added to the buffer. If so, we need to write it too.
