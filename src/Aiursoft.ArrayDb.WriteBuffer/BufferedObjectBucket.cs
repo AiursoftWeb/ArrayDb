@@ -41,7 +41,6 @@ public class BufferedObjectBuckets<T>(
     private ConcurrentQueue<T> _activeBuffer = new();
     private ConcurrentQueue<T> _secondaryBuffer = new();
 
-    public IObjectBucket<T> InnerBucket => innerBucket;
     public bool IsCold => _engine.IsCompleted && _coolDownEngine.IsCompleted;
     public bool IsHot => !IsCold;
 

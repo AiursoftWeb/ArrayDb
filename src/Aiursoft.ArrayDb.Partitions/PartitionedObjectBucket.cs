@@ -136,7 +136,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         Parallel.ForEach(Partitions, partition =>
         {
             var partitionResults =
-                partition.Value.ReadBulk(0, partition.Value.InnerBucket.Count);
+                partition.Value.ReadBulk(0, partition.Value.Count);
             foreach (var result in partitionResults)
             {
                 result.PartitionId = partition.Key;
