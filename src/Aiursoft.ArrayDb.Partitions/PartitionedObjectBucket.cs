@@ -7,7 +7,7 @@ namespace Aiursoft.ArrayDb.Partitions;
 
 public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK>, new() where TK : notnull
 {
-    private Dictionary<TK, BufferedObjectBuckets<T>> Partitions { get; } = new();
+    private Dictionary<TK, IObjectBucket<T>> Partitions { get; } = new();
     
     private readonly object _partitionsLock = new();
     private readonly string _databaseName;
@@ -80,7 +80,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
     }
 
     // ReSharper disable once MemberCanBePrivate.Global
-    public BufferedObjectBuckets<T> GetPartitionById(TK partitionId)
+    public IObjectBucket<T> GetPartitionById(TK partitionId)
     {
         lock (_partitionsLock)
         {

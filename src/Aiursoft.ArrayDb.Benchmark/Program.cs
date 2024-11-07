@@ -79,10 +79,11 @@ public abstract class Program
             {
                 try
                 {
-                    Clean();
                     Console.WriteLine($"Running test case {testCase.TestCaseName} with {testItem.TestTargetName}...");
                     var result = await testCase.RunAsync(testItem);
                     testResults.Add(result);
+
+                    Clean();
                     await Task.Delay(2000); // Wait for the system to cool down
                 }
                 catch (Exception e)

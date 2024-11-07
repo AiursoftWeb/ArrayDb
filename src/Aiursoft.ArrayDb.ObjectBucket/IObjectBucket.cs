@@ -17,4 +17,5 @@ public interface IObjectBucket<T> where T : BucketEntity, new()
     Task DeleteAsync();
     
     string OutputStatistics();
+    Task SyncAsync();
 }

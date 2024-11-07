@@ -81,6 +81,12 @@ Underlying string repository statistics:
 ";
     }
 
+    public Task SyncAsync()
+    {
+        // You don't need to sync the string repository, because the string repository is always in sync with the structure file.
+        return Task.CompletedTask;
+    }
+
     /// <summary>
     /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
     /// </summary>
