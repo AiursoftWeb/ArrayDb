@@ -1,13 +1,13 @@
 using System.Collections.Concurrent;
 using Aiursoft.ArrayDb.Consts;
+using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.WriteBuffer;
 
 namespace Aiursoft.ArrayDb.Partitions;
 
 public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK>, new() where TK : notnull
 {
-    private Dictionary<TK, BufferedObjectBuckets<T>> Partitions { get; } = new();
-    
+    private Dictionary<TK, IObjectBucket<T>> Partitions { get; } = new();
     
     private readonly object _partitionsLock = new();
     private readonly string _databaseName;
@@ -45,9 +45,9 @@ public class PartitionedObjectBucket<T, TK> where T : PartitionedBucketEntity<TK
             if (fileName.StartsWith(databaseName) && fileName.EndsWith("_structure.dat"))
             {
                 var partitionId = fileName.Substring(databaseName.Length + 1, fileName.Length - databaseName.Length - 1 - "_structure.dat".Length);
-                var parrtitionIdTk = (TK)Convert.ChangeType(partitionId, typeof(TK));
-                Partitions[parrtitionIdTk] = new BufferedObjectBuckets<T>(
-                    new ObjectBucket.ObjectBucket<T>(
+                var partitionIdTk = (TK)Convert.ChangeType(partitionId, typeof(TK));
+                Partitions[partitionIdTk] = new BufferedObjectBuckets<T>(
+                    new ObjectBucket<T>(
                         file,
                         Path.Combine(databaseDirectory, $"{databaseName}_{partitionId}_string.dat"),
                         initialSizeIfNotExists,
@@ -80,7 +80,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
     }
 
     // ReSharper disable once MemberCanBePrivate.Global
-    public BufferedObjectBuckets<T> GetPartitionById(TK partitionId)
+    public IObjectBucket<T> GetPartitionById(TK partitionId)
     {
         lock (_partitionsLock)
         {
@@ -92,7 +92,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
             var structureFilePath = Path.Combine(_databaseDirectory, $"{_databaseName}_{partitionId}_structure.dat");
             var stringFilePath = Path.Combine(_databaseDirectory, $"{_databaseName}_{partitionId}_string.dat");
             Partitions[partitionId] = new BufferedObjectBuckets<T>(
-                new ObjectBucket.ObjectBucket<T>(
+                new ObjectBucket<T>(
                     structureFilePath,
                     stringFilePath,
                     _initialSizeIfNotExists,
@@ -115,14 +115,14 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
 
     public T Read(TK partitionKey, int index)
     {
-        var item = GetPartitionById(partitionKey).InnerBucket.Read(index);
+        var item = GetPartitionById(partitionKey).Read(index);
         item.PartitionId = partitionKey;
         return item;
     }
 
     public T[] ReadBulk(TK partitionKey, int indexFrom, int count)
     {
-        var result = GetPartitionById(partitionKey).InnerBucket.ReadBulk(indexFrom, count);
+        var result = GetPartitionById(partitionKey).ReadBulk(indexFrom, count);
         foreach (var item in result)
         {
             item.PartitionId = partitionKey;
@@ -136,7 +136,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         Parallel.ForEach(Partitions, partition =>
         {
             var partitionResults =
-                partition.Value.InnerBucket.ReadBulk(0, partition.Value.InnerBucket.ArchivedItemsCount);
+                partition.Value.ReadBulk(0, partition.Value.Count);
             foreach (var result in partitionResults)
             {
                 result.PartitionId = partition.Key;
@@ -151,21 +151,21 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
         var totalItemsCount = 0;
         foreach (var partition in Partitions)
         {
-            totalItemsCount += partition.Value.InnerBucket.ArchivedItemsCount;
+            totalItemsCount += partition.Value.Count;
         }
         return totalItemsCount;
     }
     
     public int Count(TK partitionKey)
     {
-        return GetPartitionById(partitionKey).InnerBucket.ArchivedItemsCount;
+        return GetPartitionById(partitionKey).Count;
     }
     
     public async Task DeletePartitionAsync(TK partitionKey)
     {
         if (Partitions.TryGetValue(partitionKey, out var partition))
         {
-            await partition.InnerBucket.DeleteAsync();
+            await partition.DeleteAsync();
             Partitions.Remove(partitionKey);
         }
         else
@@ -176,7 +176,7 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
     
     public IEnumerable<T> AsEnumerable(TK partitionKey, int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
     {
-        return GetPartitionById(partitionKey).InnerBucket.AsEnumerable(bufferedReadPageSize)
+        return GetPartitionById(partitionKey).AsEnumerable(bufferedReadPageSize)
             .Select(item =>
             {
                 item.PartitionId = partitionKey;

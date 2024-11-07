@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
@@ -8,39 +7,31 @@ using Aiursoft.ArrayDb.StringRepository.Models;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 
-public static class TypeExtensions
-{
-    public static PropertyInfo[] GetPropertiesShouldPersistOnDisk(this Type type)
-    {
-        return type.GetProperties()
-            .Where(p => p is { CanRead: true, CanWrite: true })
-            .Where(p => Type.GetTypeCode(p.PropertyType) switch
-            {
-                TypeCode.Int32 => true,
-                TypeCode.Boolean => true,
-                TypeCode.String => true,
-                TypeCode.DateTime => true,
-                TypeCode.Int64 => true,
-                TypeCode.Single => true,
-                TypeCode.Double => true,
-                _ => p.PropertyType == typeof(TimeSpan) || p.PropertyType == typeof(Guid)
-            })
-            .Where(p => p.GetCustomAttributes(typeof(PartitionKeyAttribute), false).Length == 0)
-            .OrderBy(p => p.Name)
-            .ToArray();
-    }
-}
-
 /// <summary>
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectBucket<T> where T : BucketEntity, new()
+public class ObjectBucket<T> : IObjectBucket<T> where T : BucketEntity, new()
 {
-    // Save the offset
-    // SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
-    public int SpaceProvisionedItemsCount;
-    public int ArchivedItemsCount;
+    public int Count => ArchivedItemsCount;
+    /// <summary>
+    /// SpaceProvisionedItemsCount is the total number of items that the bucket can store.
+    ///
+    /// When requesting to write new item, it will start to write at the offset of SpaceProvisionedItemsCount.
+    /// 
+    /// SpaceProvisionedItemsCount is always larger than or equal to ArchivedItemsCount.
+    /// </summary>
+    public int SpaceProvisionedItemsCount { get; private set; }
+    
+    /// <summary>
+    /// ArchivedItemsCount is the total number of items that have been written to the bucket. Which are the items ready to be read.
+    ///
+    /// When finished writing new item, the ArchivedItemsCount will be increased by 1.
+    ///
+    /// ArchivedItemsCount is always less than or equal to SpaceProvisionedItemsCount.
+    /// </summary>
+    public int ArchivedItemsCount { get; private set; }
+    
     private const int CountMarkerSize = sizeof(int) + sizeof(int);
     private readonly object _expandLengthLock = new();
 
@@ -88,6 +79,12 @@ Underlying structure file access service statistics:
 Underlying string repository statistics:
 {StringRepository.OutputStatistics().AppendTabsEachLineHead()}
 ";
+    }
+
+    public Task SyncAsync()
+    {
+        // You don't need to sync the string repository, because the string repository is always in sync with the structure file.
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -428,16 +425,6 @@ Underlying string repository statistics:
         return obj;
     }
 
-    private void WriteIndex(long index, T obj)
-    {
-        var sizeOfObject = GetItemSize();
-        var buffer = new byte[sizeOfObject];
-        // Save the strings.
-        var objWithStrings = SaveObjectStrings([obj])[0];
-        SerializeBytes(objWithStrings, buffer, 0);
-        StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
-    }
-
     private void WriteBulk(long index, T[] objs)
     {
         var sizeOfObject = GetItemSize();
@@ -452,22 +439,13 @@ Underlying string repository statistics:
         StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
     }
 
-    [Obsolete(error: false, message: "Write objects one by one is slow. Use AddBulk instead.")]
-    public void Add(T obj)
-    {
-        var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(1);
-        Interlocked.Increment(ref SingleAppendCount);
-        WriteIndex(indexToWrite, obj);
-        SetArchivedAsProvisioned();
-    }
-
     /// <summary>
     /// Add objects in bulk.
     ///
     /// This method is thread-safe. You can call it from multiple threads.
     /// </summary>
     /// <param name="objs">Array of objects to add in bulk.</param>
-    public void AddBulk(T[] objs)
+    public void Add(params T[] objs)
     {
         var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(objs.Length);
         WriteBulk(indexToWrite, objs);
@@ -494,21 +472,21 @@ Underlying string repository statistics:
     /// This method is thread-safe. You can call it from multiple threads.
     /// </summary>
     /// <param name="indexFrom">Start index of the objects to read.</param>
-    /// <param name="count">Number of objects to read.</param>
+    /// <param name="take">Number of objects to read.</param>
     /// <returns>An array of objects read from the file.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the indexFrom is less than 0 or indexFrom + count is greater than the total number of objects.</exception>
-    public T[] ReadBulk(int indexFrom, int count)
+    public T[] ReadBulk(int indexFrom, int take)
     {
-        if (indexFrom < 0 || indexFrom + count > ArchivedItemsCount)
+        if (indexFrom < 0 || indexFrom + take > ArchivedItemsCount)
         {
             throw new ArgumentOutOfRangeException(nameof(indexFrom));
         }
 
         var sizeOfObject = GetItemSize();
         // Sequential read. Load binary data from disk and deserialize them in parallel.
-        var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + CountMarkerSize, sizeOfObject * count);
-        var result = new T[count];
-        Parallel.For(0, count, i =>
+        var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + CountMarkerSize, sizeOfObject * take);
+        var result = new T[take];
+        Parallel.For(0, take, i =>
         {
             // TODO: Optimize: We need to preload the string file, because the string file is accessed randomly.
             // Random access to the string file to load the string data.
@@ -517,22 +495,7 @@ Underlying string repository statistics:
         Interlocked.Increment(ref ReadBulkCount);
         return result;
     }
-
-    public IEnumerable<T> AsEnumerable(int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
-    {
-        // Copy the value to a local variable to avoid race condition. The ArchivedItemsCount may be changed by other threads.
-        var archivedItemsCount = ArchivedItemsCount;
-        for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
-        {
-            var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
-            var result = ReadBulk(i, readCount);
-            foreach (var item in result)
-            {
-                yield return item;
-            }
-        }
-    }
-
+    
     public async Task DeleteAsync()
     {
         await StructureFileAccess.DeleteAsync();

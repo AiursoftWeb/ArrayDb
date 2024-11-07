@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.ReadLruCac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Partitions", "src\Aiursoft.ArrayDb.Partitions\Aiursoft.ArrayDb.Partitions.csproj", "{7FC1E4B6-A66C-4BDD-B227-40062C850AF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Benchmark", "src\Aiursoft.ArrayDb.Benchmark\Aiursoft.ArrayDb.Benchmark.csproj", "{D870537D-97FD-406F-BA91-FDF242C0F656}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,7 @@ Global
 		{AEE71123-A7DB-4A10-8344-FAAC6BA79409} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 		{42B34AA3-D52E-42AA-9C85-A0757922F4F7} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 		{7FC1E4B6-A66C-4BDD-B227-40062C850AF0} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{D870537D-97FD-406F-BA91-FDF242C0F656} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -74,5 +77,9 @@ Global
 		{7FC1E4B6-A66C-4BDD-B227-40062C850AF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FC1E4B6-A66C-4BDD-B227-40062C850AF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FC1E4B6-A66C-4BDD-B227-40062C850AF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D870537D-97FD-406F-BA91-FDF242C0F656}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D870537D-97FD-406F-BA91-FDF242C0F656}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D870537D-97FD-406F-BA91-FDF242C0F656}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D870537D-97FD-406F-BA91-FDF242C0F656}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
