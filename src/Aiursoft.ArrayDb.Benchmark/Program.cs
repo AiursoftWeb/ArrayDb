@@ -16,24 +16,25 @@ public abstract class Program
 
     public static async Task Main()
     {
+        await Clean();
         var testItems = new[]
         {
             new TestTarget
             {
                 TestTargetName = "Bucket",
-                TestEntities = new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                TestEntities = () => new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
             },
             new TestTarget
             {
                 TestTargetName = "Buf Bucket",
-                TestEntities = new BufferedObjectBuckets<TestEntity>(
+                TestEntities = () => new BufferedObjectBuckets<TestEntity>(
                     new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
                 )
             },
             new TestTarget
             {
                 TestTargetName = "BufBuf Bucket",
-                TestEntities = new BufferedObjectBuckets<TestEntity>(
+                TestEntities = () => new BufferedObjectBuckets<TestEntity>(
                     new BufferedObjectBuckets<TestEntity>(
                         new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
                     )
@@ -42,7 +43,7 @@ public abstract class Program
             new TestTarget
             {
                 TestTargetName = "BufBufBuf Bucket",
-                TestEntities = new BufferedObjectBuckets<TestEntity>(
+                TestEntities = () => new BufferedObjectBuckets<TestEntity>(
                     new BufferedObjectBuckets<TestEntity>(
                         new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
                     )
@@ -83,7 +84,7 @@ public abstract class Program
                     var result = await testCase.RunAsync(testItem);
                     testResults.Add(result);
 
-                    Clean();
+                    await Clean();
                     await Task.Delay(2000); // Wait for the system to cool down
                 }
                 catch (Exception e)
@@ -101,19 +102,31 @@ public abstract class Program
         }
 
         Console.WriteLine(MarkdownTableExtensions.ToMarkdownTable(finalResult));
-        Clean();
+        await Clean();
     }
 
-    private static void Clean()
+    private static async Task Clean()
     {
         if (File.Exists(StructureFileName))
         {
             File.Delete(StructureFileName);
+            GC.Collect();
+            do
+            {
+                await Task.Delay(100);
+            }
+            while (File.Exists(StructureFileName));
         }
 
         if (File.Exists(StructureStringsFileName))
         {
             File.Delete(StructureStringsFileName);
+            GC.Collect();
+            do
+            {
+                await Task.Delay(100);
+            }
+            while (File.Exists(StructureStringsFileName));
         }
     }
 }

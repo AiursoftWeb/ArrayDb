@@ -11,10 +11,9 @@ public class Add1MItemsOneTimeTest : ITestCase
     public async Task<TestResult> RunAsync(TestTarget target)
     {
         var dataToAdd = TestEntityFactory.CreateSome(Program.OneMillion);
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, t =>
         {
-            target.TestEntities.Add(dataToAdd);
-            return Task.CompletedTask;
+            t.Add(dataToAdd);
         });
 
         return new TestResult

@@ -11,46 +11,41 @@ public class Write7Read3With1000TimesTest : ITestCase
     public async Task<TestResult> RunAsync(TestTarget target)
     {
         var dataToAdd = TestEntityFactory.CreateSome(Program.OneKilo);
-        target.TestEntities.Add(dataToAdd); // Ensure at least OneKilo items in the bucket.
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, t =>
         {
             for (var i = 0; i < Program.OneKilo; i++)
             {
                 if (new Random().NextDouble() < 0.7)
                 {
                     // Add OneKilo items
-                    target.TestEntities.Add(dataToAdd);
+                    t.Add(dataToAdd);
                 }
                 else
                 {
                     // Randomly read OneKilo items
-                    var index = new Random().Next(0, target.TestEntities.Count - Program.OneKilo);
-                    target.TestEntities.ReadBulk(index, Program.OneKilo);
+                    var index = new Random().Next(0, t.Count - Program.OneKilo);
+                    t.ReadBulk(index, Program.OneKilo);
                 }
             }
-
-            return Task.CompletedTask;
-        });
+        }, actionBefore: ActionBeforeTestings.Insert1KItemsBeforeTesting);
         
-        var parallelRunTime = await TimeExtensions.RunWithWatch(() =>
+        var parallelRunTime = await TimeExtensions.RunTest(target, t =>
         {
             Parallel.For(0, Program.OneKilo, _ =>
             {
                 if (new Random().NextDouble() < 0.7)
                 {
                     // Add OneKilo items
-                    target.TestEntities.Add(dataToAdd);
+                    t.Add(dataToAdd);
                 }
                 else
                 {
                     // Randomly read OneKilo items
-                    var index = new Random().Next(0, target.TestEntities.Count - Program.OneKilo);
-                    target.TestEntities.ReadBulk(index, Program.OneKilo);
+                    var index = new Random().Next(0, t.Count - Program.OneKilo);
+                    t.ReadBulk(index, Program.OneKilo);
                 }
             });
-
-            return Task.CompletedTask;
-        });
+        }, actionBefore: ActionBeforeTestings.Insert1KItemsBeforeTesting);
 
         return new TestResult
         {

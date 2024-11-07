@@ -10,23 +10,21 @@ public class Add1MTimesTest : ITestCase
 
     public async Task<TestResult> RunAsync(TestTarget target)
     {
-        var ob = target.TestEntities;
         var dataToAdd = TestEntityFactory.CreateSome(Program.OneMillion);
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, (t) =>
         {
             foreach (var data in dataToAdd)
             {
-                ob.Add(data);
+                t.Add(data);
             }
-
-            return Task.CompletedTask;
         });
 
-        var parallelRunTime = await TimeExtensions.RunWithWatch(() =>
+        var parallelRunTime = await TimeExtensions.RunTest(target, t =>
         {
-            Parallel.ForEach(dataToAdd, data => { ob.Add(data); });
-
-            return Task.CompletedTask;
+            Parallel.ForEach(dataToAdd, data =>
+            {
+                t.Add(data);
+            });
         });
 
         return new TestResult

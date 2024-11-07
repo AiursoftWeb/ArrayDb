@@ -10,18 +10,11 @@ public class Read1MItemsOneTimeTest : ITestCase
 
     public async Task<TestResult> RunAsync(TestTarget target)
     {
-        var dataToAdd = TestEntityFactory.CreateSome(Program.OneMillion);
-        target.TestEntities.Add(dataToAdd);
-
-        var result = Array.Empty<TestEntity>();
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, t =>
         {
-            result = target.TestEntities.ReadBulk(0, Program.OneMillion);
-            return Task.CompletedTask;
-        });
+            t.ReadBulk(0, Program.OneMillion);
+        }, actionBefore: ActionBeforeTestings.Insert1MItemsBeforeTesting);
         
-        result.EnsureCorrectness(Program.OneMillion);
-
         return new TestResult
         {
             TestedItem = target.TestTargetName,

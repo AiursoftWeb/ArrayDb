@@ -11,20 +11,19 @@ public class Add1KItems1KTimesTest : ITestCase
     public async Task<TestResult> RunAsync(TestTarget target)
     {
         var dataToAdd = TestEntityFactory.CreateSome(Program.OneKilo);
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, t =>
         {
             for (var i = 0; i < Program.OneKilo; i++)
             {
-                target.TestEntities.Add(dataToAdd);
+                t.Add(dataToAdd);
             }
-
-            return Task.CompletedTask;
         });
-        
-        var parallelRunTime = await TimeExtensions.RunWithWatch(() =>
+        var parallelRunTime = await TimeExtensions.RunTest(target, t =>
         {
-            Parallel.For(0, Program.OneKilo, _ => { target.TestEntities.Add(dataToAdd); });
-            return Task.CompletedTask;
+            Parallel.For(0, Program.OneKilo, _ =>
+            {
+                t.Add(dataToAdd);
+            });
         });
 
         return new TestResult

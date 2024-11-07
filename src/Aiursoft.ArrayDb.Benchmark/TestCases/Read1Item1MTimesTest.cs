@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Aiursoft.ArrayDb.Benchmark.Abstractions;
 using Aiursoft.ArrayDb.Benchmark.Extensions;
 using Aiursoft.ArrayDb.Benchmark.Models;
@@ -11,34 +10,21 @@ public class Read1Item1MTimesTest : ITestCase
 
     public async Task<TestResult> RunAsync(TestTarget target)
     {
-        var dataToAdd = TestEntityFactory.CreateSome(Program.OneKilo);
-        target.TestEntities.Add(dataToAdd);
-
-        var result = new List<TestEntity>();
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, t =>
         {
             for (var i = 0; i < Program.OneMillion; i++)
             {
-                result.Add(target.TestEntities.Read(i));
+                t.Read(i);
             }
-
-            return Task.CompletedTask;
-        });
+        }, actionBefore: ActionBeforeTestings.Insert1MItemsBeforeTesting);
         
-        result.ToArray().EnsureCorrectness(Program.OneMillion);
-
-        var result2 = new ConcurrentBag<TestEntity>();
-        var parallelRunTime = await TimeExtensions.RunWithWatch(() =>
+        var parallelRunTime = await TimeExtensions.RunTest(target, t =>
         {
             Parallel.For(0, Program.OneMillion, i =>
             {
-                result2.Add(target.TestEntities.Read(i));
+                t.Read(i);
             });
-
-            return Task.CompletedTask;
-        });
-        
-        result2.ToArray().EnsureCorrectness(Program.OneMillion, true);
+        }, actionBefore: ActionBeforeTestings.Insert1MItemsBeforeTesting);
 
         return new TestResult
         {

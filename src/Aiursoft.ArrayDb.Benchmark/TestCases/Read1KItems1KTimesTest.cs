@@ -10,31 +10,21 @@ public class Read1KItems1KTimesTest : ITestCase
 
     public async Task<TestResult> RunAsync(TestTarget target)
     {
-        var dataToAdd = TestEntityFactory.CreateSome(Program.OneKilo);
-        target.TestEntities.Add(dataToAdd);
-
-        var result = Array.Empty<TestEntity>();
-        var serialRunTime = await TimeExtensions.RunWithWatch(() =>
+        var serialRunTime = await TimeExtensions.RunTest(target, t =>
         {
             for (var i = 0; i < Program.OneKilo; i++)
             {
-                result = target.TestEntities.ReadBulk(0, Program.OneKilo);
+                t.ReadBulk(indexFrom: i * Program.OneKilo, take: Program.OneKilo);
             }
-
-            return Task.CompletedTask;
-        });
+        }, actionBefore: ActionBeforeTestings.Insert1MItemsBeforeTesting);
         
-        result.EnsureCorrectness(Program.OneKilo);
-        
-        var parallelRunTime = await TimeExtensions.RunWithWatch(() =>
+        var parallelRunTime = await TimeExtensions.RunTest(target, t =>
         {
-            Parallel.For(0, Program.OneKilo, _ =>
+            Parallel.For(0, Program.OneMillion, i =>
             {
-                target.TestEntities.ReadBulk(0, Program.OneKilo);
+                t.ReadBulk(indexFrom: i * Program.OneKilo, take: Program.OneKilo);
             });
-
-            return Task.CompletedTask;
-        });
+        }, actionBefore: ActionBeforeTestings.Insert1MItemsBeforeTesting);
 
         return new TestResult
         {
