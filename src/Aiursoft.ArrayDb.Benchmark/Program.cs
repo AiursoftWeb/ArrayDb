@@ -22,32 +22,38 @@ public abstract class Program
             new TestTarget
             {
                 TestTargetName = "Bucket",
-                TestEntities = () => new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                TestEntities = () =>
+                    new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
             },
             new TestTarget
             {
                 TestTargetName = "Buf Bucket",
-                TestEntities = () => new BufferedObjectBuckets<TestEntity>(
-                    new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
-                )
+                TestEntities = () =>
+                    new BufferedObjectBuckets<TestEntity>(
+                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                    )
             },
             new TestTarget
             {
                 TestTargetName = "BufBuf Bucket",
-                TestEntities = () => new BufferedObjectBuckets<TestEntity>(
+                TestEntities = () =>
                     new BufferedObjectBuckets<TestEntity>(
-                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                        new BufferedObjectBuckets<TestEntity>(
+                            new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                        )
                     )
-                )
             },
             new TestTarget
             {
                 TestTargetName = "BufBufBuf Bucket",
-                TestEntities = () => new BufferedObjectBuckets<TestEntity>(
+                TestEntities = () =>
                     new BufferedObjectBuckets<TestEntity>(
-                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                        new BufferedObjectBuckets<TestEntity>(
+                            new BufferedObjectBuckets<TestEntity>(
+                                new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                            )
+                        )
                     )
-                )
             }
         };
         var testCases = new ITestCase[]
@@ -89,7 +95,8 @@ public abstract class Program
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"The test case {testCase.TestCaseName} failed with {testItem.TestTargetName}. Error: {e.Message}");
+                    Console.WriteLine(
+                        $"The test case {testCase.TestCaseName} failed with {testItem.TestTargetName}. Error: {e.Message}");
                     throw;
                 }
             }
@@ -114,8 +121,7 @@ public abstract class Program
             do
             {
                 await Task.Delay(100);
-            }
-            while (File.Exists(StructureFileName));
+            } while (File.Exists(StructureFileName));
         }
 
         if (File.Exists(StructureStringsFileName))
@@ -125,8 +131,7 @@ public abstract class Program
             do
             {
                 await Task.Delay(100);
-            }
-            while (File.Exists(StructureStringsFileName));
+            } while (File.Exists(StructureStringsFileName));
         }
     }
 }

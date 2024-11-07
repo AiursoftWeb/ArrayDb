@@ -6,7 +6,7 @@ namespace Aiursoft.ArrayDb.Benchmark.TestCases;
 
 public class Write3Read7With1000TimesTest : ITestCase
 {
-    public string TestCaseName => "Write 3 read 7 with 1000 items";
+    public string TestCaseName => "Write 3 read 7 1000 items, 1000 times";
 
     public async Task<TestResult> RunAsync(TestTarget target)
     {
