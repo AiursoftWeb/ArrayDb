@@ -43,6 +43,7 @@ public static class TimeExtensions
         
         // Clean
         await target.DeleteAsync();
+        await Task.Delay(2000);
         return sw.Elapsed;
     }
     
@@ -76,6 +77,7 @@ public static class TimeExtensions
         
         // Clean
         await target.DeleteAsync();
+        await Task.Delay(2000);
         return sw.Elapsed;
     }
 }
