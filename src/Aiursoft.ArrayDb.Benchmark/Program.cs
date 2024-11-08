@@ -90,7 +90,6 @@ public abstract class Program
                     var result = await testCase.RunAsync(testItem);
                     testResults.Add(result);
 
-                    await Clean();
                     await Task.Delay(2000); // Wait for the system to cool down
                 }
                 catch (Exception e)
