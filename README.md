@@ -241,6 +241,14 @@ Console.WriteLine("All logs count after delete: " + allLogsAfterDelete.Length);
 
 ## Best practice
 
+### Avoiding multiple processes accessing the same file
+
+Can I use ArrayDb in multiple processes with the same underlining file?
+
+Answer is: **Absolutely NO**. The underlining file is not thread-safe. You should not use the same file in multiple processes.
+
+If you have multiple services need to access the same data, you should use a server-client model. You can create a server with ArrayDb SDK to manage the data and let the clients access the data through the server.
+
 ### Default partition key
 
 In some cases, you don't want to rename the `PartitionId` property to `ApplicationName` in the entity. You can directly add your own property. And use `PartitionId` to access the partition key.
