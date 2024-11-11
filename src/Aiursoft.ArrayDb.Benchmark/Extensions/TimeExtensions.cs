@@ -54,6 +54,11 @@ public static class TimeExtensions
                 target.Add(dataToAdd);
                 break;
             }
+            case ActionBeforeTestings.None:
+            {
+                // Do nothing
+                break;
+            }
         }
         
         // Test
