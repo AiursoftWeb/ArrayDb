@@ -275,11 +275,22 @@ Console.WriteLine("All logs count after delete: " + allLogsAfterDelete.Length);
 
 ## Best practice
 
-### Avoiding multiple processes accessing the same file
+### Avoiding multiple processes accessing the same file!!!
 
-Can I use ArrayDb in multiple processes with the same underlining file?
+Can I use ArrayDb in multiple processes or instance with the same underlining file?
 
-Answer is: **Absolutely NO**. The underlining file is not thread-safe. You should not use the same file in multiple processes.
+Answer is: **Absolutely NO**. The underlining file is not thread-safe. You should not use the same file in multiple processes or instances.
+
+So **avoid** doing this:
+
+```csharp
+// WRONG CODE, DO NOT COPY!!!
+var dbInstanceA = new PartitionedObjectBucket<MyLogItem, string>("my-db", dbPath);
+var dbInstanceB = new PartitionedObjectBucket<MyLogItem, string>("my-db", dbPath);
+
+dbInstanceA.Add(new MyLogItem { ApplicationName = "NextCloud", LogMessage = "A user logged in." });
+var count = dbInstanceB.Count("NextCloud"); // This will not work as expected!!!
+```
 
 If you have multiple services need to access the same data, you should use a server-client model. You can create a server with ArrayDb SDK to manage the data and let the clients access the data through the server.
 
@@ -330,7 +341,7 @@ for (var i = 0; i < 100; i++)
     };
     partitionedService.Add(sample);
 }
-await partitionedService.SyncAsync();
+await partitionedService.SyncAsync(); // Make sure the data is written to the disk.
 
 // Now the application crashes. After rebooting, you can still get the data.
 
@@ -343,7 +354,7 @@ foreach (var log in db.AsEnumerable(0))
 
 However, it is still strongly recommended to keep the `PartitionedObjectBucket` as a singleton in your application. It has inner cache and will improve the performance.
 
-Rebooting the instance will not lose any data before `SyncAsync` is called. But all cache will be lost.
+Rebooting the instance will not lose any data before `SyncAsync` is called. But all cache will be lost. So it is better to keep the `PartitionedObjectBucket` instance alive and singleton.
 
 ### Using ArrayDb with Dependency Injection
 
