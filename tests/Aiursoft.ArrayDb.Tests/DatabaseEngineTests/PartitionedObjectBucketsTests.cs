@@ -104,6 +104,15 @@ public class PartitionedObjectBucketsTests
             Assert.AreEqual("5", result.PartitionId, "PartitionId should be '5'.");
             Assert.AreEqual("5", (result.Id % 10).ToString(), "PartitionId should match calculated partition key.");
         }
+        
+        var resultsR = partitionedService2.AsReverseEnumerable("5", bufferedReadPageSize: 13);
+        var resultsArrayR = resultsR.ToArray();
+        Assert.AreEqual(20, resultsArrayR.Length, "Partition '5' should contain 20 items.");
+        foreach (var result in resultsArrayR)
+        {
+            Assert.AreEqual("5", result.PartitionId, "PartitionId should be '5'.");
+            Assert.AreEqual("5", (result.Id % 10).ToString(), "PartitionId should match calculated partition key.");
+        }
     }
 
     [TestMethod]
@@ -126,6 +135,14 @@ public class PartitionedObjectBucketsTests
         var results = partitionedService2.AsEnumerable(5).ToArray();
         Assert.AreEqual(10, results.Length, "Partition '5' should contain 10 items.");
         foreach (var result in results)
+        {
+            Assert.AreEqual(5, result.PartitionId, "PartitionId should be 5.");
+            Assert.AreEqual(5, result.Id % 10, "Id modulo 10 should equal PartitionId.");
+        }
+        
+        var resultsR = partitionedService2.AsReverseEnumerable(5).ToArray();
+        Assert.AreEqual(10, resultsR.Length, "Partition '5' should contain 10 items.");
+        foreach (var result in resultsR)
         {
             Assert.AreEqual(5, result.PartitionId, "PartitionId should be 5.");
             Assert.AreEqual(5, result.Id % 10, "Id modulo 10 should equal PartitionId.");

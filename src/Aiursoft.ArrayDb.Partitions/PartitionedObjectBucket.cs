@@ -183,6 +183,16 @@ Partitioned object buket with item type {typeof(T).Name} and partition key {type
                 return item;
             });
     }
+    
+    public IEnumerable<T> AsReverseEnumerable(TK partitionKey, int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
+    {
+        return GetPartitionById(partitionKey).AsReverseEnumerable(bufferedReadPageSize)
+            .Select(item =>
+            {
+                item.PartitionId = partitionKey;
+                return item;
+            });
+    }
 
     public Task SyncAsync()
     {
