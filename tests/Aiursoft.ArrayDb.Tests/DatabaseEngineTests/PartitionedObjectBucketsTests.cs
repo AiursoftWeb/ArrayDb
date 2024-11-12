@@ -114,6 +114,36 @@ public class PartitionedObjectBucketsTests
             Assert.AreEqual("5", (result.Id % 10).ToString(), "PartitionId should match calculated partition key.");
         }
     }
+    
+    [TestMethod]
+    public async Task TestAsReverseEnumerablePartitioned()
+    {
+        var partitionedService = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
+        for (var i = 1; i <= 5; i++)
+        {
+            var sample = new DataCanBePartitionedByString
+            {
+                Id = i,
+                ThreadId = "2333",
+                Message = $"Hello, World! 你好世界 {i}"
+            };
+            partitionedService.Add(sample);
+        }
+        await partitionedService.SyncAsync();
+
+        var partitionedService2 = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
+        var results = partitionedService2.AsReverseEnumerable("2333", bufferedReadPageSize: 2);
+        
+        // results should be: 5, 4, 3, 2, 1, 0
+        var resultsArray = results.ToArray();
+        
+        Assert.AreEqual(5, resultsArray.Length, "Partition should contain 5 items.");
+        Assert.AreEqual(5, resultsArray[0].Id, "First item should be 49.");
+        Assert.AreEqual(4, resultsArray[1].Id, "Second item should be 48.");
+        Assert.AreEqual(3, resultsArray[2].Id, "Third item should be 47.");
+        Assert.AreEqual(2, resultsArray[3].Id, "Fourth item should be 46.");
+        Assert.AreEqual(1, resultsArray[4].Id, "Fifth item should be 45.");
+    }
 
     [TestMethod]
     public async Task TestDataWithDefaultPartitionKey()

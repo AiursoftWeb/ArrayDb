@@ -23,13 +23,20 @@ public static class ObjectBucketExtensions
     {
         // Copy the value to a local variable to avoid race condition. The ArchivedItemsCount may be changed by other threads.
         var archivedItemsCount = bucket.Count;
+
         for (var i = archivedItemsCount - 1; i >= 0; i -= bufferedReadPageSize)
         {
-            var readCount = Math.Min(bufferedReadPageSize, i + 1);
-            var result = bucket.ReadBulk(i - readCount + 1, readCount);
-            foreach (var item in result)
+            // Calculate the range of indices to fetch
+            var startIndex = Math.Max(0, i - bufferedReadPageSize + 1);
+            var readCount = i - startIndex + 1;
+
+            // Read the bulk data from the bucket
+            var result = bucket.ReadBulk(startIndex, readCount);
+
+            // Manually iterate over the result in reverse order
+            for (int j = result.Length - 1; j >= 0; j--)
             {
-                yield return item;
+                yield return result[j];
             }
         }
     }
