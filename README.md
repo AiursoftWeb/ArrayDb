@@ -57,7 +57,6 @@ title: Project dependency diagram
 ---
 
 stateDiagram-v2
-21:46 warn: Aiursoft.NugetNinja.Core.Services.Extractor.Extractor[0] Can not find ninja config file: /home/anduin/Source/Repos/Aiursoft/ArrayDb/src/ninja.yaml
     Aiursoft.ArrayDb.FilePersists --> Aiursoft.ArrayDb.Consts
     Aiursoft.ArrayDb.ReadLruCache --> Aiursoft.ArrayDb.FilePersists
     Aiursoft.ArrayDb.StringRepository --> Aiursoft.ArrayDb.ReadLruCache
