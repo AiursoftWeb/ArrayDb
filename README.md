@@ -388,6 +388,11 @@ Each test case, warm up 2 times, test 3 times, and get the average time.
 | Write 7 read 3 1000 items, 1000 times | 1004.5276 ms (S), 1261.5065 ms (P) | 180.4458 ms (S), 1413.4928 ms (P) | 310.5668 ms (S), 194.6626 ms (P) | 279.447 ms (S), 326.5397 ms (P) |
 | Write 3 read 7 1000 items, 1000 times | 1667.8699 ms (S), 1569.0151 ms (P) | 1043.3758 ms (S), 1170.6673 ms (P) | 738.4987 ms (S), 395.0881 ms (P) | 277.2271 ms (S), 638.3276 ms (P) |
 
+In the table:
+
+* S means single-threaded, like: `for (int i = 0; i < 1000; i++) { db.Add(new MyLogItem()); }`
+* P means multi-threaded, like: `Parallel.For(0, 1000, i => { db.Add(new MyLogItem()); });`
+
 ## How to contribute
 
 There are many ways to contribute to the project: logging bugs, submitting pull requests, reporting issues, and creating suggestions.
