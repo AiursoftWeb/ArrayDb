@@ -372,9 +372,9 @@ Then you can inject the `PartitionedObjectBucket` from the DI container.
 
 ## Performance Test Report
 
-ArrayDb has incredible performance. With buffer can insert 1M items in 10.89ms, and can read 1M items in 13.16ms.
+ArrayDb has incredible performance. With buffer can insert 1M items in 10.20ms, and can read 1M items in 15.72ms.
 
-Without buffer, it can insert 1M items within 451.61ms, and can read 1M items within 1722.94ms.
+Without buffer, it can insert 1M items within 524.191ms, and can read 1M items within 1418.22ms.
 
 Here is a performance test report.
 
@@ -391,14 +391,14 @@ Each test case, warm up 2 times, test 3 times, and get the average time.
 
 | Test Case | Bucket | Buffered Bucket | Buffered Buffered Bucket | Buffered Buffered Buffered Bucket |
 |---|---|---|---|---|
-| Add 1 time with 1M items | 608.1287 ms (S),  | 10.8947 ms (S),  | 8.88 ms (S),  | 9.2027 ms (S),  |
-| Add 1K items 1K times | 451.6113 ms (S), 1307.3913 ms (P) | 18.8888 ms (S), 27.3029 ms (P) | 26.9661 ms (S), 28.4662 ms (P) | 16.5438 ms (S), 17.2353 ms (P) |
-| Add 1M times with 1 item | 22843.5893 ms (S), 64205.374 ms (P) | 148.5249 ms (S), 262.3714 ms (P) | 31.9148 ms (S), 243.5664 ms (P) | 37.8436 ms (S), 270.8936 ms (P) |
-| Read 1 time with 1M items | 1722.9448 ms (S),  | 13.1617 ms (S),  | 18.0225 ms (S),  | 16.0391 ms (S),  |
-| Read 1K items 1K times | 2458.0378 ms (S), 1971.0012 ms (P) | 2267.7522 ms (S), 3258.0043 ms (P) | 3167.3627 ms (S), 3219.8099 ms (P) | 3134.2589 ms (S), 2919.6149 ms (P) |
-| Read 1 item 1M times | 3004.6247 ms (S), 1997.0978 ms (P) | 3880.4276 ms (S), 3513.2028 ms (P) | 3893.4777 ms (S), 3837.6777 ms (P) | 3979.1938 ms (S), 2596.18 ms (P) |
-| Write 7 read 3 1000 items, 1000 times | 1004.5276 ms (S), 1261.5065 ms (P) | 180.4458 ms (S), 1413.4928 ms (P) | 310.5668 ms (S), 194.6626 ms (P) | 279.447 ms (S), 326.5397 ms (P) |
-| Write 3 read 7 1000 items, 1000 times | 1667.8699 ms (S), 1569.0151 ms (P) | 1043.3758 ms (S), 1170.6673 ms (P) | 738.4987 ms (S), 395.0881 ms (P) | 277.2271 ms (S), 638.3276 ms (P) |
+| Add 1 time with 1M items | 774.8686 ms (S),  | 10.2093 ms (S),  | 23.7705 ms (S),  | 10.0915 ms (S),  |
+| Add 1K items 1K times | 524.191 ms (S), 1278.9293 ms (P) | 12.1467 ms (S), 16.2805 ms (P) | 20.0573 ms (S), 21.4399 ms (P) | 29.8272 ms (S), 37.2894 ms (P) |
+| Add 1M times with 1 item | 22956.3927 ms (S), 68387.0663 ms (P) | 166.0826 ms (S), 278.6171 ms (P) | 44.2852 ms (S), 189.1372 ms (P) | 43.4513 ms (S), 220.4332 ms (P) |
+| Read 1 time with 1M items | 1418.2269 ms (S),  | 15.72 ms (S),  | 12.7386 ms (S),  | 14.7609 ms (S),  |
+| Read 1K items 1K times | 2330.246 ms (S), 2086.1788 ms (P) | 3434.6218 ms (S), 3796.8591 ms (P) | 3748.9203 ms (S), 3131.4449 ms (P) | 3579.8892 ms (S), 3439.7619 ms (P) |
+| Read 1 item 1M times | 2900.2711 ms (S), 2984.4894 ms (P) | 3945.6999 ms (S), 4689.5108 ms (P) | 3992.9079 ms (S), 4160.1278 ms (P) | 3962.2668 ms (S), 4134.1648 ms (P) |
+| Write 7 read 3 1000 items, 1000 times | 1181.6159 ms (S), 1331.431 ms (P) | 418.5302 ms (S), 1157.6625 ms (P) | 314.2199 ms (S), 53.5181 ms (P) | 971.9621 ms (S), 338.2756 ms (P) |
+| Write 3 read 7 1000 items, 1000 times | 2182.6757 ms (S), 2130.797 ms (P) | 1183.3988 ms (S), 776.6431 ms (P) | 670.837 ms (S), 810.9361 ms (P) | 1528.2315 ms (S), 393.8358 ms (P) |
 
 In the table:
 
