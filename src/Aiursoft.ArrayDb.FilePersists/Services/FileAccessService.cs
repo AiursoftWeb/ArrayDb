@@ -110,6 +110,15 @@ File access service statistics:
         }
     }
 
+    
+    /// <summary>
+    /// Fill the file with 0 to make file system allocate the sequential space
+    ///
+    /// This method is not thread-safe. It should be called within a lock.
+    /// </summary>
+    /// <param name="fs">The file stream to fill</param>
+    /// <param name="start">The start position to fill</param>
+    /// <param name="end">The end position to fill</param>
     private void FillFile(FileStream fs, long start, long end)
     {
         // Fill the file with 0 to make file system allocate the sequential space
