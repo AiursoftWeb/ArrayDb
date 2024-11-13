@@ -95,16 +95,18 @@ File access service statistics:
         
         lock (_expandSizeLock)
         {
-            if (offset + dataLength > _currentSize)
+            var sizeToAdjust = _currentSize;
+            if (offset + dataLength > sizeToAdjust)
             {
-                while (offset + dataLength > _currentSize)
+                while (offset + dataLength > sizeToAdjust)
                 {
-                    _currentSize *= 2;
+                    sizeToAdjust *= 2;
                 }
 
                 using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
-                fs.SetLength(_currentSize);
-                FillFile(fs, _currentSize / 2, _currentSize);
+                fs.SetLength(sizeToAdjust);
+                FillFile(fs, sizeToAdjust / 2, sizeToAdjust);
+                _currentSize = sizeToAdjust;
                 Interlocked.Increment(ref ExpandSizeCount);
             }
         }
@@ -122,7 +124,6 @@ File access service statistics:
     private void FillFile(FileStream fs, long start, long end)
     {
         // Fill the file with 0 to make file system allocate the sequential space
-        
         fs.Seek(start, SeekOrigin.Begin);
         var buffer = new byte[_initialSizeIfNotExists];
         while (fs.Position < end)

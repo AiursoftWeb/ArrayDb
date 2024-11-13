@@ -330,11 +330,17 @@ public class IntegrationTests : ArrayDbTestBase
         threads.ForEach(t => t.Start());
         threads.ForEach(t => t.Join());
 
-        var readSamples = persistService.ReadBulk(0, 1000000).OrderBy(t => t.MyNumber1).ToArray();
+        var count = persistService.Count;
+        Assert.AreEqual(1000000, count, "The count of items should be 1,000,000.");
+
+        var readSamples = persistService
+            .ReadBulk(0, 1000000)
+            .OrderBy(t => t.MyNumber1)
+            .ToArray();
         for (var i = 0; i < 1000000; i++)
         {
             var readSample = readSamples[i];
-            Assert.AreEqual(i, readSample.MyNumber1, $"The value of MyNumber1 for index {i} should match.");
+            Assert.AreEqual(i, readSample.MyNumber1, $"The value of MyNumber1 for index {i} should match. It's string is {readSample.MyString1}");  
             Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1,
                 $"The value of MyString1 for index {i} should match.");
         }
