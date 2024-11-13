@@ -384,6 +384,7 @@ Test platform:
 * RAM: 32GB DDR5 6400MHz
 * Disk: Samsung 990 PRO 1TB NVMe SSD
 * OS: AnduinOS 1.0.3
+* File system: ext4
 * .NET: 8.0.110, Release build, Linux-x64
 
 Each test case, warm up 2 times, test 3 times, and get the average time.

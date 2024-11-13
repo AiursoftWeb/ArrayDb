@@ -45,6 +45,7 @@ File access service statistics:
         {
             using var fs = File.Create(path);
             fs.SetLength(initialSizeIfNotExists);
+            FillFile(fs, 0, initialSizeIfNotExists);
         }
 
         _currentSize = new FileInfo(path).Length;
@@ -63,6 +64,7 @@ File access service statistics:
 
                 using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
                 fs.SetLength(_currentSize);
+                FillFile(fs, _currentSize / 2, _currentSize);
                 Interlocked.Increment(ref ExpandSizeCount);
             }
         }
@@ -88,6 +90,7 @@ File access service statistics:
 
                 using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
                 fs.SetLength(_currentSize);
+                FillFile(fs, _currentSize / 2, _currentSize);
                 Interlocked.Increment(ref ExpandSizeCount);
             }
         }
@@ -116,5 +119,17 @@ File access service statistics:
                 File.Delete(Path);
             }
         });
+    }
+
+    private void FillFile(FileStream fs, long start, long end)
+    {
+        // Fill the file with 0 to make file system allocate the sequential space
+        
+        fs.Seek(start, SeekOrigin.Begin);
+        var buffer = new byte[_initialSizeIfNotExists];
+        while (fs.Position < end)
+        {
+            fs.Write(buffer, 0, buffer.Length);
+        }
     }
 }

@@ -75,7 +75,7 @@ Underlying cached file access service statistics:
         // When initially the file is empty, we need to reserve the first 8 bytes for EndOffset
         return offSet <= EndOffsetSize ? EndOffsetSize : offSet;
     }
-
+    
     private long RequestWriteSpaceAndGetStartOffset(int length)
     {
         long writeOffset;
