@@ -53,61 +53,27 @@ File access service statistics:
 
     public void WriteInFile(long offset, byte[] data)
     {
-        lock (_expandSizeLock)
-        {
-            if (offset + data.Length > _currentSize)
-            {
-                while (offset + data.Length > _currentSize)
-                {
-                    _currentSize *= 2;
-                }
-
-                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
-                fs.SetLength(_currentSize);
-                FillFile(fs, _currentSize / 2, _currentSize);
-                Interlocked.Increment(ref ExpandSizeCount);
-            }
-        }
-
-        using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Write))
-        {
-            fs.Seek(offset, SeekOrigin.Begin);
-            fs.Write(data);
-            Interlocked.Increment(ref SeekWriteCount);
-        }
+        ExpandFileIfNeededThreadSafe(offset, data.Length);
+        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
+        fs.Seek(offset, SeekOrigin.Begin);
+        fs.Write(data);
+        Interlocked.Increment(ref SeekWriteCount);
     }
 
     public byte[] ReadInFile(long offset, int length)
     {
-        lock (_expandSizeLock)
+        ExpandFileIfNeededThreadSafe(offset, length);
+        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read);
+        fs.Seek(offset, SeekOrigin.Begin);
+        var buffer = new byte[length];
+        var read = fs.Read(buffer, 0, length);
+        Interlocked.Increment(ref SeekReadCount);
+        if (read != length)
         {
-            if (offset + length > _currentSize)
-            {
-                while (offset + length > _currentSize)
-                {
-                    _currentSize *= 2;
-                }
-
-                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
-                fs.SetLength(_currentSize);
-                FillFile(fs, _currentSize / 2, _currentSize);
-                Interlocked.Increment(ref ExpandSizeCount);
-            }
+            throw new Exception("Failed to read the expected length of data");
         }
 
-        using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Read))
-        {
-            fs.Seek(offset, SeekOrigin.Begin);
-            var buffer = new byte[length];
-            var read = fs.Read(buffer, 0, length);
-            Interlocked.Increment(ref SeekReadCount);
-            if (read != length)
-            {
-                throw new Exception("Failed to read the expected length of data");
-            }
-
-            return buffer;
-        }
+        return buffer;
     }
 
     public async Task DeleteAsync()
@@ -119,6 +85,29 @@ File access service statistics:
                 File.Delete(Path);
             }
         });
+    }
+
+    private void ExpandFileIfNeededThreadSafe(long offset, int dataLength)
+    {
+        // For most cases, we don't need to expand the file
+        // Make it true statement in if to make CPU branch prediction faster
+        if (offset + dataLength <= _currentSize) return;
+        
+        lock (_expandSizeLock)
+        {
+            if (offset + dataLength > _currentSize)
+            {
+                while (offset + dataLength > _currentSize)
+                {
+                    _currentSize *= 2;
+                }
+
+                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
+                fs.SetLength(_currentSize);
+                FillFile(fs, _currentSize / 2, _currentSize);
+                Interlocked.Increment(ref ExpandSizeCount);
+            }
+        }
     }
 
     private void FillFile(FileStream fs, long start, long end)
