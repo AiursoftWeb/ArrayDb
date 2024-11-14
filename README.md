@@ -201,7 +201,8 @@ for (var i = 0; i < 100; i++)
         ResponseTime = TimeSpan.FromMilliseconds(100)
     });
 }
-db.AddBulk(logs.ToArray());
+// Write 100 items at once.
+db.Add(logs.ToArray());
 ```
 
 Calling `SyncAsync()` is **optional**. It will block current thread and flush the data to the disk. However, if you don't call it, the data will also be archived very soon. Only call this to ensure the data is written to the disk.
