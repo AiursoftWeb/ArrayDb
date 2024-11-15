@@ -31,6 +31,7 @@ public static class TimeExtensions
         }.Average(t => t.TotalMilliseconds);
         
         // Return average
+        Console.WriteLine($"    Average: {average} ms.");
         return TimeSpan.FromMilliseconds(average);
     }
     
@@ -72,6 +73,7 @@ public static class TimeExtensions
         // Clean
         await target.DeleteAsync();
         await Task.Delay(2000);
+        
         return sw.Elapsed;
     }
 }
