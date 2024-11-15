@@ -54,7 +54,7 @@ File access service statistics:
     public void WriteInFile(long offset, byte[] data)
     {
         ExpandFileIfNeededThreadSafe(offset, data.Length);
-        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
+        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
         fs.Seek(offset, SeekOrigin.Begin);
         fs.Write(data);
         Interlocked.Increment(ref SeekWriteCount);
@@ -63,7 +63,7 @@ File access service statistics:
     public byte[] ReadInFile(long offset, int length)
     {
         ExpandFileIfNeededThreadSafe(offset, length);
-        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read);
+        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         fs.Seek(offset, SeekOrigin.Begin);
         var buffer = new byte[length];
         var read = fs.Read(buffer, 0, length);
@@ -103,7 +103,7 @@ File access service statistics:
                     sizeToAdjust *= 2;
                 }
 
-                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write);
+                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
                 fs.SetLength(sizeToAdjust);
                 FillFile(fs, sizeToAdjust / 2, sizeToAdjust);
                 _currentSize = sizeToAdjust;

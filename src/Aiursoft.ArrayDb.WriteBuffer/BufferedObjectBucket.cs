@@ -51,7 +51,7 @@ public class BufferedObjectBuckets<T>(
             }
         }
     }
-    
+
     // Statistics
     public int WriteTimesCount;
     public int WriteItemsCount;
@@ -116,7 +116,7 @@ Underlying object bucket statistics:
                 _activeBuffer.Enqueue(obj);
             }
         }
-        
+
         if (objs.Length == 0)
         {
             return;
@@ -210,7 +210,7 @@ Underlying object bucket statistics:
         // Wait two rounds of engine to finish to ensure all data is written.
         // Cool down engine will ensure restart the engine to write the remaining data.
         // Wait for the engine to finish.
-        
+
         // Case 2:
         // The engine is not working. In this case, it might be in the cool down phase.
         // The first wait is just await a completed task.
@@ -257,7 +257,7 @@ Underlying object bucket statistics:
 
             // Total items available for reading
             var totalItemsAvailable = innerBucket.Count + _activeBuffer.Count;
-        
+
             if (indexFrom < 0 || indexFrom >= totalItemsAvailable)
             {
                 throw new ArgumentOutOfRangeException(nameof(indexFrom), "Index is out of range.");
@@ -293,9 +293,10 @@ Underlying object bucket statistics:
         }
     }
 
-    
+
     public async Task DeleteAsync()
     {
+        await SyncAsync(); // Sync to make sure all data is written to disk. Or delete will fail.
         await innerBucket.DeleteAsync();
         _activeBuffer.Clear();
         _secondaryBuffer.Clear();
