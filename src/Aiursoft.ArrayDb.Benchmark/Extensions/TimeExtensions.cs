@@ -63,9 +63,11 @@ public static class TimeExtensions
         
         // Test
         var sw = new Stopwatch();
+        Console.Write($"    Running...");
         sw.Start();
         action(target);
         sw.Stop();
+        Console.WriteLine($"    Done in {sw.ElapsedMilliseconds} ms. Cleaning up...");
         
         // Clean
         await target.DeleteAsync();
