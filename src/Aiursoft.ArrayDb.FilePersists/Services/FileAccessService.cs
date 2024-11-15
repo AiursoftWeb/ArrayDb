@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Aiursoft.ArrayDb.FilePersists.Services;
 
@@ -54,7 +55,7 @@ File access service statistics:
     public void WriteInFile(long offset, byte[] data)
     {
         ExpandFileIfNeededThreadSafe(offset, data.Length);
-        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, GetFileShare());
         fs.Seek(offset, SeekOrigin.Begin);
         fs.Write(data);
         Interlocked.Increment(ref SeekWriteCount);
@@ -63,7 +64,7 @@ File access service statistics:
     public byte[] ReadInFile(long offset, int length)
     {
         ExpandFileIfNeededThreadSafe(offset, length);
-        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read, GetFileShare());
         fs.Seek(offset, SeekOrigin.Begin);
         var buffer = new byte[length];
         var read = fs.Read(buffer, 0, length);
@@ -103,7 +104,7 @@ File access service statistics:
                     sizeToAdjust *= 2;
                 }
 
-                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, GetFileShare());
                 fs.SetLength(sizeToAdjust);
                 FillFile(fs, sizeToAdjust / 2, sizeToAdjust);
                 _currentSize = sizeToAdjust;
@@ -130,5 +131,11 @@ File access service statistics:
         {
             fs.Write(buffer, 0, buffer.Length);
         }
+    }
+    
+    private static FileShare GetFileShare()
+    {
+        // If Windows, return FileShare.ReadWrite. If Linux, return FileShare.Read
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? FileShare.ReadWrite : FileShare.Read;
     }
 }

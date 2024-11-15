@@ -23,14 +23,14 @@ public abstract class Program
             {
                 TestTargetName = "Bucket",
                 TestEntities = () =>
-                    new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                    new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName, initialSizeIfNotExists: Consts.Consts.DefaultPhysicalFileSize * 8)
             },
             new TestTarget
             {
                 TestTargetName = "Buf Bucket",
                 TestEntities = () =>
                     new BufferedObjectBuckets<TestEntity>(
-                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                        new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName, initialSizeIfNotExists: Consts.Consts.DefaultPhysicalFileSize * 8)
                     )
             },
             new TestTarget
@@ -39,7 +39,7 @@ public abstract class Program
                 TestEntities = () =>
                     new BufferedObjectBuckets<TestEntity>(
                         new BufferedObjectBuckets<TestEntity>(
-                            new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                            new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName, initialSizeIfNotExists: Consts.Consts.DefaultPhysicalFileSize * 8)
                         )
                     )
             },
@@ -50,7 +50,7 @@ public abstract class Program
                     new BufferedObjectBuckets<TestEntity>(
                         new BufferedObjectBuckets<TestEntity>(
                             new BufferedObjectBuckets<TestEntity>(
-                                new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName)
+                                new ObjectBucket<TestEntity>(StructureFileName, StructureStringsFileName, initialSizeIfNotExists: Consts.Consts.DefaultPhysicalFileSize * 8)
                             )
                         )
                     )
