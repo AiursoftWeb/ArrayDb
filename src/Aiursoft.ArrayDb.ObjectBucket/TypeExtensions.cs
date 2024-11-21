@@ -1,4 +1,5 @@
 using System.Reflection;
+using Aiursoft.ArrayDb.ObjectBucket.Attributes;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 
@@ -17,10 +18,23 @@ public static class TypeExtensions
                 TypeCode.Int64 => true,
                 TypeCode.Single => true,
                 TypeCode.Double => true,
-                _ => p.PropertyType == typeof(TimeSpan) || p.PropertyType == typeof(Guid)
+                _ => p.PropertyType == typeof(TimeSpan) || p.PropertyType == typeof(Guid) || p.PropertyType == typeof(byte[])
             })
             .Where(p => p.GetCustomAttributes(typeof(PartitionKeyAttribute), false).Length == 0)
             .OrderBy(p => p.Name)
             .ToArray();
+    }
+    
+    public static byte[] TrimEndZeros(this byte[] bytes)
+    {
+        var length = bytes.Length;
+        while (length > 0 && bytes[length - 1] == 0)
+        {
+            length--;
+        }
+
+        var result = new byte[length];
+        Array.Copy(bytes, result, length);
+        return result;
     }
 }

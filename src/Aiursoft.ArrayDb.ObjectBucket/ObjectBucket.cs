@@ -1,7 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
+using Aiursoft.ArrayDb.ObjectBucket.Attributes;
 using Aiursoft.ArrayDb.ReadLruCache;
 using Aiursoft.ArrayDb.StringRepository.Models;
 
@@ -201,6 +203,16 @@ Underlying string repository statistics:
                     {
                         size += 16; // Guid occupies 16 bytes.
                     }
+                    else if (prop.PropertyType == typeof(byte[]))
+                    {
+                        var lengthAttribute = prop.GetCustomAttribute<FixedLengthStringAttribute>();
+                        if (lengthAttribute == null)
+                        {
+                            throw new Exception("The byte[] property must have a FixedLengthStringAttribute.");
+                        }
+                        var length = lengthAttribute.BytesLength;
+                        size += length;
+                    }
                     else
                     {
                         throw new Exception($"Unsupported property type: {prop.PropertyType}");
@@ -314,6 +326,26 @@ Underlying string repository statistics:
 
                         offset += 16;
                     }
+                    else if (prop.PropertyType == typeof(byte[]))
+                    {
+                        var lengthAttribute = prop.GetCustomAttribute<FixedLengthStringAttribute>();
+                        if (lengthAttribute == null)
+                        {
+                            throw new Exception("The byte[] property must have a FixedLengthStringAttribute.");
+                        }
+
+                        var bytes = (byte[])prop.GetValue(objWithStrings.Object)!;
+                        if (bytes.Length > lengthAttribute.BytesLength)
+                        {
+                            throw new Exception("The byte[] property is too long.");
+                        }
+                        
+                        for (var i = 0; i < bytes.Length; i++)
+                        {
+                            buffer[offset + i] = bytes[i];
+                        }
+                        offset += lengthAttribute.BytesLength;
+                    }
                     else
                     {
                         throw new Exception($"Unsupported property type: {prop.PropertyType}");
@@ -401,6 +433,23 @@ Underlying string repository statistics:
 
                         prop.SetValue(obj, new Guid(guidBytes));
                         offset += 16;
+                    }
+                    else if (prop.PropertyType == typeof(byte[]))
+                    {
+                        var lengthAttribute = prop.GetCustomAttribute<FixedLengthStringAttribute>();
+                        if (lengthAttribute == null)
+                        {
+                            throw new Exception("The byte[] property must have a FixedLengthStringAttribute.");
+                        }
+
+                        var bytes = new byte[lengthAttribute.BytesLength];
+                        for (var i = 0; i < lengthAttribute.BytesLength; i++)
+                        {
+                            bytes[i] = buffer[offset + i];
+                        }
+
+                        prop.SetValue(obj, bytes);
+                        offset += lengthAttribute.BytesLength;
                     }
                     else
                     {

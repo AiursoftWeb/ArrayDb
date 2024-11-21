@@ -1,4 +1,5 @@
 using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.ObjectBucket.Attributes;
 using Aiursoft.ArrayDb.Partitions;
 
 namespace Aiursoft.ArrayDb.Tests.Base.Models;

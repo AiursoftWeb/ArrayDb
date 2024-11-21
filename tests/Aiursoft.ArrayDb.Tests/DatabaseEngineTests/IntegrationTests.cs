@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
@@ -422,4 +423,31 @@ public class IntegrationTests : ArrayDbTestBase
         }
     }
 
+    [TestMethod]
+    public void TestBytesData()
+    {
+        var persistService = new ObjectBucket<BytesData>(TestFilePath, TestFilePathStrings);
+        for (var i = 0; i < 200; i++)
+        {
+            var sample = new BytesData
+            {
+                AdeId = i,
+                BytesText = Encoding.UTF8.GetBytes($"Hello, World! 你好世界 {i}"),
+                ZdexId = i * 10
+            };
+            persistService.Add(sample);
+        }
+        
+        var newPersistService = new ObjectBucket<BytesData>(TestFilePath, TestFilePathStrings);
+        for (var i = 0; i < 200; i++)
+        {
+            var readSample = newPersistService.Read(i);
+            
+            // Trim the ending zeros
+            var bytes = readSample.BytesText.TrimEndZeros();
+            Assert.AreEqual(i, readSample.AdeId, $"The value of AdeId for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", Encoding.UTF8.GetString(bytes), $"The value of BytesText for index {i} should match.");
+            Assert.AreEqual(i * 10, readSample.ZdexId, $"The value of ZdexId for index {i} should match.");
+        }
+    }
 }
