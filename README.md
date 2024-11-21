@@ -104,6 +104,7 @@ Supported property types are:
 * `double`
 * `TimeSpan`
 * `Guid`
+* Fixed length `byte[]`
 
 ```csharp
 using Aiursoft.ArrayDb.ObjectBucket;
@@ -130,6 +131,9 @@ public class MyLogItem : PartitionedBucketEntity<string>
     public string RequestPath { get; set; } = string.Empty;
     
     public TimeSpan ResponseTime { get; set; }
+    
+    [FixedLengthString(BytesLength = 50)]
+    public byte[] BytesText { get; set; } = [];
 }
 ```
 
@@ -315,6 +319,9 @@ public class MyLogItem : PartitionedBucketEntity<string>
     public string RequestPath { get; set; } = string.Empty;
     
     public TimeSpan ResponseTime { get; set; }
+    
+    [FixedLengthString(BytesLength = 50)]
+    public byte[] BytesText { get; set; } = [];
 }
 
 var log = new MyLogItem

@@ -450,4 +450,25 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual(i * 10, readSample.ZdexId, $"The value of ZdexId for index {i} should match.");
         }
     }
+
+    [TestMethod]
+    public void TestBytesDataTooLong()
+    {
+        var persistService = new ObjectBucket<BytesData>(TestFilePath, TestFilePathStrings);
+        try
+        {
+            var sample = new BytesData
+            {
+                AdeId = 1,
+                BytesText = Encoding.UTF8.GetBytes(new string('a', 100)),
+                ZdexId = 2
+            };
+            persistService.Add(sample);
+            Assert.Fail("An exception should be thrown when attempting to write a byte array that is too long.");
+        }
+        catch (Exception e)
+        {
+            Assert.AreEqual("One or more errors occurred. (The byte[] property is too long.)", e.Message, "The exception message should match.");
+        }
+    }
 }
