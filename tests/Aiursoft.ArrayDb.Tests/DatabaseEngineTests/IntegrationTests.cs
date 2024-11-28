@@ -45,7 +45,7 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2,
                 "The value of MyString2 should match the expected value.");
             Assert.IsTrue(testStartTime < readSample.CreationTime,
-                "CreationTime should be greater than testStartTime.");
+                $"CreationTime should be greater than testStartTime. However, test time is {testStartTime} and creation time is {readSample.CreationTime}."); 
             Assert.IsTrue(testEndTime > readSample.CreationTime, "CreationTime should be less than testEndTime.");
         }
     }
@@ -137,7 +137,7 @@ public class IntegrationTests : ArrayDbTestBase
             MyTimeSpan1 = TimeSpan.FromDays(1),
             MyGuid1 = Guid.NewGuid()
         };
-        persistService.Add(new[] { sample });
+        persistService.Add(sample);
 
         var result = persistService.ReadBulk(0, 1);
 
@@ -468,7 +468,7 @@ public class IntegrationTests : ArrayDbTestBase
         }
         catch (Exception e)
         {
-            Assert.AreEqual("One or more errors occurred. (The byte[] property is too long.)", e.Message, "The exception message should match.");
+            Assert.AreEqual("One or more errors occurred. (The byte[] property 'BytesText' is too long.)", e.Message, "The exception message should match.");
         }
     }
 }
