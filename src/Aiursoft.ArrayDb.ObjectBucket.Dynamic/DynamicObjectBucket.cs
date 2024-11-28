@@ -1,10 +1,11 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 using Aiursoft.ArrayDb.ReadLruCache;
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
 
-namespace Aiursoft.ArrayDb.ObjectBucket;
+namespace Aiursoft.ArrayDb.ObjectBucket.Dynamic;
 
 public class DynamicObjectBucket : IDynamicObjectBucket
 {
@@ -152,7 +153,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         return size;
     }
 
-    private ObjectWithPersistedStrings[] SaveObjectStrings(BucketItem[] objs)
+    private BucketItemWithPersistedStrings[] SaveObjectStrings(BucketItem[] objs)
     {
         // Get the list of string property names
         var stringPropertyNames = _itemTypeDefinition.Properties
@@ -186,11 +187,11 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         var savedStrings = StringRepository.BulkWriteStringContentAndGetOffsets(strings);
 
         // Create ObjectWithPersistedStrings array
-        var result = new ObjectWithPersistedStrings[objs.Length];
+        var result = new BucketItemWithPersistedStrings[objs.Length];
 
         Parallel.For(0, objs.Length, i =>
         {
-            var objWithStrings = new ObjectWithPersistedStrings
+            var objWithStrings = new BucketItemWithPersistedStrings
             {
                 Object = objs[i],
                 Strings = savedStrings.Skip(i * stringsCount).Take(stringsCount)
@@ -201,7 +202,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         return result;
     }
 
-    private void SerializeBytes(ObjectWithPersistedStrings objWithStrings, byte[] buffer, int offset)
+    private void SerializeBytes(BucketItemWithPersistedStrings objWithStrings, byte[] buffer, int offset)
     {
         var obj = objWithStrings.Object;
         using var stringsEnumerator = objWithStrings.Strings.GetEnumerator();
@@ -288,7 +289,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
     private BucketItem DeserializeBytes(byte[] buffer, int offset = 0)
     {
         var obj = new BucketItem();
-        obj.Properties = new Dictionary<string, BucketItemProperty<object>>();
+        obj.Properties = new Dictionary<string, BucketItemPropertyValue<object>>();
 
         var stringsToLoad = new List<(string PropertyName, long Offset, int Length)>();
 
@@ -301,7 +302,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
             {
                 case BucketItemPropertyType.Int32:
                     var intValue = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = intValue,
                         Type = propertyType
@@ -310,7 +311,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Boolean:
                     var boolValue = Unsafe.ReadUnaligned<byte>(ref buffer[offset]) != 0;
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = boolValue,
                         Type = propertyType
@@ -328,7 +329,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.DateTime:
                     var dateTimeTicks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = new DateTime(dateTimeTicks),
                         Type = propertyType
@@ -337,7 +338,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Int64:
                     var longValue = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = longValue,
                         Type = propertyType
@@ -346,7 +347,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Single:
                     var floatValue = Unsafe.ReadUnaligned<float>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = floatValue,
                         Type = propertyType
@@ -355,7 +356,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Double:
                     var doubleValue = Unsafe.ReadUnaligned<double>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = doubleValue,
                         Type = propertyType
@@ -364,7 +365,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.TimeSpan:
                     var timeSpanTicks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = new TimeSpan(timeSpanTicks),
                         Type = propertyType
@@ -377,7 +378,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     {
                         guidBytes[i] = buffer[offset + i];
                     }
-                    obj.Properties[propertyName] = new BucketItemProperty<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                     {
                         Value = new Guid(guidBytes),
                         Type = propertyType
@@ -389,7 +390,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     {
                         var bytes = new byte[length];
                         Array.Copy(buffer, offset, bytes, 0, length);
-                        obj.Properties[propertyName] = new BucketItemProperty<object>
+                        obj.Properties[propertyName] = new BucketItemPropertyValue<object>
                         {
                             Value = bytes,
                             Type = propertyType
@@ -410,7 +411,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         foreach (var strInfo in stringsToLoad)
         {
             var str = StringRepository.LoadStringContent(strInfo.Offset, strInfo.Length);
-            obj.Properties[strInfo.PropertyName] = new BucketItemProperty<object>
+            obj.Properties[strInfo.PropertyName] = new BucketItemPropertyValue<object>
             {
                 Value = str,
                 Type = BucketItemPropertyType.String
@@ -422,19 +423,15 @@ public class DynamicObjectBucket : IDynamicObjectBucket
 
     public void Add(params BucketItem[] objs)
     {
+        // Provision space for the objects. This method is thread-safe.
         var indexToWrite = ProvisionWriteSpaceAndGetStartOffset(objs.Length);
-        WriteBulk(indexToWrite, objs);
-        Interlocked.Increment(ref BulkAppendCount);
-        SetArchivedAsProvisioned();
-    }
-
-    private void WriteBulk(long index, BucketItem[] objs)
-    {
-        var sizeOfObject = GetItemSize();
-        var buffer = new byte[sizeOfObject * objs.Length];
-
+        
         // Save the strings.
         var objWithStrings = SaveObjectStrings(objs);
+
+        // Allocate buffer for the objects.
+        var sizeOfObject = GetItemSize();
+        var buffer = new byte[sizeOfObject * objs.Length];
 
         // Serialize objects in parallel.
         Parallel.For(0, objs.Length, i =>
@@ -443,7 +440,13 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         });
 
         // Write binary data to disk.
-        StructureFileAccess.WriteInFile(sizeOfObject * index + CountMarkerSize, buffer);
+        StructureFileAccess.WriteInFile(sizeOfObject * indexToWrite + CountMarkerSize, buffer);
+        
+        // Update statistics.
+        Interlocked.Increment(ref BulkAppendCount);
+        
+        // Set the archived count as the provisioned count.
+        SetArchivedAsProvisioned();
     }
 
     public BucketItem Read(int index)

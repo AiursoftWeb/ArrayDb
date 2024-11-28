@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 using Aiursoft.ArrayDb.ReadLruCache;
 
 namespace Aiursoft.ArrayDb.StringRepository.ObjectStorage;
@@ -97,17 +97,17 @@ Underlying cached file access service statistics:
     /// </summary>
     /// <param name="processedStrings">An array of byte arrays representing the processed strings to be written.</param>
     /// <returns>An array of SavedString objects containing the offsets and lengths of each processed string in the file.</returns>
-    public SavedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings) // Multi-thread safe
+    public PersistedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings) // Multi-thread safe
     {
         var allBytes = processedStrings.SelectMany(x => x).ToArray();
         var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
         _fileAccess.WriteInFile(writeOffset, allBytes);
         var offset = writeOffset;
-        var result = new SavedString[processedStrings.Length];
+        var result = new PersistedString[processedStrings.Length];
         var index = 0;
         foreach (var processedString in processedStrings)
         {
-            result[index] = new SavedString { Offset = offset, Length = processedString.Length };
+            result[index] = new PersistedString { Offset = offset, Length = processedString.Length };
             offset += processedString.Length;
             index++;
         }

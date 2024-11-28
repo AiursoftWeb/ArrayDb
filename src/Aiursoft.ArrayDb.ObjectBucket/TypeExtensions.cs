@@ -1,5 +1,5 @@
 using System.Reflection;
-using Aiursoft.ArrayDb.ObjectBucket.Attributes;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 

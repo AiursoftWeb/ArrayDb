@@ -1,4 +1,6 @@
-namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
+
+namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 
 public interface IDynamicObjectBucket
 {

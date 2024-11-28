@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 
 public interface IObjectBucket<T> where T : new()
 {

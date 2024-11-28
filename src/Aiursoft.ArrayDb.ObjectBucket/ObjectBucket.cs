@@ -1,7 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
-using Aiursoft.ArrayDb.ObjectBucket.Attributes;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
+using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
 using Aiursoft.ArrayDb.ReadLruCache;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
@@ -240,7 +242,7 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
                     break;
             }
 
-            bucketItem.Properties[prop.Name] = new BucketItemProperty<object>
+            bucketItem.Properties[prop.Name] = new BucketItemPropertyValue<object>
             {
                 Value = value,
                 Type = propertyType

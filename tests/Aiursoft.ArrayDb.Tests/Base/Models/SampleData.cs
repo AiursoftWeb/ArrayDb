@@ -1,6 +1,4 @@
-﻿using Aiursoft.ArrayDb.ObjectBucket;
-
-namespace Aiursoft.ArrayDb.Tests.Base.Models;
+﻿namespace Aiursoft.ArrayDb.Tests.Base.Models;
 
 public class SampleData
 {

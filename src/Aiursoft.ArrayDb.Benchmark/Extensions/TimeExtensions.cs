@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.Benchmark.Models;
-using Aiursoft.ArrayDb.ObjectBucket;
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 
 namespace Aiursoft.ArrayDb.Benchmark.Extensions;
 

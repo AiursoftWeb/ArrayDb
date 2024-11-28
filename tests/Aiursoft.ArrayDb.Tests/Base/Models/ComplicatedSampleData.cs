@@ -1,5 +1,3 @@
-using Aiursoft.ArrayDb.ObjectBucket;
-
 namespace Aiursoft.ArrayDb.Tests.Base.Models;
 
 public class ComplicatedSampleData

@@ -1,8 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.Consts;
-using Aiursoft.ArrayDb.ObjectBucket;
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 
 namespace Aiursoft.ArrayDb.WriteBuffer;
 

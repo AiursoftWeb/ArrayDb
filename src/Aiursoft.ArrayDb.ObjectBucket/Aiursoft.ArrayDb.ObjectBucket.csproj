@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.19</Version>
+    <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.ObjectBucket</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.ObjectBucket</RootNamespace>
@@ -23,6 +23,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="." />
-    <ProjectReference Include="..\Aiursoft.ArrayDb.StringRepository\Aiursoft.ArrayDb.StringRepository.csproj" />
+    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket.Dynamic\Aiursoft.ArrayDb.ObjectBucket.Dynamic.csproj" />
   </ItemGroup>
 </Project>

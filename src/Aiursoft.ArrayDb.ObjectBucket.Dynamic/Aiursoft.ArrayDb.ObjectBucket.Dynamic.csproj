@@ -3,26 +3,26 @@
     <OutputType>Library</OutputType>
     <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.ArrayDb.Partitions</AssemblyName>
-    <RootNamespace>Aiursoft.ArrayDb.Partitions</RootNamespace>
+    <AssemblyName>Aiursoft.ArrayDb.ObjectBucket.Dynamic</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.ObjectBucket.Dynamic</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Company>Aiursoft</Company>
-    <Product>Partitions</Product>
-    <Description>Nuget package of 'Partitions' provided by Aiursoft</Description>
-    <PackageId>Aiursoft.ArrayDb.Partitions</PackageId>
+    <Product>Dynamic</Product>
+    <Description>Nuget package of 'Dynamic' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.ObjectBucket.Dynamic</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</PackageProjectUrl>
+    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Aiursoft.ArrayDb.WriteBuffer\Aiursoft.ArrayDb.WriteBuffer.csproj" />
+    <ProjectReference Include="..\Aiursoft.ArrayDb.StringRepository\Aiursoft.ArrayDb.StringRepository.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
 </Project>

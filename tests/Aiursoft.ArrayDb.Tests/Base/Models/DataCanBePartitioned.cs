@@ -1,4 +1,4 @@
-using Aiursoft.ArrayDb.ObjectBucket.Attributes;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
 using Aiursoft.ArrayDb.Partitions;
 
 namespace Aiursoft.ArrayDb.Tests.Base.Models;

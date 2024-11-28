@@ -1,4 +1,4 @@
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 

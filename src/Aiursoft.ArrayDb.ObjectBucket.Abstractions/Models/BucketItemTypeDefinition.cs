@@ -1,6 +1,4 @@
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
-
-namespace Aiursoft.ArrayDb.ObjectBucket;
+namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 
 public class BucketItemTypeDefinition
 {

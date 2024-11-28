@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Aiursoft.ArrayDb.Consts;
 using Aiursoft.ArrayDb.ObjectBucket;
-using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 using Aiursoft.ArrayDb.WriteBuffer;
 
 namespace Aiursoft.ArrayDb.Partitions;
