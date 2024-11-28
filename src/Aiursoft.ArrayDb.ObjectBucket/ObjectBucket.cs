@@ -362,7 +362,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         (SpaceProvisionedItemsCount, ArchivedItemsCount) = GetItemsCount();
         if (SpaceProvisionedItemsCount != ArchivedItemsCount)
         {
-            throw new Exception("The space provisioned items count and archived items count are not equal. The file may be corrupted. Is the process crashed in the middle of writing?");
+            throw new Exception($"The space provisioned items count and archived items count are not equal. The file may be corrupted. Is the process crashed in the middle of writing? (SpaceProvisionedItemsCount: {SpaceProvisionedItemsCount}, ArchivedItemsCount: {ArchivedItemsCount})");
         }
     }
 
