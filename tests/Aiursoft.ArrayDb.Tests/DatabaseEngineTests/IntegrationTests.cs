@@ -12,7 +12,6 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 public class IntegrationTests : ArrayDbTestBase
 {
     [TestMethod]
-    [Obsolete("This test covers the scenario of writing items one by one, which is slow but necessary.")]
     public void TestWriteAndRead()
     {
         var testStartTime = DateTime.UtcNow;
@@ -45,7 +44,7 @@ public class IntegrationTests : ArrayDbTestBase
             Assert.AreEqual($"This is another longer string. {i}", readSample.MyString2,
                 "The value of MyString2 should match the expected value.");
             Assert.IsTrue(testStartTime < readSample.CreationTime,
-                $"CreationTime should be greater than testStartTime. However, test time is {testStartTime} and creation time is {readSample.CreationTime}."); 
+                $"CreationTime should be greater than testStartTime. However, test time is {testStartTime} and creation time is {readSample.CreationTime}.");
             Assert.IsTrue(testEndTime > readSample.CreationTime, "CreationTime should be less than testEndTime.");
         }
     }
@@ -341,7 +340,8 @@ public class IntegrationTests : ArrayDbTestBase
         for (var i = 0; i < 1000000; i++)
         {
             var readSample = readSamples[i];
-            Assert.AreEqual(i, readSample.MyNumber1, $"The value of MyNumber1 for index {i} should match. It's string is {readSample.MyString1}");  
+            Assert.AreEqual(i, readSample.MyNumber1,
+                $"The value of MyNumber1 for index {i} should match. It's string is {readSample.MyString1}");
             Assert.AreEqual($"Hello, World! 你好世界 {i}", readSample.MyString1,
                 $"The value of MyString1 for index {i} should match.");
         }
@@ -416,10 +416,13 @@ public class IntegrationTests : ArrayDbTestBase
         for (var i = 0; i < 200; i++)
         {
             Assert.AreEqual(i, resultsArray[i].MyNumber1, $"The value of MyNumber1 for index {i} should match.");
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", resultsArray[i].MyString1, $"The value of MyString1 for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", resultsArray[i].MyString1,
+                $"The value of MyString1 for index {i} should match.");
             Assert.AreEqual(i * 10, resultsArray[i].MyNumber2, $"The value of MyNumber2 for index {i} should match.");
-            Assert.AreEqual(i % 2 == 0, resultsArray[i].MyBoolean1, $"The value of MyBoolean1 for index {i} should match.");
-            Assert.AreEqual($"This is another longer string. {i}", resultsArray[i].MyString2, $"The value of MyString2 for index {i} should match.");
+            Assert.AreEqual(i % 2 == 0, resultsArray[i].MyBoolean1,
+                $"The value of MyBoolean1 for index {i} should match.");
+            Assert.AreEqual($"This is another longer string. {i}", resultsArray[i].MyString2,
+                $"The value of MyString2 for index {i} should match.");
         }
     }
 
@@ -437,16 +440,17 @@ public class IntegrationTests : ArrayDbTestBase
             };
             persistService.Add(sample);
         }
-        
+
         var newPersistService = new ObjectBucket<BytesData>(TestFilePath, TestFilePathStrings);
         for (var i = 0; i < 200; i++)
         {
             var readSample = newPersistService.Read(i);
-            
+
             // Trim the ending zeros
             var bytes = readSample.BytesText.TrimEndZeros();
             Assert.AreEqual(i, readSample.AdeId, $"The value of AdeId for index {i} should match.");
-            Assert.AreEqual($"Hello, World! 你好世界 {i}", Encoding.UTF8.GetString(bytes), $"The value of BytesText for index {i} should match.");
+            Assert.AreEqual($"Hello, World! 你好世界 {i}", Encoding.UTF8.GetString(bytes),
+                $"The value of BytesText for index {i} should match.");
             Assert.AreEqual(i * 10, readSample.ZdexId, $"The value of ZdexId for index {i} should match.");
         }
     }
@@ -468,7 +472,8 @@ public class IntegrationTests : ArrayDbTestBase
         }
         catch (Exception e)
         {
-            Assert.AreEqual("One or more errors occurred. (The byte[] property 'BytesText' is too long.)", e.Message, "The exception message should match.");
+            Assert.AreEqual("One or more errors occurred. (The byte[] property 'BytesText' is too long.)", e.Message,
+                "The exception message should match.");
         }
     }
 }

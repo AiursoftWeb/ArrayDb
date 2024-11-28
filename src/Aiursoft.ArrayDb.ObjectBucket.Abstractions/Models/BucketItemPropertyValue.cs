@@ -1,7 +1,7 @@
 namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 
-public class BucketItemPropertyValue<T>
+public class BucketItemPropertyValue
 {
-    public T? Value { get; set; }
+    public object? Value { get; set; }
     public BucketItemPropertyType Type { get; set; }
 }

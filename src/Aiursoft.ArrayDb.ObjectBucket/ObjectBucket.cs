@@ -242,7 +242,7 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
                     break;
             }
 
-            bucketItem.Properties[prop.Name] = new BucketItemPropertyValue<object>
+            bucketItem.Properties[prop.Name] = new BucketItemPropertyValue
             {
                 Value = value,
                 Type = propertyType

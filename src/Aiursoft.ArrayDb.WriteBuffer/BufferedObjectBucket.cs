@@ -18,7 +18,7 @@ public class BufferedObjectBuckets<T>(
 {
     private Task _engine = Task.CompletedTask;
     private Task _coolDownEngine = Task.CompletedTask;
-    private readonly ReaderWriterLockSlim _bufferLock = new ReaderWriterLockSlim();
+    private readonly ReaderWriterLockSlim _bufferLock = new();
 
     /// <summary>
     /// This lock protects from swapping the active and secondary buffers at the same time.

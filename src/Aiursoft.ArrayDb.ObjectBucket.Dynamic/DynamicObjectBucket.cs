@@ -288,8 +288,10 @@ public class DynamicObjectBucket : IDynamicObjectBucket
 
     private BucketItem DeserializeBytes(byte[] buffer, int offset = 0)
     {
-        var obj = new BucketItem();
-        obj.Properties = new Dictionary<string, BucketItemPropertyValue<object>>();
+        var obj = new BucketItem
+        {
+            Properties = new Dictionary<string, BucketItemPropertyValue>()
+        };
 
         var stringsToLoad = new List<(string PropertyName, long Offset, int Length)>();
 
@@ -302,7 +304,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
             {
                 case BucketItemPropertyType.Int32:
                     var intValue = Unsafe.ReadUnaligned<int>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = intValue,
                         Type = propertyType
@@ -311,7 +313,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Boolean:
                     var boolValue = Unsafe.ReadUnaligned<byte>(ref buffer[offset]) != 0;
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = boolValue,
                         Type = propertyType
@@ -329,7 +331,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.DateTime:
                     var dateTimeTicks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = new DateTime(dateTimeTicks),
                         Type = propertyType
@@ -338,7 +340,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Int64:
                     var longValue = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = longValue,
                         Type = propertyType
@@ -347,7 +349,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Single:
                     var floatValue = Unsafe.ReadUnaligned<float>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = floatValue,
                         Type = propertyType
@@ -356,7 +358,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.Double:
                     var doubleValue = Unsafe.ReadUnaligned<double>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = doubleValue,
                         Type = propertyType
@@ -365,7 +367,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     break;
                 case BucketItemPropertyType.TimeSpan:
                     var timeSpanTicks = Unsafe.ReadUnaligned<long>(ref buffer[offset]);
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = new TimeSpan(timeSpanTicks),
                         Type = propertyType
@@ -378,7 +380,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     {
                         guidBytes[i] = buffer[offset + i];
                     }
-                    obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                    obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
                         Value = new Guid(guidBytes),
                         Type = propertyType
@@ -390,7 +392,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     {
                         var bytes = new byte[length];
                         Array.Copy(buffer, offset, bytes, 0, length);
-                        obj.Properties[propertyName] = new BucketItemPropertyValue<object>
+                        obj.Properties[propertyName] = new BucketItemPropertyValue
                         {
                             Value = bytes,
                             Type = propertyType
@@ -411,7 +413,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         foreach (var strInfo in stringsToLoad)
         {
             var str = StringRepository.LoadStringContent(strInfo.Offset, strInfo.Length);
-            obj.Properties[strInfo.PropertyName] = new BucketItemPropertyValue<object>
+            obj.Properties[strInfo.PropertyName] = new BucketItemPropertyValue
             {
                 Value = str,
                 Type = BucketItemPropertyType.String
