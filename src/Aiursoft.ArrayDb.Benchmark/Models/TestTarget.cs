@@ -1,4 +1,5 @@
 using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
 
 namespace Aiursoft.ArrayDb.Benchmark.Models;
 

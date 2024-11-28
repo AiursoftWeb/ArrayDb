@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.19</Version>
+    <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.ArrayDb.StringRepository</AssemblyName>
-    <RootNamespace>Aiursoft.ArrayDb.StringRepository</RootNamespace>
+    <AssemblyName>Aiursoft.ArrayDb.ObjectBucket.Abstractions</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.ObjectBucket.Abstractions</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Company>Aiursoft</Company>
-    <Product>StringRepository</Product>
-    <Description>Nuget package of 'StringRepository' provided by Aiursoft</Description>
-    <PackageId>Aiursoft.ArrayDb.StringRepository</PackageId>
+    <Product>Abstractions</Product>
+    <Description>Nuget package of 'Abstractions' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.ObjectBucket.Abstractions</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
@@ -23,7 +23,5 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="." />
-    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket.Abstractions\Aiursoft.ArrayDb.ObjectBucket.Abstractions.csproj" />
-    <ProjectReference Include="..\Aiursoft.ArrayDb.ReadLruCache\Aiursoft.ArrayDb.ReadLruCache.csproj" />
   </ItemGroup>
 </Project>

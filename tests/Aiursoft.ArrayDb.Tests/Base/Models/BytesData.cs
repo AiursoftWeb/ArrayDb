@@ -3,7 +3,7 @@ using Aiursoft.ArrayDb.ObjectBucket.Attributes;
 
 namespace Aiursoft.ArrayDb.Tests.Base.Models;
 
-public class BytesData : BucketEntity
+public class BytesData
 {
     public int AdeId { get; set; }
     

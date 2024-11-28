@@ -2,7 +2,7 @@ using Aiursoft.ArrayDb.ObjectBucket;
 
 namespace Aiursoft.ArrayDb.Tests.Base.Models;
 
-public class ComplicatedSampleData : BucketEntity
+public class ComplicatedSampleData
 {
     public string MyString1 { get; init; } = string.Empty;
     public DateTime MyDateTime1 { get; init; }

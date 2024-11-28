@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
 using Aiursoft.ArrayDb.ReadLruCache;
-using Aiursoft.ArrayDb.StringRepository.Models;
 
 namespace Aiursoft.ArrayDb.StringRepository.ObjectStorage;
 

@@ -1,6 +1,6 @@
-namespace Aiursoft.ArrayDb.ObjectBucket;
+namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions;
 
-public interface IObjectBucket<T> where T : BucketEntity, new()
+public interface IObjectBucket<T> where T : new()
 {
     /// <summary>
     /// The count of the items in the bucket that can be read.

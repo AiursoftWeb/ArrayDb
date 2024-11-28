@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.Consts;
 using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions;
 
 namespace Aiursoft.ArrayDb.WriteBuffer;
 
@@ -14,7 +15,7 @@ public class BufferedObjectBuckets<T>(
     IObjectBucket<T> innerBucket,
     int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
     int stopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
-    : IObjectBucket<T> where T : BucketEntity, new()
+    : IObjectBucket<T> where T : new()
 {
     private Task _engine = Task.CompletedTask;
     private Task _coolDownEngine = Task.CompletedTask;
