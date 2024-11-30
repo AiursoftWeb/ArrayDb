@@ -16,9 +16,9 @@
     <PackageId>Aiursoft.ArrayDb.WriteBuffer.Core</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>ssh://git@gitlab.aiursoft.cn:2202/aiursoft/arraydb</PackageProjectUrl>
+    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>ssh://git@gitlab.aiursoft.cn:2202/aiursoft/arraydb.git</RepositoryUrl>
+    <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
