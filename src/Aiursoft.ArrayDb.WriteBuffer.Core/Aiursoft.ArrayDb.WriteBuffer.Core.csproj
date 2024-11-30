@@ -1,9 +1,27 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Aiursoft.ArrayDb.WriteBuffer.Core</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.WriteBuffer.Core</RootNamespace>
+    <IsTestProject>false</IsTestProject>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Company>Aiursoft</Company>
+    <Product>Core</Product>
+    <Description>Nuget package of 'Core' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.WriteBuffer.Core</PackageId>
+    <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>ssh://git@gitlab.aiursoft.cn:2202/aiursoft/arraydb</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>ssh://git@gitlab.aiursoft.cn:2202/aiursoft/arraydb.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="." />
+  </ItemGroup>
 </Project>
