@@ -59,11 +59,18 @@ title: Project dependency diagram
 stateDiagram-v2
     Aiursoft.ArrayDb.FilePersists --> Aiursoft.ArrayDb.Consts
     Aiursoft.ArrayDb.ReadLruCache --> Aiursoft.ArrayDb.FilePersists
+    Aiursoft.ArrayDb.StringRepository --> Aiursoft.ArrayDb.ObjectBucket.Abstractions
     Aiursoft.ArrayDb.StringRepository --> Aiursoft.ArrayDb.ReadLruCache
-    Aiursoft.ArrayDb.ObjectBucket --> Aiursoft.ArrayDb.StringRepository
+    Aiursoft.ArrayDb.ObjectBucket.Dynamic --> Aiursoft.ArrayDb.StringRepository
+    Aiursoft.ArrayDb.ObjectBucket --> Aiursoft.ArrayDb.ObjectBucket.Dynamic
     Aiursoft.ArrayDb.WriteBuffer --> Aiursoft.ArrayDb.ObjectBucket
+    Aiursoft.ArrayDb.WriteBuffer --> Aiursoft.ArrayDb.WriteBuffer.Core
     Aiursoft.ArrayDb.Partitions --> Aiursoft.ArrayDb.WriteBuffer
     Aiursoft.ArrayDb.Benchmark --> Aiursoft.ArrayDb.Partitions
+    Aiursoft.ArrayDb.WriteBuffer.Dynamic --> Aiursoft.ArrayDb.ObjectBucket.Dynamic
+    Aiursoft.ArrayDb.WriteBuffer.Dynamic --> Aiursoft.ArrayDb.WriteBuffer.Core
+    Aiursoft.ArrayDb.Tests --> Aiursoft.ArrayDb.Partitions
+    Aiursoft.ArrayDb.Tests --> Aiursoft.ArrayDb.WriteBuffer.Dynamic
 ```
 
 For most cases, it's suggested to directly use the `Partitions` module. It provides the best performance and the most features.
@@ -397,16 +404,16 @@ Test platform:
 
 Each test case, warm up 2 times, test 3 times, and get the average time.
 
-| Test Case | Bucket | Buffered Bucket | Buffered Buffered Bucket | Buffered Buffered Buffered Bucket |
-|---|---|---|---|---|
-| Add 1 time with 1M items | 768.7194 ms (S),  | 8.9451 ms (S),  | 9.4255 ms (S),  | 9.3819 ms (S),  |
-| Add 1K items 1K times | 469.5969 ms (S), 1357.379 ms (P) | 23.5016 ms (S), 15.7182 ms (P) | 57.3428 ms (S), 19.0802 ms (P) | 15.189 ms (S), 17.9211 ms (P) |
-| Add 1M times with 1 item | 23087.0104 ms (S), 67530.5748 ms (P) | 139.5363 ms (S), 199.5407 ms (P) | 32.6204 ms (S), 186.8497 ms (P) | 51.8651 ms (S), 138.9131 ms (P) |
-| Read 1 time with 1M items | 1310.2232 ms (S),  | 13.2466 ms (S),  | 13.2334 ms (S),  | 13.3859 ms (S),  |
-| Read 1K items 1K times | 1779.7974 ms (S), 1406.2456 ms (P) | 3475.0036 ms (S), 3836.4354 ms (P) | 3725.368 ms (S), 3692.4634 ms (P) | 3633.9955 ms (S), 3395.1114 ms (P) |
-| Read 1 item 1M times | 2889.6926 ms (S), 2719.3658 ms (P) | 3836.5553 ms (S), 4312.7708 ms (P) | 3821.7147 ms (S), 3968.1223 ms (P) | 4168.1731 ms (S), 3001.3363 ms (P) |
-| Write 7 read 3 1000 items, 1000 times | 1441.8036 ms (S), 1597.4134 ms (P) | 465.6043 ms (S), 1127.2276 ms (P) | 172.5622 ms (S), 596.6575 ms (P) | 144.6602 ms (S), 41.0073 ms (P) |
-| Write 3 read 7 1000 items, 1000 times | 1847.1623 ms (S), 2052.7122 ms (P) | 294.2046 ms (S), 886.9641 ms (P) | 751.0373 ms (S), 997.481 ms (P) | 1446.2321 ms (S), 309.2387 ms (P) |
+| Test Case                             | Bucket                               | Buffered Bucket                    | Buffered Buffered Bucket           | Buffered Buffered Buffered Bucket  |
+|---------------------------------------|--------------------------------------|------------------------------------|------------------------------------|------------------------------------|
+| Add 1 time with 1M items              | 768.7194 ms (S),                     | 8.9451 ms (S),                     | 9.4255 ms (S),                     | 9.3819 ms (S),                     |
+| Add 1K items 1K times                 | 469.5969 ms (S), 1357.379 ms (P)     | 23.5016 ms (S), 15.7182 ms (P)     | 57.3428 ms (S), 19.0802 ms (P)     | 15.189 ms (S), 17.9211 ms (P)      |
+| Add 1M times with 1 item              | 23087.0104 ms (S), 67530.5748 ms (P) | 139.5363 ms (S), 199.5407 ms (P)   | 32.6204 ms (S), 186.8497 ms (P)    | 51.8651 ms (S), 138.9131 ms (P)    |
+| Read 1 time with 1M items             | 1310.2232 ms (S),                    | 13.2466 ms (S),                    | 13.2334 ms (S),                    | 13.3859 ms (S),                    |
+| Read 1K items 1K times                | 1779.7974 ms (S), 1406.2456 ms (P)   | 3475.0036 ms (S), 3836.4354 ms (P) | 3725.368 ms (S), 3692.4634 ms (P)  | 3633.9955 ms (S), 3395.1114 ms (P) |
+| Read 1 item 1M times                  | 2889.6926 ms (S), 2719.3658 ms (P)   | 3836.5553 ms (S), 4312.7708 ms (P) | 3821.7147 ms (S), 3968.1223 ms (P) | 4168.1731 ms (S), 3001.3363 ms (P) |
+| Write 7 read 3 1000 items, 1000 times | 1441.8036 ms (S), 1597.4134 ms (P)   | 465.6043 ms (S), 1127.2276 ms (P)  | 172.5622 ms (S), 596.6575 ms (P)   | 144.6602 ms (S), 41.0073 ms (P)    |
+| Write 3 read 7 1000 items, 1000 times | 1847.1623 ms (S), 2052.7122 ms (P)   | 294.2046 ms (S), 886.9641 ms (P)   | 751.0373 ms (S), 997.481 ms (P)    | 1446.2321 ms (S), 309.2387 ms (P)  |
 
 In the table:
 
