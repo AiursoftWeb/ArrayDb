@@ -1,9 +1,8 @@
-using Aiursoft.ArrayDb.ObjectBucket;
-using Aiursoft.ArrayDb.ObjectBucket.Attributes;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
 
 namespace Aiursoft.ArrayDb.Tests.Base.Models;
 
-public class BytesData : BucketEntity
+public class BytesData
 {
     public int AdeId { get; set; }
     

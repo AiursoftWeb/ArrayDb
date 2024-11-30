@@ -20,5 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.Partitions\Aiursoft.ArrayDb.Partitions.csproj" />
+    <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.WriteBuffer.Dynamic\Aiursoft.ArrayDb.WriteBuffer.Dynamic.csproj" />
   </ItemGroup>
 </Project>

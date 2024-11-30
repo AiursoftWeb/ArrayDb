@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>1.0.19</Version>
+    <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.StringRepository</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.StringRepository</RootNamespace>
@@ -23,6 +23,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="." />
+    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket.Abstractions\Aiursoft.ArrayDb.ObjectBucket.Abstractions.csproj" />
     <ProjectReference Include="..\Aiursoft.ArrayDb.ReadLruCache\Aiursoft.ArrayDb.ReadLruCache.csproj" />
   </ItemGroup>
 </Project>

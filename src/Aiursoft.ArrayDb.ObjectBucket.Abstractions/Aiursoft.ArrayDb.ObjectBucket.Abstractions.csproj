@@ -3,17 +3,17 @@
     <OutputType>Library</OutputType>
     <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.ArrayDb.WriteBuffer</AssemblyName>
-    <RootNamespace>Aiursoft.ArrayDb.WriteBuffer</RootNamespace>
+    <AssemblyName>Aiursoft.ArrayDb.ObjectBucket.Abstractions</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.ObjectBucket.Abstractions</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Company>Aiursoft</Company>
-    <Product>WriteBuffer</Product>
-    <Description>Nuget package of 'WriteBuffer' provided by Aiursoft</Description>
-    <PackageId>Aiursoft.ArrayDb.WriteBuffer</PackageId>
+    <Product>Abstractions</Product>
+    <Description>Nuget package of 'Abstractions' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.ObjectBucket.Abstractions</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
@@ -22,8 +22,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket\Aiursoft.ArrayDb.ObjectBucket.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
-    <ProjectReference Include="..\Aiursoft.ArrayDb.WriteBuffer.Core\Aiursoft.ArrayDb.WriteBuffer.Core.csproj" />
   </ItemGroup>
 </Project>

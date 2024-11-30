@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.ObjectBucket.Attributes;
+namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
 
 public class FixedLengthStringAttribute : Attribute
 {

@@ -1,7 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.Consts;
-using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
+using Aiursoft.ArrayDb.WriteBuffer.Core;
 
 namespace Aiursoft.ArrayDb.WriteBuffer;
 
@@ -14,11 +15,11 @@ public class BufferedObjectBuckets<T>(
     IObjectBucket<T> innerBucket,
     int maxSleepMilliSecondsWhenCold = Consts.Consts.MaxSleepMilliSecondsWhenCold,
     int stopSleepingWhenWriteBufferItemsMoreThan = Consts.Consts.WriteBufferStopSleepingWhenWriteBufferItemsMoreThan)
-    : IObjectBucket<T> where T : BucketEntity, new()
+    : IObjectBucket<T> where T : new()
 {
     private Task _engine = Task.CompletedTask;
     private Task _coolDownEngine = Task.CompletedTask;
-    private readonly ReaderWriterLockSlim _bufferLock = new ReaderWriterLockSlim();
+    private readonly ReaderWriterLockSlim _bufferLock = new();
 
     /// <summary>
     /// This lock protects from swapping the active and secondary buffers at the same time.
@@ -174,7 +175,7 @@ Underlying object bucket statistics:
         }
 
         // While we are writing, new data may be added to the buffer. If so, we need to write it too.
-        if (_activeBuffer.Count > 0)
+        if (!_activeBuffer.IsEmpty)
         {
             // Restart the engine to write the new added data.
             // Before engine quits, it wakes up cool down engine to ensure the engine will be restarted.

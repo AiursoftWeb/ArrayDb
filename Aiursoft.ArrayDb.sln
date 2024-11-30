@@ -25,6 +25,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Partitions
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.Benchmark", "src\Aiursoft.ArrayDb.Benchmark\Aiursoft.ArrayDb.Benchmark.csproj", "{D870537D-97FD-406F-BA91-FDF242C0F656}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.ObjectBucket.Abstractions", "src\Aiursoft.ArrayDb.ObjectBucket.Abstractions\Aiursoft.ArrayDb.ObjectBucket.Abstractions.csproj", "{348F02BD-0368-4FFE-9319-3464F97D619F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.ObjectBucket.Dynamic", "src\Aiursoft.ArrayDb.ObjectBucket.Dynamic\Aiursoft.ArrayDb.ObjectBucket.Dynamic.csproj", "{1166B6C2-F887-44C6-8C98-360F890B9F08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.WriteBuffer.Dynamic", "src\Aiursoft.ArrayDb.WriteBuffer.Dynamic\Aiursoft.ArrayDb.WriteBuffer.Dynamic.csproj", "{3983E59B-012D-400E-B541-07F65644BCE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.ArrayDb.WriteBuffer.Core", "src\Aiursoft.ArrayDb.WriteBuffer.Core\Aiursoft.ArrayDb.WriteBuffer.Core.csproj", "{4268223A-7F63-4207-BC09-A0C28CC83366}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +51,10 @@ Global
 		{42B34AA3-D52E-42AA-9C85-A0757922F4F7} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 		{7FC1E4B6-A66C-4BDD-B227-40062C850AF0} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 		{D870537D-97FD-406F-BA91-FDF242C0F656} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{348F02BD-0368-4FFE-9319-3464F97D619F} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{1166B6C2-F887-44C6-8C98-360F890B9F08} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{3983E59B-012D-400E-B541-07F65644BCE9} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
+		{4268223A-7F63-4207-BC09-A0C28CC83366} = {E598DD69-F1C1-4E86-9500-1BE6A1556B7C}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E6B3955F-F1B8-410A-A33B-79E10F6C056F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -81,5 +93,21 @@ Global
 		{D870537D-97FD-406F-BA91-FDF242C0F656}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D870537D-97FD-406F-BA91-FDF242C0F656}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D870537D-97FD-406F-BA91-FDF242C0F656}.Release|Any CPU.Build.0 = Release|Any CPU
+		{348F02BD-0368-4FFE-9319-3464F97D619F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{348F02BD-0368-4FFE-9319-3464F97D619F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{348F02BD-0368-4FFE-9319-3464F97D619F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{348F02BD-0368-4FFE-9319-3464F97D619F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1166B6C2-F887-44C6-8C98-360F890B9F08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1166B6C2-F887-44C6-8C98-360F890B9F08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1166B6C2-F887-44C6-8C98-360F890B9F08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1166B6C2-F887-44C6-8C98-360F890B9F08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3983E59B-012D-400E-B541-07F65644BCE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3983E59B-012D-400E-B541-07F65644BCE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3983E59B-012D-400E-B541-07F65644BCE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3983E59B-012D-400E-B541-07F65644BCE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4268223A-7F63-4207-BC09-A0C28CC83366}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4268223A-7F63-4207-BC09-A0C28CC83366}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4268223A-7F63-4207-BC09-A0C28CC83366}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4268223A-7F63-4207-BC09-A0C28CC83366}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

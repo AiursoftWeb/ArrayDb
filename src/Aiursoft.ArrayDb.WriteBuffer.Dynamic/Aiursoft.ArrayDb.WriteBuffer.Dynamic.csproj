@@ -3,27 +3,27 @@
     <OutputType>Library</OutputType>
     <Version>1.0.20</Version>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.ArrayDb.WriteBuffer</AssemblyName>
-    <RootNamespace>Aiursoft.ArrayDb.WriteBuffer</RootNamespace>
+    <AssemblyName>Aiursoft.ArrayDb.WriteBuffer.Dynamic</AssemblyName>
+    <RootNamespace>Aiursoft.ArrayDb.WriteBuffer.Dynamic</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Company>Aiursoft</Company>
-    <Product>WriteBuffer</Product>
-    <Description>Nuget package of 'WriteBuffer' provided by Aiursoft</Description>
-    <PackageId>Aiursoft.ArrayDb.WriteBuffer</PackageId>
+    <Product>Dynamic</Product>
+    <Description>Nuget package of 'Dynamic' provided by Aiursoft</Description>
+    <PackageId>Aiursoft.ArrayDb.WriteBuffer.Dynamic</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb</PackageProjectUrl>
+    <PackageProjectUrl>ssh://git@gitlab.aiursoft.cn:2202/aiursoft/arraydb</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://gitlab.aiursoft.cn/aiursoft/arraydb.git</RepositoryUrl>
+    <RepositoryUrl>ssh://git@gitlab.aiursoft.cn:2202/aiursoft/arraydb.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket\Aiursoft.ArrayDb.ObjectBucket.csproj" />
-    <None Include="../../README.md" Pack="true" PackagePath="." />
+    <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket.Dynamic\Aiursoft.ArrayDb.ObjectBucket.Dynamic.csproj" />
     <ProjectReference Include="..\Aiursoft.ArrayDb.WriteBuffer.Core\Aiursoft.ArrayDb.WriteBuffer.Core.csproj" />
+    <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@ using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
 using Aiursoft.ArrayDb.WriteBuffer;
+using Aiursoft.ArrayDb.WriteBuffer.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
@@ -580,13 +581,13 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     }
 
     [TestMethod]
-    public void ReadBulkWithOffset()
+    public async Task ReadBulkWithOffset()
     {
         var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
 
         // Add items
-        var items = Enumerable.Range(0, 50000).Select(i => new SampleData
+        var items = Enumerable.Range(0, 30000).Select(i => new SampleData
         {
             MyNumber1 = i,
             MyString1 = $"Item {i}",
@@ -601,5 +602,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         var bulkRead = buffer.ReadBulk(100, 10000);
         Assert.AreEqual(10000, bulkRead.Length, "Should return 10000 items starting from offset.");
         Assert.AreEqual("Item 100", bulkRead[0].MyString1, "First item should start at the correct offset.");
+        
+        await buffer.SyncAsync();
     }
 }
