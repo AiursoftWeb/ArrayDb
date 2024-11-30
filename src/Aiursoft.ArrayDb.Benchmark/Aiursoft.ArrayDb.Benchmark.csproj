@@ -8,6 +8,7 @@
 		<IsPackable>false</IsPackable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<PublishAot>true</PublishAot>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Aiursoft.ArrayDb.Partitions\Aiursoft.ArrayDb.Partitions.csproj" />
