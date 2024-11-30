@@ -2,6 +2,7 @@ using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
 using Aiursoft.ArrayDb.WriteBuffer;
+using Aiursoft.ArrayDb.WriteBuffer.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;

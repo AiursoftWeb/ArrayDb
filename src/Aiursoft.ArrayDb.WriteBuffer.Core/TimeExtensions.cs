@@ -1,4 +1,4 @@
-namespace Aiursoft.ArrayDb.WriteBuffer;
+namespace Aiursoft.ArrayDb.WriteBuffer.Core;
 
 public static class TimeExtensions
 {

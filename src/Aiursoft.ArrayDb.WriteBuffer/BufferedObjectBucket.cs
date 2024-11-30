@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.Consts;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
+using Aiursoft.ArrayDb.WriteBuffer.Core;
 
 namespace Aiursoft.ArrayDb.WriteBuffer;
 
@@ -174,7 +175,7 @@ Underlying object bucket statistics:
         }
 
         // While we are writing, new data may be added to the buffer. If so, we need to write it too.
-        if (_activeBuffer.Count > 0)
+        if (!_activeBuffer.IsEmpty)
         {
             // Restart the engine to write the new added data.
             // Before engine quits, it wakes up cool down engine to ensure the engine will be restarted.

@@ -24,5 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket\Aiursoft.ArrayDb.ObjectBucket.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
+    <ProjectReference Include="..\Aiursoft.ArrayDb.WriteBuffer.Core\Aiursoft.ArrayDb.WriteBuffer.Core.csproj" />
   </ItemGroup>
 </Project>

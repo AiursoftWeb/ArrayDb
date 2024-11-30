@@ -264,5 +264,3 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
         return obj;
     }
 }
-
-// Define a class to hold the object and its persisted strings.
