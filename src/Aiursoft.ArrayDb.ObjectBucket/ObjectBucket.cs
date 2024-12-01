@@ -4,7 +4,6 @@ using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
-using Aiursoft.ArrayDb.ReadLruCache;
 
 namespace Aiursoft.ArrayDb.ObjectBucket;
 
@@ -13,48 +12,14 @@ namespace Aiursoft.ArrayDb.ObjectBucket;
 /// The ObjectPersistOnDiskService class provides methods to serialize and deserialize objects to and from disk. Making the disk can be accessed as an array of objects.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectBucket<T> : IObjectBucket<T> where T : new()
+public class ObjectBucket<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T> : IObjectBucket<T>
+    where T : new()
 {
     private readonly DynamicObjectBucket _dynamicBucket;
-
-    // Underlying store
-    public readonly CachedFileAccessService StructureFileAccess;
-    public readonly StringRepository.ObjectStorage.StringRepository StringRepository;
-
-    // Statistics
-    public int SingleAppendCount
-    {
-        get => _dynamicBucket.SingleAppendCount;
-        set => _dynamicBucket.SingleAppendCount = value;
-    }
-    public int BulkAppendCount
-    {
-        get => _dynamicBucket.BulkAppendCount;
-        set => _dynamicBucket.BulkAppendCount = value;
-    }
-    public int ReadCount
-    {
-        get => _dynamicBucket.ReadCount;
-        set => _dynamicBucket.ReadCount = value;
-    }
-    public int ReadBulkCount
-    {
-        get => _dynamicBucket.ReadBulkCount;
-        set => _dynamicBucket.ReadBulkCount = value;
-    }
 
     public int Count => _dynamicBucket.Count;
     public int SpaceProvisionedItemsCount => _dynamicBucket.SpaceProvisionedItemsCount;
     public int ArchivedItemsCount => _dynamicBucket.ArchivedItemsCount;
-
-    [ExcludeFromCodeCoverage]
-    public void ResetAllStatistics()
-    {
-        SingleAppendCount = 0;
-        BulkAppendCount = 0;
-        ReadCount = 0;
-        ReadBulkCount = 0;
-    }
 
     /// <summary>
     /// Initializes a new instance of the ObjectBucket class.
@@ -73,7 +38,6 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
         int maxCachedPagesCount = Consts.Consts.MaxReadCachedPagesCount,
         int hotCacheItems = Consts.Consts.ReadCacheHotCacheItems)
     {
-        // Build BucketItemTypeDefinition from T
         var itemTypeDefinition = BuildBucketItemTypeDefinition(typeof(T));
 
         _dynamicBucket = new DynamicObjectBucket(
@@ -84,12 +48,10 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
             cachePageSize,
             maxCachedPagesCount,
             hotCacheItems);
-
-        StructureFileAccess = _dynamicBucket.StructureFileAccess;
-        StringRepository = _dynamicBucket.StringRepository;
     }
 
-    private BucketItemTypeDefinition BuildBucketItemTypeDefinition(Type type)
+    private static BucketItemTypeDefinition BuildBucketItemTypeDefinition(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         var properties = new Dictionary<string, BucketItemPropertyType>();
         var fixedByteArrayLengths = new Dictionary<string, int>();
@@ -136,16 +98,20 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
                         var lengthAttribute = prop.GetCustomAttribute<FixedLengthStringAttribute>();
                         if (lengthAttribute == null)
                         {
-                            throw new Exception($"The byte[] property '{prop.Name}' must have a FixedLengthStringAttribute.");
+                            throw new Exception(
+                                $"The byte[] property '{prop.Name}' must have a FixedLengthStringAttribute.");
                         }
+
                         fixedByteArrayLengths[prop.Name] = lengthAttribute.BytesLength;
                     }
                     else
                     {
                         throw new Exception($"Unsupported property type: {prop.PropertyType}");
                     }
+
                     break;
             }
+
             properties[prop.Name] = propertyType;
         }
 
@@ -158,7 +124,6 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
 
     public void Add(params T[] objs)
     {
-        // Convert T[] to BucketItem[]
         var bucketItems = objs.Select(ConvertToBucketItem).ToArray();
         _dynamicBucket.Add(bucketItems);
     }
@@ -172,7 +137,7 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
     public T[] ReadBulk(int indexFrom, int take)
     {
         var bucketItems = _dynamicBucket.ReadBulk(indexFrom, take);
-        return bucketItems.Select(bi => ConvertToT(bi)).ToArray();
+        return bucketItems.Select(ConvertToT).ToArray();
     }
 
     public async Task DeleteAsync()
@@ -239,6 +204,7 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
                     {
                         throw new Exception($"Unsupported property type: {prop.PropertyType}");
                     }
+
                     break;
             }
 
@@ -248,6 +214,7 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
                 Type = propertyType
             };
         }
+
         return bucketItem;
     }
 
@@ -261,6 +228,7 @@ public class ObjectBucket<T> : IObjectBucket<T> where T : new()
                 prop.SetValue(obj, property.Value);
             }
         }
+
         return obj;
     }
 }

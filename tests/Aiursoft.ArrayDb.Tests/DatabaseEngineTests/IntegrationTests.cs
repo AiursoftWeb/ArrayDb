@@ -102,8 +102,8 @@ public class IntegrationTests : ArrayDbTestBase
         Assert.AreEqual(2, persistService2.SpaceProvisionedItemsCount,
             "The number of space-provisioned items should be 2.");
         Assert.AreEqual(2, persistService2.ArchivedItemsCount, "The number of archived items should be 2.");
-        var offset = persistService2.StringRepository.FileEndOffset;
-        Assert.AreEqual(49, offset, "The file end offset should be 49.");
+        //var offset = persistService2.StringRepository.FileEndOffset;
+        //Assert.AreEqual(49, offset, "The file end offset should be 49.");
 
         var readSample = persistService2.Read(0);
         Assert.AreEqual(1, readSample.MyNumber1, "The value of MyNumber1 should be 1.");
