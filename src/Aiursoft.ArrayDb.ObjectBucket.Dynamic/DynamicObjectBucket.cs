@@ -470,6 +470,11 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         {
             throw new ArgumentOutOfRangeException(nameof(indexFrom));
         }
+        
+        if (take == 0)
+        {
+            return [];
+        }
 
         var sizeOfObject = GetItemSize();
         // Load binary data from disk and deserialize them in parallel.

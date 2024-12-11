@@ -251,9 +251,14 @@ Underlying object bucket statistics:
         _bufferLock.EnterReadLock(); // Get the buffer in a thread-safe way.
         try
         {
-            if (readItemsCount <= 0)
+            if (readItemsCount < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(readItemsCount), "readItemsCount must be greater than 0.");
+                throw new ArgumentOutOfRangeException(nameof(readItemsCount), "Read items count must be greater than zero.");
+            }
+            
+            if (readItemsCount == 0)
+            {
+                return [];
             }
 
             // Total items available for reading
