@@ -114,7 +114,7 @@ Supported property types are:
 * Fixed length `byte[]`
 
 ```csharp
-using Aiursoft.ArrayDb.ObjectBucket;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Attributes;
 using Aiursoft.ArrayDb.Partitions;
 
 public class MyLogItem : PartitionedBucketEntity<string>
