@@ -85,7 +85,7 @@ dotnet add package Aiursoft.ArrayDb.ObjectBucket
 
 ## How to use ArrayDb
 
-Before starting, you need to install [.NET 8 SDK](https://dot.net) on your machine.
+Before starting, you need to install [.NET 9 SDK](https://dot.net) on your machine.
 
 Unlike MySQL, working as a process, ArrayDb works as a library. You can use ArrayDb in your C# project by adding the `ArrayDb` NuGet package to your project.
 
