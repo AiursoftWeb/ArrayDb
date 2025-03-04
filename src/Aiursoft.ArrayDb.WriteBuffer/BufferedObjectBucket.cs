@@ -258,11 +258,13 @@ Underlying object bucket statistics:
             
             if (readItemsCount == 0)
             {
-                return [];
+                return Array.Empty<T>();
             }
 
             // Total items available for reading
-            var totalItemsAvailable = innerBucket.Count + _activeBuffer.Count;
+            var innerCount = innerBucket.Count;
+            var activeBufferItems = _activeBuffer.ToArray(); // Create a snapshot to prevent inconsistency during read
+            var totalItemsAvailable = innerCount + activeBufferItems.Length;
 
             if (indexFrom < 0 || indexFrom >= totalItemsAvailable)
             {
@@ -275,30 +277,33 @@ Underlying object bucket statistics:
                 throw new ArgumentOutOfRangeException(nameof(readItemsCount), "Read range exceeds available items.");
             }
 
-            // Case 1: Reading from innerBucket and potentially _activeBuffer
-            if (indexFrom < innerBucket.Count)
+            var result = new T[readItemsCount];
+            int resultIndex = 0;
+
+            // Case 1: Reading from innerBucket
+            if (indexFrom < innerCount)
             {
-                var itemsToTakeFromInnerBucket = Math.Min(readItemsCount, innerBucket.Count - indexFrom);
-                var fromInnerBucket = innerBucket.ReadBulk(indexFrom, itemsToTakeFromInnerBucket);
-                var remainingItemsToTake = readItemsCount - itemsToTakeFromInnerBucket;
-
-                if (remainingItemsToTake <= 0) return fromInnerBucket; // Only needed from innerBucket
-                // Read remaining items from the active buffer
-                var fromActiveBuffer = _activeBuffer.Take(remainingItemsToTake).ToArray();
-                return fromInnerBucket.Concat(fromActiveBuffer).ToArray(); // Combining results without List
-
+                var itemsFromInner = Math.Min(readItemsCount, innerCount - indexFrom);
+                var innerItems = innerBucket.ReadBulk(indexFrom, itemsFromInner);
+                Array.Copy(innerItems, 0, result, 0, innerItems.Length);
+                resultIndex = innerItems.Length;
             }
 
-            // Case 2: Reading entirely from the active buffer
-            var bufferIndex = indexFrom - innerBucket.Count;
-            return _activeBuffer.Skip(bufferIndex).Take(readItemsCount).ToArray();
+            // Case 2: Reading from active buffer
+            if (resultIndex < readItemsCount)
+            {
+                var bufferStartIndex = Math.Max(0, indexFrom - innerCount);
+                var itemsFromBuffer = readItemsCount - resultIndex;
+                Array.Copy(activeBufferItems, bufferStartIndex, result, resultIndex, itemsFromBuffer);
+            }
+
+            return result;
         }
         finally
         {
             _bufferLock.ExitReadLock();
         }
     }
-
 
     public async Task DeleteAsync()
     {
