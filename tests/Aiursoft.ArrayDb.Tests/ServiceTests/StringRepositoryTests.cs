@@ -27,13 +27,13 @@ public class StringRepositoryTests : ArrayDbTestBase
         var lockObject = new object();
 
         // Create and start threads
-        for (int i = 0; i < 50; i++) // 50 threads for the test
+        for (var i = 0; i < 50; i++) // 50 threads for the test
         {
             var threadIndex = i;
             var thread = new Thread(() =>
             {
                 var stringBytesList = new List<byte[]>();
-                for (int j = 0; j < 20; j++) // Each thread writes 20 strings
+                for (var j = 0; j < 20; j++) // Each thread writes 20 strings
                 {
                     var text = $"Thread-{threadIndex}-String-{j}";
                     var bytes = Encoding.UTF8.GetBytes(text);
@@ -46,7 +46,7 @@ public class StringRepositoryTests : ArrayDbTestBase
                 // Add offsets and content to expected result for later verification
                 lock (lockObject)
                 {
-                    for (int k = 0; k < offsets.Length; k++)
+                    for (var k = 0; k < offsets.Length; k++)
                     {
                         expectedStrings.Add((offsets[k].Offset, offsets[k].Length,
                             Encoding.UTF8.GetString(stringBytesList[k])));

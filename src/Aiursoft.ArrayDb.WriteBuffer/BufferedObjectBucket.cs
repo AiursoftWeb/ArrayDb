@@ -255,7 +255,7 @@ Underlying object bucket statistics:
             {
                 throw new ArgumentOutOfRangeException(nameof(readItemsCount), "Read items count must be greater than zero.");
             }
-            
+
             if (readItemsCount == 0)
             {
                 return Array.Empty<T>();
@@ -278,7 +278,7 @@ Underlying object bucket statistics:
             }
 
             var result = new T[readItemsCount];
-            int resultIndex = 0;
+            var resultIndex = 0;
 
             // Case 1: Reading from innerBucket
             if (indexFrom < innerCount)

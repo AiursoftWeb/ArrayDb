@@ -1,10 +1,16 @@
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
+using Aiursoft.ArrayDb.ObjectBucket.Dynamic.Simplify;
 
 namespace Aiursoft.ArrayDb.ObjectBucket.Dynamic;
 
 public static class DynamicObjectBucketExtensions
 {
+    public static IEnumerable<dynamic> AsSimplified(this IDynamicObjectBucket bucket)
+    {
+        return bucket.AsEnumerable().Select(dynamic (item) => new SimplifiedBucketItem(item));
+    }
+
     public static IEnumerable<BucketItem> AsEnumerable(this IDynamicObjectBucket bucket,
         int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
     {
@@ -33,7 +39,7 @@ public static class DynamicObjectBucketExtensions
             var readCount = i - startIndex + 1;
             var result = bucket.ReadBulk(startIndex, readCount);
             // Iterate over the page in reverse order.
-            for (int j = result.Length - 1; j >= 0; j--)
+            for (var j = result.Length - 1; j >= 0; j--)
             {
                 yield return result[j];
             }

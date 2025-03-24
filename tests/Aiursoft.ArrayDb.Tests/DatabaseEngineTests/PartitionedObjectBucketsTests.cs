@@ -274,7 +274,7 @@ public class PartitionedObjectBucketsTests
         var partitionedService = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
 
         var samples = new List<DataCanBePartitionedByString>();
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             samples.Add(new DataCanBePartitionedByString
             {
@@ -299,7 +299,7 @@ public class PartitionedObjectBucketsTests
     {
         var partitionedService = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             partitionedService.Add(new DataCanBePartitionedByString
             {
@@ -336,7 +336,7 @@ public class PartitionedObjectBucketsTests
     public async Task TestConcurrentSyncAsync()
     {
         var partitionedService = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             partitionedService.Add(new DataCanBePartitionedByString
             {

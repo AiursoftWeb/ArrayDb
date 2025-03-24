@@ -102,7 +102,7 @@ public class CachedFileAccessServiceTests : ArrayDbTestBase
         new Random().NextBytes(dataToWrite);
 
         // Load maxCacheItems + 1 pages to trigger eviction
-        for (int i = 0; i < 513; i++)
+        for (var i = 0; i < 513; i++)
         {
             _service.WriteInFile(i * PageSize, dataToWrite);
             _service.ReadInFile(i * PageSize, dataToWrite.Length);
@@ -149,7 +149,7 @@ public class CachedFileAccessServiceTests : ArrayDbTestBase
         new Random().NextBytes(dataToWrite);
 
         // Write and read multiple pages
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _service.WriteInFile(i * PageSize, dataToWrite);
             _service.ReadInFile(i * PageSize, dataToWrite.Length);

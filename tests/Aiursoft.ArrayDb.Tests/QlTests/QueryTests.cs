@@ -95,7 +95,7 @@ public class QueryTests : ArrayDbTestBase
         // Execute a query
         var results = parser.Run("""
                                  source
-                                 .Where(c => (int)c.Properties["MyNumber1"].Value % 2 == 0)
+                                 .Where(c => c.MyNumber1 % 2 == 0)
                                  """, persistService);
 
         Assert.AreEqual(50, results.Count());
@@ -103,10 +103,12 @@ public class QueryTests : ArrayDbTestBase
         // Execute a query
         var resultsCount = parser.Run("""
                                  source
-                                 .Where(c => (int)c.Properties["MyNumber1"].Value % 2 == 0)
+                                 .Where(c => c.MyNumber1 % 2 == 0)
+                                 .OrderBy(c => c.MyString1)
                                  .Count()
                                  """, persistService);
 
         Assert.AreEqual(50, resultsCount.First() as int?);
     }
 }
+

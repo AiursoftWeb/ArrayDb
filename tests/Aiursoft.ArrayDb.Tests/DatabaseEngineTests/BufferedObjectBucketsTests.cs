@@ -110,7 +110,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
 
     private async Task WaitForBufferToBecomeCold(BufferedObjectBuckets<SampleData> buffer)
     {
-        for (int i = 0; i < 30; i++) // Max wait time ~3 seconds
+        for (var i = 0; i < 30; i++) // Max wait time ~3 seconds
         {
             if (buffer.IsCold) break;
             await Task.Delay(100);
@@ -127,7 +127,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         Assert.IsTrue(buffer.IsCold, "Buffer should start in a cold state.");
 
         var tasks = new List<Task>();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var i1 = i;
             tasks.Add(Task.Run(() =>
@@ -161,7 +161,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         Assert.IsTrue(buffer.IsCold, "Buffer should start in a cold state.");
 
         // Rapidly add a large number of items
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             var sampleData = new SampleData
             {
@@ -199,7 +199,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         var persistService = new ObjectBucket<SampleData>(TestFilePath, TestFilePathStrings);
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var sampleData = new SampleData
             {
@@ -223,14 +223,14 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     [TestMethod]
     public void CalculateSleepTimeReturnsZeroForLargeBuffer()
     {
-        int result = TimeExtensions.CalculateSleepTime(1000, 10, 20);
+        var result = TimeExtensions.CalculateSleepTime(1000, 10, 20);
         Assert.AreEqual(0, result, "Sleep time should be 0 when buffer size exceeds threshold.");
     }
 
     [TestMethod]
     public void CalculateSleepTimeHandlesSmallBufferSizes()
     {
-        int result = TimeExtensions.CalculateSleepTime(1000, 10, 2);
+        var result = TimeExtensions.CalculateSleepTime(1000, 10, 2);
         Assert.IsTrue(result is > 0 and <= 1000,
             "Sleep time should be within valid range for small buffer sizes.");
     }
@@ -249,7 +249,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
 
         // Add initial data
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             buffer.Add(new SampleData
             {
@@ -297,7 +297,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         var buffer = new BufferedObjectBuckets<SampleData>(persistService);
 
         // Add a batch of data
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             buffer.Add(new SampleData
             {
@@ -310,7 +310,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         await Task.Delay(100);
 
         // Add more data during the writing process
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             buffer.Add(new SampleData
             {

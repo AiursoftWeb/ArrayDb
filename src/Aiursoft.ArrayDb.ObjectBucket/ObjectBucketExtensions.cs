@@ -36,7 +36,7 @@ public static class ObjectBucketExtensions
             var result = bucket.ReadBulk(startIndex, readCount);
 
             // Manually iterate over the result in reverse order
-            for (int j = result.Length - 1; j >= 0; j--)
+            for (var j = result.Length - 1; j >= 0; j--)
             {
                 yield return result[j];
             }

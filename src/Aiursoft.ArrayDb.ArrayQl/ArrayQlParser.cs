@@ -1,9 +1,12 @@
-﻿using System.Reflection;
+﻿using System.Dynamic;
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
+using Aiursoft.ArrayDb.ObjectBucket.Dynamic.Simplify;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace Aiursoft.ArrayDb.ArrayQl;
 
@@ -50,7 +53,7 @@ public class ArrayQlParser
         ValidateQuery(query);
 
         // Create code that will execute the query
-        string code = $@"
+        var code = $@"
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +66,7 @@ namespace ArrayQl.Dynamic
     {{
         public static object Execute(IDynamicObjectBucket bucket)
         {{
-            var source = bucket.AsEnumerable();
+            var source = bucket.AsSimplified();
             return {query};
         }}
     }}
@@ -75,12 +78,16 @@ namespace ArrayQl.Dynamic
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(SimplifiedBucketItem).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IEnumerable<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IDynamicObjectBucket).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(DynamicObjectBucket).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(DynamicObject).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(CSharpArgumentInfo).Assembly.Location),
             MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
             MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location),
             MetadataReference.CreateFromFile(Assembly.Load("System.Collections").Location),
+            MetadataReference.CreateFromFile(Assembly.Load("System.Linq.Expressions").Location),
         ];
 
         var compilation = CSharpCompilation.Create("ArrayQl.Dynamic")
@@ -112,8 +119,8 @@ namespace ArrayQl.Dynamic
     private void ValidateQuery(string query)
     {
         // Parse the query into a syntax tree
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(query);
-        CompilationUnitSyntax root = syntaxTree.GetCompilationUnitRoot();
+        var syntaxTree = CSharpSyntaxTree.ParseText(query);
+        var root = syntaxTree.GetCompilationUnitRoot();
 
         // Use a syntax visitor to check for unsafe operations
         var visitor = new UnsafeOperationVisitor();
@@ -146,7 +153,7 @@ namespace ArrayQl.Dynamic
             // Check if method is allowed
             if (node.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                string methodName = memberAccess.Name.Identifier.Text;
+                var methodName = memberAccess.Name.Identifier.Text;
                 if (!AllowedMethods.Contains(methodName))
                 {
                     HasUnsafeOperations = true;

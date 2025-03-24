@@ -122,7 +122,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         Assert.IsTrue(bufferedBucket.IsCold, "Buffer should start in a cold state.");
 
         var items = new List<BucketItem>();
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             items.Add(CreateSampleItem(i));
         }
@@ -173,7 +173,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         Assert.IsTrue(bufferedBucket.IsCold, "Buffer should start in a cold state.");
 
         var tasks = new List<Task>();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var i1 = i;
             tasks.Add(Task.Run(() =>
@@ -201,7 +201,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         Assert.IsTrue(bufferedBucket.IsCold, "Buffer should start in a cold state.");
 
         // Rapidly add a large number of items
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             var sampleItem = CreateSampleItem(i);
             bufferedBucket.Add(sampleItem);
@@ -234,7 +234,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         var dynamicBucket = new DynamicObjectBucket(typeDefinition, TestFilePath, TestFilePathStrings);
         var bufferedBucket = new BufferedDynamicObjectBucket(dynamicBucket);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var sampleItem = CreateSampleItem(i);
             bufferedBucket.Add(sampleItem);
@@ -256,7 +256,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         var bufferedBucket = new BufferedDynamicObjectBucket(dynamicBucket);
 
         // Add initial data
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             bufferedBucket.Add(CreateSampleItem(i));
         }
@@ -301,7 +301,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         var bufferedBucket = new BufferedDynamicObjectBucket(dynamicBucket);
 
         // Add a batch of data
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             bufferedBucket.Add(CreateSampleItem(i));
         }
@@ -310,7 +310,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         await Task.Delay(100);
 
         // Add more data during the writing process
-        for (int i = 10; i < 15; i++)
+        for (var i = 10; i < 15; i++)
         {
             bufferedBucket.Add(CreateSampleItem(i));
         }
@@ -331,7 +331,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         var bufferedBucket = new BufferedDynamicObjectBucket(dynamicBucket);
 
         var items = new List<BucketItem>();
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             items.Add(CreateSampleItem(i));
         }
@@ -386,7 +386,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         var bufferedBucket = new BufferedDynamicObjectBucket(dynamicBucket);
 
         var items = new List<BucketItem>();
-        for (int i = 1; i <= 100; i++)
+        for (var i = 1; i <= 100; i++)
         {
             items.Add(CreateSampleItem(i));
         }
@@ -408,7 +408,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Persisted data
         var persistedItems = new List<BucketItem>();
-        for (int i = 1; i <= 50; i++)
+        for (var i = 1; i <= 50; i++)
         {
             persistedItems.Add(CreateSampleItem(i));
         }
@@ -418,7 +418,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Buffer data
         var bufferedItems = new List<BucketItem>();
-        for (int i = 51; i <= 100; i++)
+        for (var i = 51; i <= 100; i++)
         {
             bufferedItems.Add(CreateSampleItem(i));
         }
@@ -441,7 +441,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Add a few items
         var items = new List<BucketItem>();
-        for (int i = 1; i <= 5; i++)
+        for (var i = 1; i <= 5; i++)
         {
             items.Add(CreateSampleItem(i));
         }
@@ -470,7 +470,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Add items and ensure they are persisted
         var items = new List<BucketItem>();
-        for (int i = 1; i <= 100; i++)
+        for (var i = 1; i <= 100; i++)
         {
             items.Add(CreateSampleItem(i));
         }
@@ -493,7 +493,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Add items
         var items = new List<BucketItem>();
-        for (int i = 0; i < 30000; i++)
+        for (var i = 0; i < 30000; i++)
         {
             items.Add(CreateSampleItem(i));
         }
@@ -509,7 +509,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
     private async Task WaitForBufferToBecomeCold(BufferedDynamicObjectBucket buffer)
     {
-        for (int i = 0; i < 30; i++) // Max wait time ~3 seconds
+        for (var i = 0; i < 30; i++) // Max wait time ~3 seconds
         {
             if (buffer.IsCold) break;
             await Task.Delay(100);
