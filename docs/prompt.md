@@ -318,7 +318,7 @@ ArrayDb 是一个库，不是一个进程。它是一个库，所以你可以在
 
 为了开发这个服务端，首先我需要定义一个自己的查询语言：ArrayQL。ArrayQL 是一个类 SQL 的查询语言，但是它只支持查询，不支持修改。ArrayQL 的语法如下：
 
-```aql
+```csharp
 MyTable
 .Skip(10)  
 .Take(20)
@@ -326,11 +326,23 @@ MyTable
 
 上面的语句表示从 MyTable 表中跳过 10 条数据，然后取 20 条数据。
 
+当然，为了查询第10到第29行的数据，你可以这么写：
+
+```csharp
+MyTable[10..30]
+```
+
 我会提供更多示例，例如：
+
+查询 MyTable 的特定行：
+
+```csharp
+MyTable[10]
+```
 
 查询我的所有 Customer 表中，资产大于 10 亿美元的美国客户或者年龄为 18 岁的非程序员客户的数量。
 
-```aql
+```csharp
 Customers
 .Where(c => c.Assets > 1000000000 && c.Country == "USA" || c.Age == 18 && c.Occupation != "Programmer")
 .Count()
@@ -338,7 +350,7 @@ Customers
 
 查询我的所有 Customer 表中，按照国家分组，统计每个国家的客户数量。
 
-```aql
+```csharp
 Customers
 .GroupBy(c => c.Country)
 .Select(c => new { Country = c.Key, Count = c.Count() })
@@ -346,7 +358,7 @@ Customers
 
 查询我的所有 HTTP 请求中，最近3天的，所有向 Nextcloud 的请求里，每天成功和失败的请求数量。
 
-```aql
+```csharp
 HttpRequests
 .Where(r => r.RequestTime > DateTime.Now.AddDays(-3))
 .Where(r => r.Target == "Nextcloud")
@@ -358,22 +370,85 @@ HttpRequests
 
 所以，为了完成上面的工作，我决定这么设计它的语法解析器。
 
-首先，语法解析器一定是一个类，它的核心函数：Run，需要输入一个 string，作为 ArrayQL 的查询语句，输入一个 IEnumerable<T>，作为查询的数据源，输出一个 IEnumerable<P>，作为查询的结果。
+首先，语法解析器一定是一个类，它的核心函数：Run，需要输入一个 string，作为 ArrayQL 的查询语句，输入一个 IDynamicObjectBucket，作为查询的数据源，输出一个 IEnumerable<P>，作为查询的结果。
 
-其中，T是我已经定义好的数据库实体类，P是一个匿名类，用于表示查询的结果。
+其中，IDynamicObjectBucket 是 ArrayDb 核心对外暴露的接口，用于表示一个数据库表。它的定义如下：
 
-T 只有下面几种类型：
+```csharp
+namespace Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
 
-* int
-* bool
-* string
-* DateTime
-* long
-* float
-* double
-* TimeSpan
-* Guid
-* byte[]
+public interface IDynamicObjectBucket
+{
+    int Count { get; }
+    void Add(params BucketItem[] objs);
+    BucketItem Read(int index);
+    BucketItem[] ReadBulk(int indexFrom, int take);
+    Task DeleteAsync();
+    string OutputStatistics();
+    Task SyncAsync();
+}
+```
+
+看起来它无法被过滤、聚合，对吧？别担心，我已经为你写好了扩展方法，你可以直接使用它们。
+
+```csharp
+    public static IEnumerable<BucketItem> AsEnumerable(this IDynamicObjectBucket bucket,
+        int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
+    {
+        // Copy the count locally to avoid race conditions if the bucket is modified concurrently.
+        var archivedItemsCount = bucket.Count;
+        for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
+        {
+            var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
+            var result = bucket.ReadBulk(i, readCount);
+            foreach (var item in result)
+            {
+                yield return item;
+            }
+        }
+    }
+```
+
+我的扩展方法会帮你实现分页读取，你只需要调用 AsEnumerable，然后使用 LINQ 进行过滤、聚合就可以了。而且，这个方法是延迟加载的，所以不会一次性加载所有数据到内存中。
+
+另外，我知道你一定对其中的一些引用到的类型不熟悉。所以，我会给你一些帮助。
+
+其中，BucketItem 代表一个数据库表中的一行数据，它的定义是一个字典，其中 Key 是列名，Value 是列值。
+
+```csharp
+public class BucketItem
+{
+    public Dictionary<string, BucketItemPropertyValue> Properties { get; set; } = new();
+}
+```
+
+具体的列值类型是 BucketItemPropertyValue，它的定义如下：
+
+```csharp
+public class BucketItemPropertyValue
+{
+    public object? Value { get; set; }
+    public BucketItemPropertyType Type { get; set; }
+}
+```
+
+显然，BucketItemPropertyValue 代表一个数据库表中的一个单元格，它的 Value 是单元格的值，Type 是单元格的类型。具体类型定义如下：
+
+```csharp
+public enum BucketItemPropertyType
+{
+    Int32,
+    Boolean,
+    String,
+    DateTime,
+    Int64,
+    Single,
+    Double,
+    TimeSpan,
+    Guid,
+    FixedSizeByteArray
+}
+```
 
 ArrayDb 不支持其他类型。所以，ArrayQL 也不支持其他类型。
 
@@ -381,4 +456,7 @@ ArrayDb 不支持其他类型。所以，ArrayQL 也不支持其他类型。
 
 所以，我决定使用 Roslyn 来完成这个工作。Roslyn 是一个 C# 编译器的前端，它可以将 C# 代码解析成语法树，然后我们可以对这个语法树进行修改，最后再将这个语法树转换成 C# 代码。
 
-但是，这项工作显然也并不简单。我需要你在这个工作中帮助我。
+你不需要提供任何额外的内容，包括：承载为一个 TCP 服务器、客户端代码、SDK代码等。这些不需要。这都是体力活。你应该专注于核心的困难的部分：ArrayQL 的语法解析器。
+
+但是，这项工作显然也并不简单。我需要你在这个工作中帮助我。你只需要帮我写一个类，这个类可以帮我将用户输入的 ArrayQL 语句解析成什么东西，让我可以执行它。我执行的时候，会输入一个 IDynamicObjectBucket，作为查询的数据源，输出一个 IEnumerable<P>，作为查询的结果。另外，要注意安全问题，不要让用户在查询中执行任何危险的操作，例如开启一个 Web 服务器这种离谱的操作。
+

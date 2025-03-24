@@ -57,20 +57,16 @@ title: Project dependency diagram
 ---
 
 stateDiagram-v2
-    Aiursoft.ArrayDb.FilePersists --> Aiursoft.ArrayDb.Consts
-    Aiursoft.ArrayDb.ReadLruCache --> Aiursoft.ArrayDb.FilePersists
-    Aiursoft.ArrayDb.StringRepository --> Aiursoft.ArrayDb.ObjectBucket.Abstractions
-    Aiursoft.ArrayDb.StringRepository --> Aiursoft.ArrayDb.ReadLruCache
-    Aiursoft.ArrayDb.ObjectBucket.Dynamic --> Aiursoft.ArrayDb.StringRepository
-    Aiursoft.ArrayDb.ObjectBucket --> Aiursoft.ArrayDb.ObjectBucket.Dynamic
-    Aiursoft.ArrayDb.WriteBuffer --> Aiursoft.ArrayDb.ObjectBucket
-    Aiursoft.ArrayDb.WriteBuffer --> Aiursoft.ArrayDb.WriteBuffer.Core
-    Aiursoft.ArrayDb.Partitions --> Aiursoft.ArrayDb.WriteBuffer
-    Aiursoft.ArrayDb.Benchmark --> Aiursoft.ArrayDb.Partitions
-    Aiursoft.ArrayDb.WriteBuffer.Dynamic --> Aiursoft.ArrayDb.ObjectBucket.Dynamic
-    Aiursoft.ArrayDb.WriteBuffer.Dynamic --> Aiursoft.ArrayDb.WriteBuffer.Core
-    Aiursoft.ArrayDb.Tests --> Aiursoft.ArrayDb.Partitions
-    Aiursoft.ArrayDb.Tests --> Aiursoft.ArrayDb.WriteBuffer.Dynamic
+    ReadLruCache --> FilePersists
+    StringRepository --> ReadLruCache
+    ObjectBucket.Dynamic --> StringRepository
+    WriteBuffer.Dynamic --> ObjectBucket.Dynamic
+    ObjectBucket --> ObjectBucket.Dynamic
+    WriteBuffer --> ObjectBucket
+    Partitions --> WriteBuffer
+    Benchmark --> WriteBuffer
+    Tests --> Partitions
+    Tests --> WriteBuffer.Dynamic
 ```
 
 For most cases, it's suggested to directly use the `Partitions` module. It provides the best performance and the most features.
