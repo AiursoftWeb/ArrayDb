@@ -332,6 +332,8 @@ MyTable
 MyTable[10..30]
 ```
 
+> 注意，Array[10..30] 表示从 10 开始，到 30 结束，但是不包括 30。这已经是 C# 原生支持的语法了。你不需要自己实现这个功能。
+
 我会提供更多示例，例如：
 
 查询 MyTable 的特定行：
@@ -339,6 +341,10 @@ MyTable[10..30]
 ```csharp
 MyTable[10]
 ```
+
+> 注意，上面的表达式会返回一个单独的行，而不是一个数组。因此，你需要特别小心：如果用户查询的是一个不存在的行，你需要返回一个空数组，而不是一个空行。如果用户查询的结果是一个单行，你也需要将其转换为一个只有一个元素的数组。
+
+显然，上面这些方法，都是 C# 原生的方法。
 
 查询我的所有 Customer 表中，资产大于 10 亿美元的美国客户或者年龄为 18 岁的非程序员客户的数量。
 
@@ -368,6 +374,8 @@ HttpRequests
 
 看得出来，这个语言和 C# 的 LINQ 很像。但是，ArrayQL 是一个查询语言，不是一个编程语言。它只支持查询，不支持修改。它不支持变量，不支持循环，不支持递归，不支持异常处理。它虽然支持 Lambda 表达式，但是只支持一部分 C# 的 Lambda 表达式。
 
+ArrayQl 支持的功能是 C# 的子集。
+
 所以，为了完成上面的工作，我决定这么设计它的语法解析器。
 
 首先，语法解析器一定是一个类，它的核心函数：Run，需要输入一个 string，作为 ArrayQL 的查询语句，输入一个 IDynamicObjectBucket，作为查询的数据源，输出一个 IEnumerable<P>，作为查询的结果。
@@ -392,21 +400,23 @@ public interface IDynamicObjectBucket
 看起来它无法被过滤、聚合，对吧？别担心，我已经为你写好了扩展方法，你可以直接使用它们。
 
 ```csharp
-    public static IEnumerable<BucketItem> AsEnumerable(this IDynamicObjectBucket bucket,
-        int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
+namespace Aiursoft.ArrayDb.ObjectBucket.Dynamic;
+
+public static IEnumerable<BucketItem> AsEnumerable(this IDynamicObjectBucket bucket,
+    int bufferedReadPageSize = Consts.Consts.AsEnumerablePageSize)
+{
+    // Copy the count locally to avoid race conditions if the bucket is modified concurrently.
+    var archivedItemsCount = bucket.Count;
+    for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
     {
-        // Copy the count locally to avoid race conditions if the bucket is modified concurrently.
-        var archivedItemsCount = bucket.Count;
-        for (var i = 0; i < archivedItemsCount; i += bufferedReadPageSize)
+        var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
+        var result = bucket.ReadBulk(i, readCount);
+        foreach (var item in result)
         {
-            var readCount = Math.Min(bufferedReadPageSize, archivedItemsCount - i);
-            var result = bucket.ReadBulk(i, readCount);
-            foreach (var item in result)
-            {
-                yield return item;
-            }
+            yield return item;
         }
     }
+}
 ```
 
 我的扩展方法会帮你实现分页读取，你只需要调用 AsEnumerable，然后使用 LINQ 进行过滤、聚合就可以了。而且，这个方法是延迟加载的，所以不会一次性加载所有数据到内存中。
@@ -458,5 +468,317 @@ ArrayDb 不支持其他类型。所以，ArrayQL 也不支持其他类型。
 
 你不需要提供任何额外的内容，包括：承载为一个 TCP 服务器、客户端代码、SDK代码等。这些不需要。这都是体力活。你应该专注于核心的困难的部分：ArrayQL 的语法解析器。
 
-但是，这项工作显然也并不简单。我需要你在这个工作中帮助我。你只需要帮我写一个类，这个类可以帮我将用户输入的 ArrayQL 语句解析成什么东西，让我可以执行它。我执行的时候，会输入一个 IDynamicObjectBucket，作为查询的数据源，输出一个 IEnumerable<P>，作为查询的结果。另外，要注意安全问题，不要让用户在查询中执行任何危险的操作，例如开启一个 Web 服务器这种离谱的操作。
+但是，这项工作显然也并不简单。我需要你在这个工作中帮助我。首先，我写了一个类：这个类可以帮我将用户输入的 ArrayQL 语句解析成什么东西，让我可以执行它。我执行的时候，会输入一个 IDynamicObjectBucket，作为查询的数据源，输出一个 IEnumerable<P>，作为查询的结果。
 
+这段代码我很快就写好了。如下：
+
+```csharp
+using System.Reflection;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
+using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
+
+namespace Aiursoft.ArrayDb.ArrayQl;
+
+public class ArrayQlParser
+{
+    // Cache compiled queries for better performance
+    private readonly Dictionary<string, Func<IDynamicObjectBucket, object>> _compiledQueries = new();
+
+    /// <summary>
+    /// Executes an ArrayQL query against the provided bucket
+    /// </summary>
+    /// <param name="query">The ArrayQL query string</param>
+    /// <param name="bucket">The data source</param>
+    /// <returns>Query results as an enumerable collection</returns>
+    public IEnumerable<dynamic> Run(string query, IDynamicObjectBucket bucket)
+    {
+        // Get or compile the query
+        if (!_compiledQueries.TryGetValue(query, out var compiledQuery))
+        {
+            compiledQuery = CompileQuery(query);
+            _compiledQueries[query] = compiledQuery;
+        }
+
+        // Execute the query and process the result
+        var result = compiledQuery(bucket);
+
+        // Handle different return types
+        if (result is IEnumerable<dynamic> dynamicEnumerable)
+        {
+            return dynamicEnumerable;
+        }
+        if (result is IEnumerable<object> objectEnumerable)
+        {
+            return objectEnumerable;
+        }
+
+        // Convert single result to collection
+        return [result];
+    }
+
+    private Func<IDynamicObjectBucket, object> CompileQuery(string query)
+    {
+        // Validate the query for safety
+        ValidateQuery(query);
+
+        // Create code that will execute the query
+        string code = $@"
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
+using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
+
+namespace ArrayQl.Dynamic
+{{
+    public static class QueryExecutor
+    {{
+        public static object Execute(IDynamicObjectBucket bucket)
+        {{
+            var source = bucket.AsEnumerable();
+            return {query};
+        }}
+    }}
+}}";
+
+        // Compile the code
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        MetadataReference[] references =
+        [
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IEnumerable<>).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IDynamicObjectBucket).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(DynamicObjectBucket).Assembly.Location),
+            MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
+            MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location),
+            MetadataReference.CreateFromFile(Assembly.Load("System.Collections").Location),
+        ];
+
+        var compilation = CSharpCompilation.Create("ArrayQl.Dynamic")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddReferences(references)
+            .AddSyntaxTrees(syntaxTree);
+
+        using var ms = new MemoryStream();
+        var result = compilation.Emit(ms);
+
+        if (!result.Success)
+        {
+            var errors = result.Diagnostics
+                .Where(d => d.Severity == DiagnosticSeverity.Error)
+                .Select(d => d.GetMessage());
+            throw new InvalidOperationException(
+                $"Query compilation failed: {string.Join(Environment.NewLine, errors)}");
+        }
+
+        // Load the assembly and create a delegate
+        ms.Seek(0, SeekOrigin.Begin);
+        var assembly = Assembly.Load(ms.ToArray());
+        var type = assembly.GetType("ArrayQl.Dynamic.QueryExecutor");
+        var method = type!.GetMethod("Execute");
+
+        return bucket => method!.Invoke(null, [ bucket ])!;
+    }
+
+    private void ValidateQuery(string query)
+    {
+        // Parse the query into a syntax tree
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(query);
+        CompilationUnitSyntax root = syntaxTree.GetCompilationUnitRoot();
+
+        // Use a syntax visitor to check for unsafe operations
+        var visitor = new UnsafeOperationVisitor();
+        visitor.Visit(root);
+
+        if (visitor.HasUnsafeOperations)
+        {
+            throw new InvalidOperationException("The query contains unsafe operations");
+        }
+    }
+
+    /// <summary>
+    /// Syntax walker that checks for unsafe operations in the query
+    /// </summary>
+    private class UnsafeOperationVisitor : CSharpSyntaxWalker
+    {
+        private static readonly HashSet<string> AllowedMethods =
+        [
+            "Where", "Select", "GroupBy", "OrderBy", "OrderByDescending",
+            "ThenBy", "ThenByDescending", "Skip", "Take", "Count", "Sum",
+            "Min", "Max", "Average", "Any", "All", "First", "FirstOrDefault",
+            "Last", "LastOrDefault", "Single", "SingleOrDefault", "ToArray",
+            "ToList", "Distinct"
+        ];
+
+        public bool HasUnsafeOperations { get; private set; }
+
+        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+            // Check if method is allowed
+            if (node.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                string methodName = memberAccess.Name.Identifier.Text;
+                if (!AllowedMethods.Contains(methodName))
+                {
+                    HasUnsafeOperations = true;
+                }
+            }
+
+            base.VisitInvocationExpression(node);
+        }
+
+        public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
+        {
+            // Only allow anonymous objects
+            if (!node.Type.ToString().Equals("var") &&
+                !node.Type.ToString().Equals("anonymous") &&
+                !node.Type.ToString().StartsWith("AnonymousType"))
+            {
+                HasUnsafeOperations = true;
+            }
+
+            base.VisitObjectCreationExpression(node);
+        }
+
+        // Block other unsafe operations
+        public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
+        {
+            HasUnsafeOperations = true;
+            base.VisitMethodDeclaration(node);
+        }
+
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
+        {
+            HasUnsafeOperations = true;
+            base.VisitClassDeclaration(node);
+        }
+
+        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+        {
+            // Disallow assignments except in lambda expressions
+            if (!(node.Parent is LambdaExpressionSyntax))
+            {
+                HasUnsafeOperations = true;
+            }
+
+            base.VisitAssignmentExpression(node);
+        }
+    }
+}
+```
+
+现在问题时，如果我需要使用它，我不得不这么写：
+
+```csharp
+public void TestQuery()
+{
+    var typeDefine = new BucketItemTypeDefinition
+    {
+        Properties = new Dictionary<string, BucketItemPropertyType>
+        {
+            { "MyNumber1", BucketItemPropertyType.Int32 },
+            { "MyString1", BucketItemPropertyType.String },
+            { "MyNumber2", BucketItemPropertyType.Int32 },
+            { "MyBoolean1", BucketItemPropertyType.Boolean },
+            { "MyString2", BucketItemPropertyType.String },
+            { "MyFixedByteArray", BucketItemPropertyType.FixedSizeByteArray }
+        },
+        FixedByteArrayLengths = new Dictionary<string, int>
+        {
+            { "MyFixedByteArray", 30 }
+        }
+    };
+    var persistService = new DynamicObjectBucket(typeDefine, TestFilePath, TestFilePathStrings);
+
+    for (var i = 0; i < 100; i++)
+    {
+        persistService.Add(new BucketItem
+        {
+            Properties = new Dictionary<string, BucketItemPropertyValue>
+            {
+                {
+                    "MyNumber1",
+                    new BucketItemPropertyValue
+                    {
+                        Type = BucketItemPropertyType.Int32,
+                        Value = i
+                    }
+                },
+                {
+                    "MyString1",
+                    new BucketItemPropertyValue
+                    {
+                        Type = BucketItemPropertyType.String,
+                        Value = $"Hello, World! 你好世界 {i}"
+                    }
+                },
+                {
+                    "MyNumber2",
+                    new BucketItemPropertyValue
+                    {
+                        Type = BucketItemPropertyType.Int32,
+                        Value = i * 10
+                    }
+                },
+                {
+                    "MyBoolean1",
+                    new BucketItemPropertyValue
+                    {
+                        Type = BucketItemPropertyType.Boolean,
+                        Value = i % 2 == 0
+                    }
+                },
+                {
+                    "MyString2",
+                    new BucketItemPropertyValue
+                    {
+                        Type = BucketItemPropertyType.String,
+                        Value = $"This is another longer string. {i}"
+                    }
+                },
+                {
+                    "MyFixedByteArray",
+                    new BucketItemPropertyValue
+                    {
+                        Type = BucketItemPropertyType.FixedSizeByteArray,
+                        Value = Encoding.UTF8.GetBytes($"FixedByteArray {i}")
+                    }
+                }
+            }
+        });
+    }
+
+    // Create parser
+    var parser = new ArrayQlParser();
+
+    // Execute a query
+    var results = parser.Run("""
+                            source
+                            .Where(c => (int)c.Properties["MyNumber1"].Value % 2 == 0)
+                            """, persistService);
+
+    Assert.AreEqual(50, results.Count());
+
+    // Execute a query
+    var resultsCount = parser.Run("""
+                            source
+                            .Where(c => (int)c.Properties["MyNumber1"].Value % 2 == 0)
+                            .Count()
+                            """, persistService);
+
+    Assert.AreEqual(50, resultsCount.First() as int?);
+}
+```
+
+这语法太丑了。我非常想写出：
+
+```csharp
+source
+.Where(C => c.Value % 2 == 0)
+```
+
+请你告诉我代码怎么写，我会将它整合到我的代码中。我需要你的帮助。

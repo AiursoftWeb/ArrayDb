@@ -19,6 +19,7 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.8.3" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.ArrayQl\Aiursoft.ArrayDb.ArrayQl.csproj" />
     <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.Partitions\Aiursoft.ArrayDb.Partitions.csproj" />
     <ProjectReference Include="..\..\src\Aiursoft.ArrayDb.WriteBuffer.Dynamic\Aiursoft.ArrayDb.WriteBuffer.Dynamic.csproj" />
   </ItemGroup>
