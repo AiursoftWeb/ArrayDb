@@ -13,7 +13,6 @@ public abstract class ArrayDbTestBase
     [TestInitialize]
     public void Init()
     {
-        Monitor.Enter(LockObject);
         if (File.Exists(TestFilePath))
             File.Delete(TestFilePath);
         if (File.Exists(TestFilePathStrings))
@@ -27,6 +26,5 @@ public abstract class ArrayDbTestBase
             File.Delete(TestFilePath);
         if (File.Exists(TestFilePathStrings))
             File.Delete(TestFilePathStrings);
-        Monitor.Exit(LockObject);
     }
 }
