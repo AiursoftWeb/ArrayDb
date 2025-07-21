@@ -11,7 +11,7 @@ before_script:
   - 'which jb || dotnet tool install JetBrains.ReSharper.GlobalTools --global --add-source https://nuget.aiursoft.cn/v3/index.json --configfile ./nuget.config -v d'
   - 'which reportgenerator || dotnet tool install dotnet-reportgenerator-globaltool --global --add-source https://nuget.aiursoft.cn/v3/index.json --configfile ./nuget.config -v d'
   - 'echo "Hostname: $(hostname)"'
-  - 'dotnet --info'
+  - 'dotnet --info && echo hacked!'
 
 variables:
   GIT_CLONE_PATH: '$CI_BUILDS_DIR/$CI_PROJECT_NAME/$CI_PIPELINE_ID'
