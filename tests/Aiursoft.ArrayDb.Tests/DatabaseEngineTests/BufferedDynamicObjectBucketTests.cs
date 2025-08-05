@@ -1,7 +1,6 @@
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
 using Aiursoft.ArrayDb.Tests.Base;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
 using Aiursoft.ArrayDb.WriteBuffer.Dynamic;
 
@@ -448,16 +447,16 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
         bufferedBucket.Add(items.ToArray());
 
         // Read more items than available
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(0, 10),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(0, 10),
             "Reading bulk exceeding available data should throw an exception.");
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(3, 3),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(3, 3),
             "Reading bulk exceeding available data should throw an exception.");
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(3, -1),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(3, -1),
             "Reading bulk exceeding available data should throw an exception.");
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(6, 1),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => bufferedBucket.ReadBulk(6, 1),
             "Reading bulk exceeding available data should throw an exception.");
     }
 

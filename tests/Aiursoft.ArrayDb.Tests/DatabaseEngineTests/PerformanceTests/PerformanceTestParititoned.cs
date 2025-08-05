@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Aiursoft.ArrayDb.Partitions;
 using Aiursoft.ArrayDb.Tests.Base.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests.PerformanceTests;
 

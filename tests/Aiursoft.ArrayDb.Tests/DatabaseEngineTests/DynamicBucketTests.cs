@@ -3,7 +3,6 @@ using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 using Aiursoft.ArrayDb.ObjectBucket.Dynamic;
 using Aiursoft.ArrayDb.Tests.Base;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 

@@ -1,6 +1,5 @@
 using System.Text;
 using Aiursoft.ArrayDb.Tests.Base;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 

@@ -3,7 +3,6 @@ using Aiursoft.ArrayDb.Tests.Base;
 using Aiursoft.ArrayDb.Tests.Base.Models;
 using Aiursoft.ArrayDb.WriteBuffer;
 using Aiursoft.ArrayDb.WriteBuffer.Core;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 
@@ -97,7 +96,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
 
         Assert.IsTrue(buffer.IsHot, "Buffer should be hot after adding an item.");
         Assert.AreEqual(1, buffer.Count, "Buffer should contain one item.");
-        
+
         //Assert.AreEqual(1, persistService.SpaceProvisionedItemsCount, "Data should not be persisted immediately.");
 
         await buffer.SyncAsync();
@@ -236,10 +235,9 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void CalculateSleepTimeThrowsForInvalidThreshold()
     {
-        TimeExtensions.CalculateSleepTime(1000, -1, 5);
+        Assert.ThrowsExactly<ArgumentException>(() => TimeExtensions.CalculateSleepTime(1000, -1, 5));
     }
 
     [TestMethod]
@@ -524,7 +522,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         catch (ArgumentException)
         {
         }
-        
+
         // Read more items than available
         try
         {
@@ -534,7 +532,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         catch (ArgumentException)
         {
         }
-        
+
         try
         {
             buffer.ReadBulk(3, -1);
@@ -543,7 +541,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         catch (ArgumentException)
         {
         }
-        
+
         try
         {
             buffer.ReadBulk(6, 1);
@@ -602,7 +600,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         var bulkRead = buffer.ReadBulk(100, 10000);
         Assert.AreEqual(10000, bulkRead.Length, "Should return 10000 items starting from offset.");
         Assert.AreEqual("Item 100", bulkRead[0].MyString1, "First item should start at the correct offset.");
-        
+
         await buffer.SyncAsync();
     }
 }

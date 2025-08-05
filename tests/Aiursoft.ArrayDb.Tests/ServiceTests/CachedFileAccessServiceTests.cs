@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Aiursoft.ArrayDb.ReadLruCache;
 using Aiursoft.ArrayDb.Tests.Base;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.ArrayDb.Tests.ServiceTests;
 
