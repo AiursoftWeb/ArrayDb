@@ -103,7 +103,7 @@ public class PartitionedObjectBucketsTests
             Assert.AreEqual("5", result.PartitionId, "PartitionId should be '5'.");
             Assert.AreEqual("5", (result.Id % 10).ToString(), "PartitionId should match calculated partition key.");
         }
-        
+
         var resultsR = partitionedService2.AsReverseEnumerable("5", bufferedReadPageSize: 13);
         var resultsArrayR = resultsR.ToArray();
         Assert.AreEqual(20, resultsArrayR.Length, "Partition '5' should contain 20 items.");
@@ -113,7 +113,7 @@ public class PartitionedObjectBucketsTests
             Assert.AreEqual("5", (result.Id % 10).ToString(), "PartitionId should match calculated partition key.");
         }
     }
-    
+
     [TestMethod]
     public async Task TestAsReverseEnumerablePartitioned()
     {
@@ -132,10 +132,10 @@ public class PartitionedObjectBucketsTests
 
         var partitionedService2 = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
         var results = partitionedService2.AsReverseEnumerable("2333", bufferedReadPageSize: 2);
-        
+
         // results should be: 5, 4, 3, 2, 1, 0
         var resultsArray = results.ToArray();
-        
+
         Assert.AreEqual(5, resultsArray.Length, "Partition should contain 5 items.");
         Assert.AreEqual(5, resultsArray[0].Id, "First item should be 49.");
         Assert.AreEqual(4, resultsArray[1].Id, "Second item should be 48.");
@@ -168,7 +168,7 @@ public class PartitionedObjectBucketsTests
             Assert.AreEqual(5, result.PartitionId, "PartitionId should be 5.");
             Assert.AreEqual(5, result.Id % 10, "Id modulo 10 should equal PartitionId.");
         }
-        
+
         var resultsR = partitionedService2.AsReverseEnumerable(5).ToArray();
         Assert.AreEqual(10, resultsR.Length, "Partition '5' should contain 10 items.");
         foreach (var result in resultsR)
@@ -221,12 +221,12 @@ public class PartitionedObjectBucketsTests
         Assert.AreEqual(5, partitionedService2.PartitionsCount, "There should be 5 partitions after syncing.");
         Assert.AreEqual(50, partitionedService2.Count(), "Total item count should be 50.");
     }
-    
+
     [TestMethod]
     public void TestReadNonExistentPartition()
     {
         var partitionedService = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             _ = partitionedService.Read("nonexistent", 0);
         }, "Attempting to read from a non-existent partition should throw an exception.");
@@ -252,7 +252,7 @@ public class PartitionedObjectBucketsTests
     public async Task TestDeleteNonExistentPartition()
     {
         var partitionedService = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
         {
             await partitionedService.DeletePartitionAsync("nonexistent");
         }, "Attempting to delete a non-existent partition should throw an InvalidOperationException.");
