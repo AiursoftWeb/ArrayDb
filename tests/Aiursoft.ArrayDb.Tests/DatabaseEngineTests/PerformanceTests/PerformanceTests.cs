@@ -33,7 +33,7 @@ public class PerformanceTests : ArrayDbTestBase
         stopWatch.Stop();
         Console.WriteLine($"Write 100000 time: {stopWatch.ElapsedMilliseconds}ms");
         Console.WriteLine(persistService.OutputStatistics());
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
+        Assert.IsLessThan(20 * 1000, stopWatch.ElapsedMilliseconds);
     }
 
     [TestMethod]
@@ -62,7 +62,7 @@ public class PerformanceTests : ArrayDbTestBase
         persistService.Add(samplesArray);
         stopWatch.Stop();
         Console.WriteLine($"Write 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 30);
+        Assert.IsLessThan(30, stopWatch.Elapsed.TotalSeconds);
     }
     
     [TestMethod]
@@ -94,7 +94,7 @@ public class PerformanceTests : ArrayDbTestBase
         stopWatch.Stop();
         Console.WriteLine($"Read 1000000 times: {stopWatch.ElapsedMilliseconds}ms");
         Console.WriteLine(persistService2.OutputStatistics());
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
+        Assert.IsLessThan(20 * 1000, stopWatch.ElapsedMilliseconds);
         
         for (var i = 0; i < 1000000; i++)
         {
@@ -145,7 +145,7 @@ public class PerformanceTests : ArrayDbTestBase
 
         Console.WriteLine($"Read 100000 times: {stopWatch.ElapsedMilliseconds}ms");
         Console.WriteLine(persistService.OutputStatistics());
-        Assert.IsTrue(stopWatch.ElapsedMilliseconds < 20 * 1000);
+        Assert.IsLessThan(20 * 1000, stopWatch.ElapsedMilliseconds);
     }
     
     [TestMethod]

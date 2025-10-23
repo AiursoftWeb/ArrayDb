@@ -35,7 +35,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         Console.WriteLine(buffer.OutputStatistics());
         Console.WriteLine($"Write 100 * 100 * 100 times: {stopWatch.ElapsedMilliseconds}ms");
         // Read 100 0000 times in less than 10 seconds. On my machine 345ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 10);
+        Assert.IsLessThan(10, stopWatch.Elapsed.TotalSeconds);
         Assert.IsTrue(buffer.IsHot);
 
         stopWatch.Reset();
@@ -45,7 +45,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
         // Sync 100 0000 times in less than 30 seconds. On my machine 119ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 30);
+        Assert.IsLessThan(30, stopWatch.Elapsed.TotalSeconds);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
         Assert.IsTrue(buffer.IsCold);
         Assert.AreEqual(100 * 100 * 100, bucket.SpaceProvisionedItemsCount);
@@ -79,7 +79,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
         stopWatch.Stop();
         Console.WriteLine($"Write 100 * 100 * 100 times: {stopWatch.ElapsedMilliseconds}ms");
         // Read 100 0000 times in less than 10 seconds. On my machine 597ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 50);
+        Assert.IsLessThan(50, stopWatch.Elapsed.TotalSeconds);
         Assert.IsTrue(buffer.IsHot);
         
         Console.WriteLine(buffer.OutputStatistics());
@@ -91,7 +91,7 @@ public class PerformanceTestBuffered : ArrayDbTestBase
 
         Console.WriteLine($"Sync buffer: {stopWatch.ElapsedMilliseconds}ms");
         // Sync 1000 0000 times in less than 10 seconds. On my machine 119ms.
-        Assert.IsTrue(stopWatch.Elapsed.TotalSeconds < 100 * 100 * 100);
+        Assert.IsLessThan(100 * 100 * 100, stopWatch.Elapsed.TotalSeconds);
         Assert.AreEqual(0, buffer.BufferedItemsCount);
         Assert.IsTrue(buffer.IsCold);
         Assert.AreEqual(1000000, bucket.SpaceProvisionedItemsCount);

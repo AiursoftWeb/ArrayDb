@@ -4,6 +4,8 @@ using Aiursoft.ArrayDb.Tests.Base;
 using System.Text;
 using Aiursoft.ArrayDb.WriteBuffer.Dynamic;
 
+[assembly: DoNotParallelize]
+
 namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 
 [TestClass]
@@ -394,7 +396,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Read bulk data directly from the buffer before persistence
         var bulkRead = bufferedBucket.ReadBulk(0, 10);
-        Assert.AreEqual(10, bulkRead.Length, "Should return 10 items from buffer.");
+        Assert.HasCount(10, bulkRead, "Should return 10 items from buffer.");
         Assert.AreEqual(1, bulkRead[0].Properties["MyNumber1"].Value,
             "First item should match the expected value from the buffer.");
     }
@@ -425,7 +427,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Read bulk that spans both persisted and buffered data
         var bulkRead = bufferedBucket.ReadBulk(40, 20);
-        Assert.AreEqual(20, bulkRead.Length, "Should return 20 items spanning persisted and buffered data.");
+        Assert.HasCount(20, bulkRead, "Should return 20 items spanning persisted and buffered data.");
         Assert.AreEqual(41, bulkRead[0].Properties["MyNumber1"].Value,
             "First item should be from persisted data.");
         Assert.AreEqual(51, bulkRead[10].Properties["MyNumber1"].Value, "11th item should be from buffered data.");
@@ -478,7 +480,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Read bulk from persisted data
         var bulkRead = bufferedBucket.ReadBulk(0, 20);
-        Assert.AreEqual(20, bulkRead.Length, "Should return 20 items from persisted storage.");
+        Assert.HasCount(20, bulkRead, "Should return 20 items from persisted storage.");
         Assert.AreEqual(1, bulkRead[0].Properties["MyNumber1"].Value, "First item should match the expected value.");
         Assert.AreEqual(20, bulkRead[19].Properties["MyNumber1"].Value, "Last item should match the expected value.");
     }
@@ -500,7 +502,7 @@ public class BufferedDynamicObjectBucketTests : ArrayDbTestBase
 
         // Read bulk with an offset
         var bulkRead = bufferedBucket.ReadBulk(100, 10000);
-        Assert.AreEqual(10000, bulkRead.Length, "Should return 10000 items starting from offset.");
+        Assert.HasCount(10000, bulkRead, "Should return 10000 items starting from offset.");
         Assert.AreEqual(100, bulkRead[0].Properties["MyNumber1"].Value, "First item should start at the correct offset.");
 
         await bufferedBucket.SyncAsync();
