@@ -38,7 +38,7 @@ public class PerformanceTestParititoned
         
         var results = partitionedService.ReadAll();
         Assert.AreEqual(10, partitionedService.PartitionsCount);
-        Assert.AreEqual(100 * 100 * 100, results.Length);
+        Assert.HasCount(100 * 100 * 100, results);
         foreach (var result in results)
         {
             Assert.AreEqual(result.PartitionId, result.ThreadId);

@@ -372,11 +372,11 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
         // Wait briefly to allow some data to persist
         for (var i = 0; i < 250; i++)
         {
-            Assert.AreEqual(buffer.Count, 50000, "No matter how much data is persisted, buffer should contain all items.");
+            Assert.AreEqual(50000, buffer.Count, "No matter how much data is persisted, buffer should contain all items.");
             await Task.Delay(10); // Adjust time based on your buffer persistence settings
         }
-        Assert.IsTrue(buffer.BufferedItemsCount < 50000, "Some data should have been persisted.");
-        Assert.IsTrue(persistService.Count > 0, "Some data should be in the underlying storage.");
+        Assert.IsLessThan(50000, buffer.BufferedItemsCount, "Some data should have been persisted.");
+        Assert.IsGreaterThan(0, persistService.Count, "Some data should be in the underlying storage.");
     }
 
     [TestMethod]
@@ -454,7 +454,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
 
         // Read bulk data directly from the buffer before persistence
         var bulkRead = buffer.ReadBulk(0, 10);
-        Assert.AreEqual(10, bulkRead.Length, "Should return 10 items from buffer.");
+        Assert.HasCount(10, bulkRead, "Should return 10 items from buffer.");
         Assert.AreEqual("Buffered Item 1", bulkRead[0].MyString1,
             "First item should match the expected value from the buffer.");
     }
@@ -489,7 +489,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
 
         // Read bulk that spans both persisted and buffered data
         var bulkRead = buffer.ReadBulk(40, 20);
-        Assert.AreEqual(20, bulkRead.Length, "Should return 20 items spanning persisted and buffered data.");
+        Assert.HasCount(20, bulkRead, "Should return 20 items spanning persisted and buffered data.");
         Assert.AreEqual("Persisted Item 41", bulkRead[0].MyString1,
             "First item should be from persisted data.");
         Assert.AreEqual("Buffered Item 51", bulkRead[10].MyString1, "11th item should be from buffered data.");
@@ -573,7 +573,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
 
         // Read bulk from persisted data
         var bulkRead = buffer.ReadBulk(0, 20);
-        Assert.AreEqual(20, bulkRead.Length, "Should return 20 items from persisted storage.");
+        Assert.HasCount(20, bulkRead, "Should return 20 items from persisted storage.");
         Assert.AreEqual("Item 1", bulkRead[0].MyString1, "First item should match the expected value.");
         Assert.AreEqual("Item 20", bulkRead[19].MyString1, "Last item should match the expected value.");
     }
@@ -598,7 +598,7 @@ public class BufferedObjectBucketsTests : ArrayDbTestBase
 
         // Read bulk with an offset
         var bulkRead = buffer.ReadBulk(100, 10000);
-        Assert.AreEqual(10000, bulkRead.Length, "Should return 10000 items starting from offset.");
+        Assert.HasCount(10000, bulkRead, "Should return 10000 items starting from offset.");
         Assert.AreEqual("Item 100", bulkRead[0].MyString1, "First item should start at the correct offset.");
 
         await buffer.SyncAsync();

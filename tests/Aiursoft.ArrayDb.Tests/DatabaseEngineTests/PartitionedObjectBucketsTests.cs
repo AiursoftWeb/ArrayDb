@@ -47,7 +47,7 @@ public class PartitionedObjectBucketsTests
         var partitionedService2 = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
         var results = partitionedService2.ReadAll();
         Assert.AreEqual(10, partitionedService2.PartitionsCount, "There should be 10 partitions.");
-        Assert.AreEqual(100, results.Length, "There should be 100 total results.");
+        Assert.HasCount(100, results, "There should be 100 total results.");
         foreach (var result in results)
         {
             Assert.AreEqual(result.PartitionId, result.ThreadId, $"PartitionId should match ThreadId for result with Id {result.Id}.");
@@ -97,7 +97,7 @@ public class PartitionedObjectBucketsTests
         var partitionedService2 = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
         var results = partitionedService2.AsEnumerable("5", bufferedReadPageSize: 13);
         var resultsArray = results.ToArray();
-        Assert.AreEqual(20, resultsArray.Length, "Partition '5' should contain 20 items.");
+        Assert.HasCount(20, resultsArray, "Partition '5' should contain 20 items.");
         foreach (var result in resultsArray)
         {
             Assert.AreEqual("5", result.PartitionId, "PartitionId should be '5'.");
@@ -106,7 +106,7 @@ public class PartitionedObjectBucketsTests
 
         var resultsR = partitionedService2.AsReverseEnumerable("5", bufferedReadPageSize: 13);
         var resultsArrayR = resultsR.ToArray();
-        Assert.AreEqual(20, resultsArrayR.Length, "Partition '5' should contain 20 items.");
+        Assert.HasCount(20, resultsArrayR, "Partition '5' should contain 20 items.");
         foreach (var result in resultsArrayR)
         {
             Assert.AreEqual("5", result.PartitionId, "PartitionId should be '5'.");
@@ -136,7 +136,7 @@ public class PartitionedObjectBucketsTests
         // results should be: 5, 4, 3, 2, 1, 0
         var resultsArray = results.ToArray();
 
-        Assert.AreEqual(5, resultsArray.Length, "Partition should contain 5 items.");
+        Assert.HasCount(5, resultsArray, "Partition should contain 5 items.");
         Assert.AreEqual(5, resultsArray[0].Id, "First item should be 49.");
         Assert.AreEqual(4, resultsArray[1].Id, "Second item should be 48.");
         Assert.AreEqual(3, resultsArray[2].Id, "Third item should be 47.");
@@ -162,7 +162,7 @@ public class PartitionedObjectBucketsTests
 
         var partitionedService2 = new PartitionedObjectBucket<DataWithDefaultPartition, int>("my-db2", _testPath);
         var results = partitionedService2.AsEnumerable(5).ToArray();
-        Assert.AreEqual(10, results.Length, "Partition '5' should contain 10 items.");
+        Assert.HasCount(10, results, "Partition '5' should contain 10 items.");
         foreach (var result in results)
         {
             Assert.AreEqual(5, result.PartitionId, "PartitionId should be 5.");
@@ -170,7 +170,7 @@ public class PartitionedObjectBucketsTests
         }
 
         var resultsR = partitionedService2.AsReverseEnumerable(5).ToArray();
-        Assert.AreEqual(10, resultsR.Length, "Partition '5' should contain 10 items.");
+        Assert.HasCount(10, resultsR, "Partition '5' should contain 10 items.");
         foreach (var result in resultsR)
         {
             Assert.AreEqual(5, result.PartitionId, "PartitionId should be 5.");
@@ -198,7 +198,7 @@ public class PartitionedObjectBucketsTests
         var partitionedService2 = new PartitionedObjectBucket<DataCanBePartitionedByString, string>("my-db2", _testPath);
         var results = partitionedService2.ReadAll();
         Assert.AreEqual(9, partitionedService2.PartitionsCount, "There should be 9 partitions after deleting one.");
-        Assert.AreEqual(90, results.Length, "There should be 90 items after deleting the partition.");
+        Assert.HasCount(90, results, "There should be 90 items after deleting the partition.");
     }
 
     [TestMethod]
@@ -310,7 +310,7 @@ public class PartitionedObjectBucketsTests
         await partitionedService.SyncAsync();
 
         var results = partitionedService.ReadBulk("partition1", 0, 5);
-        Assert.AreEqual(5, results.Length, "Should read 5 items.");
+        Assert.HasCount(5, results, "Should read 5 items.");
 
         try
         {

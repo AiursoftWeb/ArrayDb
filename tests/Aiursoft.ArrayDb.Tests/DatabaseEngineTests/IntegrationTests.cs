@@ -409,7 +409,7 @@ public class IntegrationTests : ArrayDbTestBase
         var resultsArray = results.ToArray();
 
         // Verify the number of results
-        Assert.AreEqual(200, resultsArray.Length, "The number of results should match the number of inserted samples.");
+        Assert.HasCount(200, resultsArray, "The number of results should match the number of inserted samples.");
 
         // Verify each item matches the expected data
         for (var i = 0; i < 200; i++)
