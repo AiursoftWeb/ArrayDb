@@ -1,10 +1,10 @@
 # Aiursoft ArrayDb
 
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://gitlab.aiursoft.cn/aiursoft/arraydb/-/blob/master/LICENSE)
-[![Pipeline stat](https://gitlab.aiursoft.cn/aiursoft/arraydb/badges/master/pipeline.svg)](https://gitlab.aiursoft.cn/aiursoft/arraydb/-/pipelines)
-[![Test Coverage](https://gitlab.aiursoft.cn/aiursoft/arraydb/badges/master/coverage.svg)](https://gitlab.aiursoft.cn/aiursoft/arraydb/-/pipelines)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://gitlab.aiursoft.com/aiursoft/arraydb/-/blob/master/LICENSE)
+[![Pipeline stat](https://gitlab.aiursoft.com/aiursoft/arraydb/badges/master/pipeline.svg)](https://gitlab.aiursoft.com/aiursoft/arraydb/-/pipelines)
+[![Test Coverage](https://gitlab.aiursoft.com/aiursoft/arraydb/badges/master/coverage.svg)](https://gitlab.aiursoft.com/aiursoft/arraydb/-/pipelines)
 [![NuGet version](https://img.shields.io/nuget/v/Aiursoft.ArrayDb.Partitions.svg?style=flat-square)](https://www.nuget.org/packages/Aiursoft.ArrayDb.Partitions/)
-[![ManHours](https://manhours.aiursoft.cn/r/gitlab.aiursoft.cn/aiursoft/arraydb.svg)](https://gitlab.aiursoft.cn/aiursoft/arraydb/-/commits/master?ref_type=heads)
+[![ManHours](https://manhours.aiursoft.cn/r/gitlab.aiursoft.com/aiursoft/arraydb.svg)](https://gitlab.aiursoft.com/aiursoft/arraydb/-/commits/master?ref_type=heads)
 
 Aiursoft ArrayDb is a lightweight, efficient database engine optimized for storing fixed-length data with constant-time indexing performance (O(1)). ArrayDb is ideal for scenarios where fast, reliable storage and access to time-sequenced or resource-utilization data are essential, making it a strong choice for logging, telemetry, and performance tracking use cases.
 
