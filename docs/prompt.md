@@ -6,7 +6,7 @@ ArrayDb 是一个数据库。但是，很遗憾的是，不同于 MySQL 它是�
 
 ## How to use ArrayDb
 
-Before starting, you need to install [.NET 9 SDK](https://dot.net) on your machine.
+Before starting, you need to install [.NET 10 SDK](https://dot.net) on your machine.
 
 Unlike MySQL, working as a process, ArrayDb works as a library. You can use ArrayDb in your C# project by adding the `ArrayDb` NuGet package to your project.
 
