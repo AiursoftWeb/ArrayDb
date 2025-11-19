@@ -13,6 +13,6 @@
     <ProjectReference Include="..\Aiursoft.ArrayDb.ObjectBucket.Dynamic\Aiursoft.ArrayDb.ObjectBucket.Dynamic.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
   </ItemGroup>
 </Project>
