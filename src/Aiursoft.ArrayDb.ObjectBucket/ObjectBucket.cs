@@ -17,6 +17,9 @@ public class ObjectBucket<[DynamicallyAccessedMembers(DynamicallyAccessedMemberT
 {
     private readonly DynamicObjectBucket _dynamicBucket;
 
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+    private static readonly PropertyInfo[] _persistedProperties = typeof(T).GetPropertiesShouldPersistOnDisk();
+
     public int Count => _dynamicBucket.Count;
     public int SpaceProvisionedItemsCount => _dynamicBucket.SpaceProvisionedItemsCount;
     public int ArchivedItemsCount => _dynamicBucket.ArchivedItemsCount;
@@ -159,7 +162,7 @@ public class ObjectBucket<[DynamicallyAccessedMembers(DynamicallyAccessedMemberT
     private BucketItem ConvertToBucketItem(T obj)
     {
         var bucketItem = new BucketItem();
-        foreach (var prop in typeof(T).GetPropertiesShouldPersistOnDisk())
+        foreach (var prop in _persistedProperties)
         {
             var value = prop.GetValue(obj);
             BucketItemPropertyType propertyType;
@@ -221,7 +224,7 @@ public class ObjectBucket<[DynamicallyAccessedMembers(DynamicallyAccessedMemberT
     private T ConvertToT(BucketItem bucketItem)
     {
         var obj = new T();
-        foreach (var prop in typeof(T).GetPropertiesShouldPersistOnDisk())
+        foreach (var prop in _persistedProperties)
         {
             if (bucketItem.Properties.TryGetValue(prop.Name, out var property))
             {

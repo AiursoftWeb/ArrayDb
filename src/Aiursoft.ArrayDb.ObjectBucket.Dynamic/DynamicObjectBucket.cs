@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Interfaces;
@@ -26,6 +27,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
     public int ReadBulkCount;
 
     private readonly BucketItemTypeDefinition _itemTypeDefinition;
+    private readonly int _itemSize;
 
     public DynamicObjectBucket(
         BucketItemTypeDefinition itemTypeDefinition,
@@ -56,6 +58,8 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         {
             throw new Exception($"The space provisioned items count and archived items count are not equal. The file may be corrupted. Is the process crashed in the middle of writing? (SpaceProvisionedItemsCount: {SpaceProvisionedItemsCount}, ArchivedItemsCount: {ArchivedItemsCount})");
         }
+
+        _itemSize = GetItemSize();
     }
 
     private (int provisioned, int archived) GetItemsCount()
@@ -98,7 +102,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         }
     }
 
-    private int GetItemSize()
+    public int GetItemSize()
     {
         var size = 0;
         foreach (var prop in _itemTypeDefinition.Properties)
@@ -257,11 +261,8 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     offset += sizeof(long);
                     break;
                 case BucketItemPropertyType.Guid:
-                    var guidBytes = propertyValue != null ? ((Guid)propertyValue).ToByteArray() : new byte[16];
-                    for (var i = 0; i < 16; i++)
-                    {
-                        buffer[offset + i] = guidBytes[i];
-                    }
+                    var guid = propertyValue != null ? (Guid)propertyValue : Guid.Empty;
+                    MemoryMarshal.Write(buffer.AsSpan(offset, 16), in guid);
                     offset += 16;
                     break;
                 case BucketItemPropertyType.FixedSizeByteArray:
@@ -375,14 +376,10 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     offset += sizeof(long);
                     break;
                 case BucketItemPropertyType.Guid:
-                    var guidBytes = new byte[16];
-                    for (var i = 0; i < 16; i++)
-                    {
-                        guidBytes[i] = buffer[offset + i];
-                    }
+                    var guidValue = MemoryMarshal.Read<Guid>(new ReadOnlySpan<byte>(buffer, offset, 16));
                     obj.Properties[propertyName] = new BucketItemPropertyValue
                     {
-                        Value = new Guid(guidBytes),
+                        Value = guidValue,
                         Type = propertyType
                     };
                     offset += 16;
@@ -409,9 +406,29 @@ public class DynamicObjectBucket : IDynamicObjectBucket
             }
         }
 
-        // Now load the strings
-        foreach (var strInfo in stringsToLoad)
+        // Now load the strings. Use parallel loading when multiple strings need fetching
+        // to exploit concurrent cache reads across different cache pages.
+        if (stringsToLoad.Count > 1)
         {
+            var loadedStrings = new string[stringsToLoad.Count];
+            Parallel.For(0, stringsToLoad.Count, i =>
+            {
+                loadedStrings[i] = StringRepository.LoadStringContent(
+                    stringsToLoad[i].Offset,
+                    stringsToLoad[i].Length);
+            });
+            for (var i = 0; i < stringsToLoad.Count; i++)
+            {
+                obj.Properties[stringsToLoad[i].PropertyName] = new BucketItemPropertyValue
+                {
+                    Value = loadedStrings[i],
+                    Type = BucketItemPropertyType.String
+                };
+            }
+        }
+        else if (stringsToLoad.Count == 1)
+        {
+            var strInfo = stringsToLoad[0];
             var str = StringRepository.LoadStringContent(strInfo.Offset, strInfo.Length);
             obj.Properties[strInfo.PropertyName] = new BucketItemPropertyValue
             {
@@ -432,17 +449,26 @@ public class DynamicObjectBucket : IDynamicObjectBucket
         var objWithStrings = SaveObjectStrings(objs);
 
         // Allocate buffer for the objects.
-        var sizeOfObject = GetItemSize();
-        var buffer = new byte[sizeOfObject * objs.Length];
+        var buffer = new byte[_itemSize * objs.Length];
 
-        // Serialize objects in parallel.
-        Parallel.For(0, objs.Length, i =>
+        // Serialize objects.
+        if (objs.Length >= Consts.Consts.ParallelSerializeThreshold)
+            Parallel.For(0, objs.Length, i => SerializeBytes(objWithStrings[i], buffer, _itemSize * i));
+        else
         {
-            SerializeBytes(objWithStrings[i], buffer, sizeOfObject * i);
-        });
+            try
+            {
+                for (var i = 0; i < objs.Length; i++)
+                    SerializeBytes(objWithStrings[i], buffer, _itemSize * i);
+            }
+            catch (Exception ex)
+            {
+                throw new AggregateException(ex);
+            }
+        }
 
         // Write binary data to disk.
-        StructureFileAccess.WriteInFile(sizeOfObject * indexToWrite + CountMarkerSize, buffer);
+        StructureFileAccess.WriteInFile(_itemSize * indexToWrite + CountMarkerSize, buffer);
         
         // Update statistics.
         Interlocked.Increment(ref BulkAppendCount);
@@ -458,8 +484,7 @@ public class DynamicObjectBucket : IDynamicObjectBucket
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        var sizeOfObject = GetItemSize();
-        var data = StructureFileAccess.ReadInFile(sizeOfObject * index + CountMarkerSize, sizeOfObject);
+        var data = StructureFileAccess.ReadInFile(_itemSize * index + CountMarkerSize, _itemSize);
         Interlocked.Increment(ref ReadCount);
         return DeserializeBytes(data);
     }
@@ -476,14 +501,22 @@ public class DynamicObjectBucket : IDynamicObjectBucket
             return [];
         }
 
-        var sizeOfObject = GetItemSize();
-        // Load binary data from disk and deserialize them in parallel.
-        var data = StructureFileAccess.ReadInFile(sizeOfObject * indexFrom + CountMarkerSize, sizeOfObject * take);
+        // Load binary data from disk and deserialize them.
+        var data = StructureFileAccess.ReadInFile(_itemSize * indexFrom + CountMarkerSize, _itemSize * take);
         var result = new BucketItem[take];
-        Parallel.For(0, take, i =>
+        if (take >= Consts.Consts.ParallelSerializeThreshold)
+            Parallel.For(0, take, i => result[i] = DeserializeBytes(data, _itemSize * i));
+        else
         {
-            result[i] = DeserializeBytes(data, sizeOfObject * i);
-        });
+            try
+            {
+                for (var i = 0; i < take; i++) result[i] = DeserializeBytes(data, _itemSize * i);
+            }
+            catch (Exception ex)
+            {
+                throw new AggregateException(ex);
+            }
+        }
         Interlocked.Increment(ref ReadBulkCount);
         return result;
     }
@@ -507,7 +540,7 @@ Object repository with dynamic item type statistics:
 
 * Space provisioned items count: {spaceProvisionedItemsCount}
 * Archived items count: {ArchivedItemsCount}
-* Consumed actual storage space: {GetItemSize() * spaceProvisionedItemsCount} bytes
+* Consumed actual storage space: {_itemSize * spaceProvisionedItemsCount} bytes
 * Single append events count: {SingleAppendCount}
 * Bulk   append events count: {BulkAppendCount}
 * Read      events count: {ReadCount}

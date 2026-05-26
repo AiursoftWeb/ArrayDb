@@ -90,4 +90,11 @@ public static class Consts
     /// </summary>
     public const int AsEnumerablePageSize = 0x80;
 
+    /// <summary>
+    /// The minimum number of items required to trigger parallel serialization/deserialization.
+    /// Below this threshold, a sequential for loop is used to avoid ThreadPool scheduling overhead.
+    /// Default is 8.
+    /// </summary>
+    public const int ParallelSerializeThreshold = 8;
+
 }

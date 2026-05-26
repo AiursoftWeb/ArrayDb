@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Aiursoft.ArrayDb.Consts;
@@ -99,21 +100,34 @@ Underlying cached file access service statistics:
     /// <returns>An array of SavedString objects containing the offsets and lengths of each processed string in the file.</returns>
     public PersistedString[] BulkWriteStringContentAndGetOffsets(byte[][] processedStrings) // Multi-thread safe
     {
-        var allBytes = processedStrings.SelectMany(x => x).ToArray();
-        var writeOffset = RequestWriteSpaceAndGetStartOffset(allBytes.Length);
-        _fileAccess.WriteInFile(writeOffset, allBytes);
-        var offset = writeOffset;
-        var result = new PersistedString[processedStrings.Length];
-        var index = 0;
-        foreach (var processedString in processedStrings)
+        var totalLength = processedStrings.Sum(s => s.Length);
+        var rentedBuffer = ArrayPool<byte>.Shared.Rent(totalLength);
+        try
         {
-            result[index] = new PersistedString { Offset = offset, Length = processedString.Length };
-            offset += processedString.Length;
-            index++;
-        }
+            var pos = 0;
+            foreach (var s in processedStrings)
+            {
+                s.CopyTo(rentedBuffer, pos);
+                pos += s.Length;
+            }
 
-        Interlocked.Increment(ref BulkWriteStringsCount);
-        return result;
+            var writeOffset = RequestWriteSpaceAndGetStartOffset(totalLength);
+            _fileAccess.WriteInFile(writeOffset, rentedBuffer.AsSpan(0, totalLength));
+            var offset = writeOffset;
+            var result = new PersistedString[processedStrings.Length];
+            for (var index = 0; index < processedStrings.Length; index++)
+            {
+                result[index] = new PersistedString { Offset = offset, Length = processedStrings[index].Length };
+                offset += processedStrings[index].Length;
+            }
+
+            Interlocked.Increment(ref BulkWriteStringsCount);
+            return result;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rentedBuffer);
+        }
     }
 
     /// <summary>

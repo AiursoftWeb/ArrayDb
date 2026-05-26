@@ -1,4 +1,5 @@
-﻿using System.Dynamic;
+﻿using System.Collections.Concurrent;
+using System.Dynamic;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -13,7 +14,7 @@ namespace Aiursoft.ArrayDb.ArrayQl;
 public class ArrayQlParser
 {
     // Cache compiled queries for better performance
-    private readonly Dictionary<string, Func<IDynamicObjectBucket, object>> _compiledQueries = new();
+    private readonly ConcurrentDictionary<string, Func<IDynamicObjectBucket, object>> _compiledQueries = new();
 
     /// <summary>
     /// Executes an ArrayQL query against the provided bucket
@@ -23,12 +24,7 @@ public class ArrayQlParser
     /// <returns>Query results as an enumerable collection</returns>
     public IEnumerable<dynamic> Run(string query, IDynamicObjectBucket bucket)
     {
-        // Get or compile the query
-        if (!_compiledQueries.TryGetValue(query, out var compiledQuery))
-        {
-            compiledQuery = CompileQuery(query);
-            _compiledQueries[query] = compiledQuery;
-        }
+        var compiledQuery = _compiledQueries.GetOrAdd(query, CompileQuery);
 
         // Execute the query and process the result
         var result = compiledQuery(bucket);

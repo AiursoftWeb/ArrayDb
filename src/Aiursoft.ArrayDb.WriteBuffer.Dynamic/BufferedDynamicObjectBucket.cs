@@ -131,18 +131,20 @@ public class BufferedDynamicObjectBucket(
         _bufferLock.EnterReadLock();
         try
         {
-            if (index < innerBucket.Count)
+            var innerCount = innerBucket.Count;
+            if (index < innerCount)
             {
                 return innerBucket.Read(index);
             }
-            else if (index < innerBucket.Count + _activeBuffer.Count)
+
+            var bufferSnapshot = _activeBuffer.ToArray();
+            var bufferIndex = index - innerCount;
+            if (bufferIndex < bufferSnapshot.Length)
             {
-                return _activeBuffer.ElementAt(index - innerBucket.Count);
+                return bufferSnapshot[bufferIndex];
             }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
+
+            throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
         }
         finally
         {

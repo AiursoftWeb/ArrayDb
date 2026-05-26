@@ -71,4 +71,117 @@ public class StringRepositoryTests : ArrayDbTestBase
         // Cleanup temporary file after test
         File.Delete(tempFilePath);
     }
+
+    [TestMethod]
+    public void BulkWriteAndReadSingleStringShouldBeCorrect()
+    {
+        var tempFilePath = TestFilePathStrings;
+
+        var stringRepository = new StringRepository.ObjectStorage.StringRepository(
+            stringFilePath: tempFilePath,
+            initialUnderlyingFileSizeIfNotExists: 0x10000,
+            cachePageSize: 1024,
+            maxCachedPagesCount: 100,
+            hotCacheItems: 10);
+
+        var input = new[] { "Hello, ArrayDb!"u8.ToArray() };
+        var offsets = stringRepository.BulkWriteStringContentAndGetOffsets(input);
+
+        Assert.AreEqual(1, offsets.Length);
+        Assert.AreEqual(input[0].Length, offsets[0].Length);
+
+        var loaded = stringRepository.LoadStringContent(offsets[0].Offset, offsets[0].Length);
+        Assert.AreEqual("Hello, ArrayDb!", loaded);
+
+        File.Delete(tempFilePath);
+    }
+
+    [TestMethod]
+    public void BulkWriteMultipleStringsShouldWriteAndReadCorrectly()
+    {
+        var tempFilePath = TestFilePathStrings;
+
+        var stringRepository = new StringRepository.ObjectStorage.StringRepository(
+            stringFilePath: tempFilePath,
+            initialUnderlyingFileSizeIfNotExists: 0x10000,
+            cachePageSize: 1024,
+            maxCachedPagesCount: 100,
+            hotCacheItems: 10);
+
+        var inputs = new[]
+        {
+            "Hello"u8.ToArray(),
+            "World"u8.ToArray(),
+            "This is a longer string for testing purposes"u8.ToArray(),
+            "Short"u8.ToArray(),
+            ""u8.ToArray()
+        };
+
+        var offsets = stringRepository.BulkWriteStringContentAndGetOffsets(inputs);
+
+        Assert.AreEqual(inputs.Length, offsets.Length);
+
+        for (var i = 0; i < inputs.Length; i++)
+        {
+            Assert.AreEqual(inputs[i].Length, offsets[i].Length);
+            var loaded = stringRepository.LoadStringContent(offsets[i].Offset, offsets[i].Length);
+            Assert.AreEqual(Encoding.UTF8.GetString(inputs[i]), loaded, $"Mismatch at index {i}");
+        }
+
+        File.Delete(tempFilePath);
+    }
+
+    [TestMethod]
+    public void BulkWriteEmptyArrayShouldReturnEmptyResult()
+    {
+        var tempFilePath = TestFilePathStrings;
+
+        var stringRepository = new StringRepository.ObjectStorage.StringRepository(
+            stringFilePath: tempFilePath,
+            initialUnderlyingFileSizeIfNotExists: 0x10000,
+            cachePageSize: 1024,
+            maxCachedPagesCount: 100,
+            hotCacheItems: 10);
+
+        var inputs = Array.Empty<byte[]>();
+        var offsets = stringRepository.BulkWriteStringContentAndGetOffsets(inputs);
+
+        Assert.AreEqual(0, offsets.Length);
+
+        File.Delete(tempFilePath);
+    }
+
+    [TestMethod]
+    public void BulkWriteLargeBatchOfStringsShouldWork()
+    {
+        var tempFilePath = TestFilePathStrings;
+
+        var stringRepository = new StringRepository.ObjectStorage.StringRepository(
+            stringFilePath: tempFilePath,
+            initialUnderlyingFileSizeIfNotExists: 0x10000,
+            cachePageSize: 1024,
+            maxCachedPagesCount: 100,
+            hotCacheItems: 10);
+
+        const int stringCount = 1000;
+        var inputs = new byte[stringCount][];
+        for (var i = 0; i < stringCount; i++)
+        {
+            var text = $"String-{i:D5}-padding-to-make-it-reasonable-size";
+            inputs[i] = Encoding.UTF8.GetBytes(text);
+        }
+
+        var offsets = stringRepository.BulkWriteStringContentAndGetOffsets(inputs);
+
+        Assert.AreEqual(stringCount, offsets.Length);
+
+        for (var i = 0; i < stringCount; i++)
+        {
+            Assert.AreEqual(inputs[i].Length, offsets[i].Length, $"Length mismatch at index {i}");
+            var loaded = stringRepository.LoadStringContent(offsets[i].Offset, offsets[i].Length);
+            Assert.AreEqual(Encoding.UTF8.GetString(inputs[i]), loaded, $"Content mismatch at index {i}");
+        }
+
+        File.Delete(tempFilePath);
+    }
 }

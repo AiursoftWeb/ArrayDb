@@ -1,9 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace Aiursoft.ArrayDb.FilePersists.Services;
 
-public class FileAccessService
+public class FileAccessService : IDisposable
 {
     public readonly string Path;
     public int SeekWriteCount;
@@ -12,7 +13,9 @@ public class FileAccessService
     private long _currentSize;
     private readonly object _expandSizeLock = new();
     private readonly long _initialSizeIfNotExists;
-    
+    private SafeFileHandle _fileHandle;
+    private bool _disposed;
+
     [ExcludeFromCodeCoverage]
     public void ResetAllStatistics()
     {
@@ -20,7 +23,7 @@ public class FileAccessService
         SeekReadCount = 0;
         ExpandSizeCount = 0;
     }
-    
+
     public string OutputStatistics()
     {
         lock (_expandSizeLock)
@@ -37,7 +40,7 @@ File access service statistics:
 ";
         }
     }
-    
+
     public FileAccessService(string path, long initialSizeIfNotExists)
     {
         Path = path;
@@ -46,28 +49,32 @@ File access service statistics:
         {
             using var fs = File.Create(path);
             fs.SetLength(initialSizeIfNotExists);
-            FillFile(fs, 0, initialSizeIfNotExists);
+            FillFileStream(fs, 0, initialSizeIfNotExists);
         }
 
         _currentSize = new FileInfo(path).Length;
+        _fileHandle = File.OpenHandle(path, FileMode.Open, FileAccess.ReadWrite, GetFileShare(), FileOptions.RandomAccess);
     }
 
     public void WriteInFile(long offset, byte[] data)
     {
         ExpandFileIfNeededThreadSafe(offset, data.Length);
-        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, GetFileShare());
-        fs.Seek(offset, SeekOrigin.Begin);
-        fs.Write(data);
+        RandomAccess.Write(_fileHandle, data, offset);
+        Interlocked.Increment(ref SeekWriteCount);
+    }
+
+    public void WriteInFile(long offset, ReadOnlySpan<byte> data)
+    {
+        ExpandFileIfNeededThreadSafe(offset, data.Length);
+        RandomAccess.Write(_fileHandle, data, offset);
         Interlocked.Increment(ref SeekWriteCount);
     }
 
     public byte[] ReadInFile(long offset, int length)
     {
         ExpandFileIfNeededThreadSafe(offset, length);
-        using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read, GetFileShare());
-        fs.Seek(offset, SeekOrigin.Begin);
         var buffer = new byte[length];
-        var read = fs.Read(buffer, 0, length);
+        var read = RandomAccess.Read(_fileHandle, buffer, offset);
         Interlocked.Increment(ref SeekReadCount);
         if (read != length)
         {
@@ -79,6 +86,7 @@ File access service statistics:
 
     public async Task DeleteAsync()
     {
+        _fileHandle.Close();
         await Task.Run(() =>
         {
             lock (_expandSizeLock)
@@ -88,12 +96,19 @@ File access service statistics:
         });
     }
 
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _fileHandle.Close();
+        _disposed = true;
+    }
+
     private void ExpandFileIfNeededThreadSafe(long offset, int dataLength)
     {
         // For most cases, we don't need to expand the file
         // Make it true statement in if to make CPU branch prediction faster
         if (offset + dataLength <= _currentSize) return;
-        
+
         lock (_expandSizeLock)
         {
             var sizeToAdjust = _currentSize;
@@ -104,27 +119,40 @@ File access service statistics:
                     sizeToAdjust *= 2;
                 }
 
-                using var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, GetFileShare());
-                fs.SetLength(sizeToAdjust);
-                FillFile(fs, sizeToAdjust / 2, sizeToAdjust);
+                using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Write, GetFileShare()))
+                {
+                    fs.SetLength(sizeToAdjust);
+                }
+
+                FillFile(_fileHandle, sizeToAdjust / 2, sizeToAdjust);
                 _currentSize = sizeToAdjust;
                 Interlocked.Increment(ref ExpandSizeCount);
             }
         }
     }
 
-    
+
     /// <summary>
     /// Fill the file with 0 to make file system allocate the sequential space
     ///
     /// This method is not thread-safe. It should be called within a lock.
     /// </summary>
-    /// <param name="fs">The file stream to fill</param>
+    /// <param name="handle">The safe file handle to write to</param>
     /// <param name="start">The start position to fill</param>
     /// <param name="end">The end position to fill</param>
-    private void FillFile(FileStream fs, long start, long end)
+    private void FillFile(SafeFileHandle handle, long start, long end)
     {
-        // Fill the file with 0 to make file system allocate the sequential space
+        long currentOffset = start;
+        var buffer = new byte[_initialSizeIfNotExists];
+        while (currentOffset < end)
+        {
+            RandomAccess.Write(handle, buffer, currentOffset);
+            currentOffset += buffer.Length;
+        }
+    }
+
+    private void FillFileStream(FileStream fs, long start, long end)
+    {
         fs.Seek(start, SeekOrigin.Begin);
         var buffer = new byte[_initialSizeIfNotExists];
         while (fs.Position < end)
@@ -132,7 +160,7 @@ File access service statistics:
             fs.Write(buffer, 0, buffer.Length);
         }
     }
-    
+
     private static FileShare GetFileShare()
     {
         // If Windows, return FileShare.ReadWrite. If Linux, return FileShare.Read

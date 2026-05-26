@@ -59,7 +59,7 @@ Underlying file access service statistics:
             var startPage = offset / cachePageSize;
             var endPage = (offset + data.Length) / cachePageSize;
             var dataOffset = 0;
-        
+
             for (var page = startPage; page <= endPage; page++)
             {
                 if (_cache.TryGetValue(page, out var cachedPage))
@@ -67,16 +67,16 @@ Underlying file access service statistics:
                     // Calculate the range of bytes to update within the cached page
                     var pageStart = page == startPage ? (int)(offset % cachePageSize) : 0;
                     var bytesToWrite = Math.Min(data.Length - dataOffset, cachePageSize - pageStart);
-        
+
                     Interlocked.Increment(ref CacheWriteCount);
-                    
+
                     // Update cached page data
                     Array.Copy(data, dataOffset, cachedPage, pageStart, bytesToWrite);
                     dataOffset += bytesToWrite;
                 }
             }
         }
-        
+
         // Drop cache
         // lock (_cacheLock)
         // {
@@ -91,6 +91,32 @@ Underlying file access service statistics:
         //         }
         //     }
         // }
+
+        _underlyingAccessService.WriteInFile(offset, data);
+    }
+
+    public void WriteInFile(long offset, ReadOnlySpan<byte> data)
+    {
+        lock (_cacheLock)
+        {
+            var startPage = offset / cachePageSize;
+            var endPage = (offset + data.Length) / cachePageSize;
+            var dataOffset = 0;
+
+            for (var page = startPage; page <= endPage; page++)
+            {
+                if (_cache.TryGetValue(page, out var cachedPage))
+                {
+                    var pageStart = page == startPage ? (int)(offset % cachePageSize) : 0;
+                    var bytesToWrite = Math.Min(data.Length - dataOffset, cachePageSize - pageStart);
+
+                    Interlocked.Increment(ref CacheWriteCount);
+
+                    data.Slice(dataOffset, bytesToWrite).CopyTo(cachedPage.AsSpan(pageStart, bytesToWrite));
+                    dataOffset += bytesToWrite;
+                }
+            }
+        }
 
         _underlyingAccessService.WriteInFile(offset, data);
     }
@@ -133,10 +159,21 @@ Underlying file access service statistics:
                 Interlocked.Increment(ref CacheHitCount);
                 return cache;
             }
+        }
 
-            var pageData = _underlyingAccessService.ReadInFile(pageOffset * cachePageSize, cachePageSize);
+        // Read from disk outside the lock so that cache-hit requests are not blocked.
+        var pageData = _underlyingAccessService.ReadInFile(pageOffset * cachePageSize, cachePageSize);
+        Interlocked.Increment(ref CacheMissCount);
+
+        lock (_cacheLock)
+        {
+            // Double-check: another thread may have loaded the same page while we were reading.
+            if (_cache.TryGetValue(pageOffset, out var existing))
+            {
+                return existing;
+            }
+
             AddToCache(pageOffset, pageData);
-            Interlocked.Increment(ref CacheMissCount);
             return pageData;
         }
     }
@@ -162,21 +199,19 @@ Underlying file access service statistics:
         return true;
     }
 
+    // Caller must hold _cacheLock
     private void AddToCache(long pageOffset, byte[] data)
     {
-        lock (_cacheLock)
+        while (_cache.Count >= maxCachedPagesCount && _lruList.Count > 0)
         {
-            while (_cache.Count >= maxCachedPagesCount && _lruList.Count > 0)
-            {
-                var oldestPage = _lruList.First!.Value;
-                _lruList.RemoveFirst();
-                _cache.Remove(oldestPage);
-                Interlocked.Increment(ref RemoveFromCacheCount);
-            }
-            
-            _cache[pageOffset] = data;
-            _lruList.AddLast(pageOffset);
+            var oldestPage = _lruList.First!.Value;
+            _lruList.RemoveFirst();
+            _cache.Remove(oldestPage);
+            Interlocked.Increment(ref RemoveFromCacheCount);
         }
+
+        _cache[pageOffset] = data;
+        _lruList.AddLast(pageOffset);
     }
 
     public async Task DeleteAsync()
