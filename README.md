@@ -543,30 +543,52 @@ Then you can inject the `PartitionedObjectBucket` from the DI container.
 
 ## Performance Test Report
 
-ArrayDb delivers dramatic write performance through its layered architecture. With two levels of write buffering, 1 million single-item writes complete in **~44 ms** — a **370× improvement** over the unbuffered baseline of ~16,278 ms. Bulk writes of 1 million items complete in under **10 ms**.
+ArrayDb delivers dramatic write performance through its layered architecture. With three levels of write buffering, 1 million single-item writes complete in **~37 ms** — a **~436× improvement** over the unbuffered baseline of ~16,123 ms. Bulk writes of 1 million items complete in under **9 ms**.
 
 The key insight: most of the old baseline time was not spent writing data — it was spent on `open()` and `close()` system calls. Switching from `new FileStream()` per write to a persistent `SafeFileHandle` eliminates ~2 million unnecessary kernel mode transitions, which alone accounts for the majority of the speedup.
 
 ### Test platform
 
-* **CPU**: 13th Gen Intel(R) Core(TM) i9-13900KS  
+* **CPU**: 13th Gen Intel(R) Core(TM) i9-13900KS (24 cores, 32 threads, up to 6.0 GHz)  
 * **RAM**: 32GB DDR5 6400MHz  
-* **Disk**: Samsung 990 PRO 1TB NVMe SSD  
-* **OS**: AnduinOS 1.0.3  
+* **Disk**: SOLIDIGM (SK Hynix) SSDPFKKW512H7 512GB NVMe SSD  
+* **OS**: AnduinOS 1.4.2 (Linux 6.17)  
 * **File system**: ext4  
-* **.NET**: 10, Release build, Linux-x64  
+* **.NET**: 10, Release build, Linux-x64, PublishAot, OptimizationPreference=Speed  
 
-Each test case runs 5 times (including warm-up); the average of the last 3 runs is recorded.
+Each test case runs 5 times (including warm-up); the average of all 5 runs is recorded.
+
+### How to run the benchmark
+
+To reproduce these results, publish the benchmark project with AOT and speed optimization, then run the native binary:
+
+```bash
+cd src/Aiursoft.ArrayDb.Benchmark
+dotnet publish -c Release \
+  -p:PublishAot=true \
+  -p:OptimizationPreference=Speed \
+  --self-contained
+./bin/Release/net10.0/linux-x64/publish/Aiursoft.ArrayDb.Benchmark
+```
+
+Key flags:
+- `-c Release` — release build with all compiler optimizations
+- `-p:PublishAot=true` — ahead-of-time compilation to native code, eliminates JIT warm-up overhead
+- `-p:OptimizationPreference=Speed` — prioritizes CPU throughput over binary size
+- `--self-contained` — bundles the runtime, no .NET SDK needed on the target machine
 
 ### Performance Data
 
-| Test Case | Bucket | Buffered Bucket | Buf×2 Bucket | Buf×3 Bucket |
+| Test Case | Bucket | Buf Bucket | BufBuf Bucket | BufBufBuf Bucket |
 |---|---|---|---|---|
-| Add 1 time with 1M items | 1,323 ms (S) | 9.6 ms (S) | 9.7 ms (S) | 11.8 ms (S) |
-| Add 1K items × 1K times | 401 ms (S), 1,113 ms (P) | 26 ms (S), 20 ms (P) | 20 ms (S), 13 ms (P) | 12 ms (S), 13 ms (P) |
-| Add 1M times × 1 item | 16,278 ms (S), 13,360 ms (P) | 118 ms (S), 280 ms (P) | **44 ms (S)**, 159 ms (P) | 46 ms (S), 211 ms (P) |
-| Read 1 time with 1M items | 2,584 ms (S) | 12 ms (S) | 26 ms (S) | 12 ms (S) |
-| Read 1K items × 1K times | 3,348 ms (S), 2,780 ms (P) | 4,708 ms (S), 4,353 ms (P) | 4,914 ms (S) | — |
+| Add 1 time with 1M items | 1,789 ms (S) | 9.0 ms (S) | 9.1 ms (S) | 9.0 ms (S) |
+| Add 1K items × 1K times | 558 ms (S), 1,495 ms (P) | 16 ms (S), 26 ms (P) | 23 ms (S), 11 ms (P) | 18 ms (S), 12 ms (P) |
+| Add 1M times × 1 item | 16,123 ms (S), 9,123 ms (P) | 55 ms (S), 233 ms (P) | **37 ms (S)**, 174 ms (P) | 37 ms (S), 155 ms (P) |
+| Read 1 time with 1M items | 3,298 ms (S) | 11 ms (S) | 12 ms (S) | 1,634 ms (S) |
+| Read 1K items × 1K times | 3,114 ms (S), 3,504 ms (P) | 5,376 ms (S), 5,411 ms (P) | 6,215 ms (S), 5,191 ms (P) | 6,484 ms (S), 5,700 ms (P) |
+| Read 1 item × 1M times | 1,333 ms (S), 1,647 ms (P) | 3,088 ms (S), 3,685 ms (P) | 3,211 ms (S), 5,826 ms (P) | 3,462 ms (S), 17,355 ms (P) |
+| Write 7 read 3 (1K items, 1K times) | 1,449 ms (S), 2,327 ms (P) | 1,725 ms (S), 2,100 ms (P) | 1,917 ms (S), 1,463 ms (P) | 2,076 ms (S), 1,703 ms (P) |
+| Write 3 read 7 (1K items, 1K times) | 3,783 ms (S), 3,175 ms (P) | 3,140 ms (S), 1,087 ms (P) | 2,578 ms (S), 1,467 ms (P) | 1,959 ms (S), **839 ms (P)** |
 
 In the table:
 
@@ -574,6 +596,8 @@ In the table:
 * P means multi-threaded, like: `Parallel.For(0, 1000, i => { db.Add(new MyLogItem()); });`
 
 > **Note on buffered read performance**: When reading many small random batches from a `BufferedObjectBucket`, performance is slower than the raw `Bucket` because each read must merge in-memory buffered data with on-disk data. Use `SyncAsync()` first if read latency is critical, or use the raw `ObjectBucket` for read-heavy workloads.
+>
+> **Note on mixed workloads**: For write-heavy mixed workloads (70% write / 30% read), BufBuf and BufBufBuf buckets deliver the best performance. For read-heavy workloads (30% write / 70% read), BufBufBuf parallel reads complete in **839 ms** — over **3.8× faster** than the unbuffered Bucket.
 
 ## How to contribute
 
