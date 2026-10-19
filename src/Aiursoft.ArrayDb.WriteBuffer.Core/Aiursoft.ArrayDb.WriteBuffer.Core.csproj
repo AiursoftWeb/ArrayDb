@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>10.0.0</Version>
+    <Version>10.0.1</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Aiursoft.ArrayDb.WriteBuffer.Core</AssemblyName>
     <RootNamespace>Aiursoft.ArrayDb.WriteBuffer.Core</RootNamespace>
@@ -16,9 +16,9 @@
     <PackageId>Aiursoft.ArrayDb.WriteBuffer.Core</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://gitlab.aiursoft.com/aiursoft/arraydb</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/AiursoftWeb/arraydb</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://gitlab.aiursoft.com/aiursoft/arraydb.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/AiursoftWeb/arraydb.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
