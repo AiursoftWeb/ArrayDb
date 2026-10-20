@@ -3,6 +3,7 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/AiursoftWeb/arraydb/blob/master/LICENSE)
 [![Pipeline stat](https://gitlab.aiursoft.com/aiursoft/arraydb/badges/master/pipeline.svg)](https://gitlab.aiursoft.com/aiursoft/arraydb/-/pipelines)
 [![Test Coverage](https://gitlab.aiursoft.com/aiursoft/arraydb/badges/master/coverage.svg)](https://gitlab.aiursoft.com/aiursoft/arraydb/-/pipelines)
+[![S360 compliance](https://s360.aiursoft.com/badge.svg?project=aiursoft%2Farraydb)](https://s360.aiursoft.com/SupplyChain?tab=projects&project=aiursoft%2Farraydb&scope=baseline&ecosystem=all)
 [![NuGet version](https://img.shields.io/nuget/v/Aiursoft.ArrayDb.Partitions.svg?style=flat-square)](https://www.nuget.org/packages/Aiursoft.ArrayDb.Partitions/)
 [![Man hours](https://manhours.aiursoft.com/r/github.com/aiursoftweb/arraydb.svg)](https://manhours.aiursoft.com/r/github.com/aiursoftweb/arraydb.html)
 
