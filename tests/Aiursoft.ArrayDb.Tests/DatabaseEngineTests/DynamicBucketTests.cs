@@ -1,3 +1,5 @@
+using System.Globalization;
+using Aiursoft.ArrayDb.ObjectBucket.Dynamic.Simplify;
 using System.Text;
 using Aiursoft.ArrayDb.ObjectBucket;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
@@ -10,6 +12,50 @@ namespace Aiursoft.ArrayDb.Tests.DatabaseEngineTests;
 [DoNotParallelize]
 public class DynamicBucketTests : ArrayDbTestBase
 {
+    [TestMethod]
+    [DataRow("en-US", "1.5", "2.75")]
+    [DataRow("de-DE", "1,5", "2,75")]
+    [DataRow("fr-FR", "1,5", "2,75")]
+    public void LocalizedConvertibleNumbersKeepTheirValuesAfterPersistence(
+        string cultureName, string singleText, string doubleText)
+    {
+        var previousCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(cultureName);
+            var definition = new BucketItemTypeDefinition
+            {
+                Properties = new Dictionary<string, BucketItemPropertyType>
+                {
+                    { "Single", BucketItemPropertyType.Single },
+                    { "Double", BucketItemPropertyType.Double }
+                }
+            };
+            var item = new BucketItem
+            {
+                Properties = new Dictionary<string, BucketItemPropertyValue>
+                {
+                    { "Single", new BucketItemPropertyValue { Type = BucketItemPropertyType.Single, Value = singleText } },
+                    { "Double", new BucketItemPropertyValue { Type = BucketItemPropertyType.Double, Value = doubleText } }
+                }
+            };
+            dynamic converted = new SimplifiedBucketItem(item);
+            Assert.AreEqual(1.5f, (float)converted.Single);
+            Assert.AreEqual(2.75d, (double)converted.Double);
+
+            var bucket = new DynamicObjectBucket(definition, TestFilePath, TestFilePathStrings);
+            bucket.Add(item);
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            var persisted = bucket.Read(0);
+            Assert.AreEqual(1.5f, persisted.Properties["Single"].Value);
+            Assert.AreEqual(2.75d, persisted.Properties["Double"].Value);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+    }
+
     [TestMethod]
     public void TestWriteAndRead()
     {
