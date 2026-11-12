@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Dynamic;
 using Aiursoft.ArrayDb.ObjectBucket.Abstractions.Models;
 
@@ -51,8 +52,8 @@ public class SimplifiedBucketItem(BucketItem item) : DynamicObject
             BucketItemPropertyType.String => value.ToString(),
             BucketItemPropertyType.DateTime => value is DateTime dt ? dt : throw new InvalidCastException(),
             BucketItemPropertyType.Int64 => Convert.ToInt64(value),
-            BucketItemPropertyType.Single => Convert.ToSingle(value),
-            BucketItemPropertyType.Double => Convert.ToDouble(value),
+            BucketItemPropertyType.Single => Convert.ToSingle(value, CultureInfo.InvariantCulture),
+            BucketItemPropertyType.Double => Convert.ToDouble(value, CultureInfo.InvariantCulture),
             BucketItemPropertyType.TimeSpan => value is TimeSpan ts ? ts : throw new InvalidCastException(),
             BucketItemPropertyType.Guid => value is Guid g ? g : throw new InvalidCastException(),
             BucketItemPropertyType.FixedSizeByteArray => value as byte[],

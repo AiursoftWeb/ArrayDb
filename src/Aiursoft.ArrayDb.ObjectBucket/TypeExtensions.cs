@@ -25,7 +25,8 @@ public static class TypeExtensions
                      p.PropertyType == typeof(byte[])
             })
             .Where(p => p.GetCustomAttributes(typeof(PartitionKeyAttribute), false).Length == 0)
-            .OrderBy(p => p.Name)
+            // Preserve the ordering that defines the existing persisted property layout.
+            .OrderBy(p => p.Name, StringComparer.CurrentCulture)
             .ToArray();
     }
 

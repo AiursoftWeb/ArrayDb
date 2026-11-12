@@ -78,8 +78,8 @@ public class ObjectBucketTests : ArrayDbTestBase
         // SampleData has 5 properties (sorted by name): CreationTime, MyBoolean1, MyNumber1, MyNumber2, MyString1, MyString2
         // Actually: CreationTime, MyBoolean1, MyNumber1, MyNumber2, MyString1, MyString2 = 6
         // Let's verify by name
-        var sampleDataPropNames = sampleDataProps.Select(p => p.Name).OrderBy(n => n).ToArray();
-        var bytesDataPropNames = bytesDataProps.Select(p => p.Name).OrderBy(n => n).ToArray();
+        var sampleDataPropNames = sampleDataProps.Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+        var bytesDataPropNames = bytesDataProps.Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
 
         // Verify they are different property sets
         CollectionAssert.AreNotEqual(sampleDataPropNames, bytesDataPropNames);

@@ -15,7 +15,7 @@ public static class MarkdownTableExtensions
             .SelectMany(r => r.TestResults)
             .Select(tr => tr.TestedItem)
             .Distinct()
-            .OrderBy(item => item)
+            .OrderBy(item => item, StringComparer.Ordinal)
             .ToList();
 
         // Header row: Test case + test items
