@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -248,11 +249,11 @@ public class DynamicObjectBucket : IDynamicObjectBucket
                     offset += sizeof(long);
                     break;
                 case BucketItemPropertyType.Single:
-                    Unsafe.WriteUnaligned(ref buffer[offset], Convert.ToSingle(propertyValue));
+                    Unsafe.WriteUnaligned(ref buffer[offset], Convert.ToSingle(propertyValue, CultureInfo.CurrentCulture));
                     offset += sizeof(float);
                     break;
                 case BucketItemPropertyType.Double:
-                    Unsafe.WriteUnaligned(ref buffer[offset], Convert.ToDouble(propertyValue));
+                    Unsafe.WriteUnaligned(ref buffer[offset], Convert.ToDouble(propertyValue, CultureInfo.CurrentCulture));
                     offset += sizeof(double);
                     break;
                 case BucketItemPropertyType.TimeSpan:
